@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vgsot-sim"
+version = "0.1.0"
+description = "VGSOT MTJ switching simulation (electronic + anisotropy + LLG step solver)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Zhang Jincheng"}]
+dependencies = [
+  "numpy>=1.22",
+  "matplotlib>=3.6",
+  "tqdm>=4.64",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.4"]
+
+[project.scripts]
+vgsot-sim = "vgsot_sim.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
