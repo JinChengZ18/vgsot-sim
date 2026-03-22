@@ -1,6 +1,6 @@
 # vgsot-sim
 
-A physics-based simulation toolkit for **VGSOT-MTJ (Voltage-Gated Spin-Orbit Torque Magnetic Tunnel Junction)** switching dynamics.
+A physics-based simulation toolkit for **VGSOT-MTJ (Voltage-Gated Spin-Orbit Torque Magnetic Tunnel Junction) and SOT-MTJ** switching dynamics. 
 
 The simulator couples several physical effects into a time-domain switching model:
 
@@ -161,6 +161,15 @@ Besides running from command line, you can **import and run each case directly i
 ---
 
 ### 1. Basic Python API usage
+
+Quick start (minimal example)
+
+```python
+from vgsot_sim import sot_only_constant_current
+
+res = sot_only_constant_current()
+print(res.mz[-1])
+```
 
 Example: run a VCMA-assisted switching simulation.
 
