@@ -1,69 +1,49 @@
-from .constants import *
-from .anisotropy import field
 from math import cos, sin
 
+from .anisotropy import field
+from .configs import PhysicalConstantsConfig
 
-def switching(V_MTJ, I_SOT, R_MTJ, theta, phi, ESTT, ESOT, VNV = 1, NON=0, R_SOT_FL_DL=0.83, R_STT_FL_DL = 0):
-    """
-    Dynamic-switching module and solving LLG analytically
-    Input: V_MTJ, I_SOT, R_MTJ, theta, phi
-    ESTT = 1 for STT effect, else 0
-    ESOT = 1 for SOT effect, else 0
 
-    Output:
-    mz (from theta_1)
-    phi_1, and theta_1
-    => finding new angles after 1 time step
-    """
+def switching(V_MTJ, I_SOT, R_MTJ, theta, phi, ESTT, ESOT, VNV=1, NON=0, R_SOT_FL_DL=0.83, R_STT_FL_DL=0, constants: PhysicalConstantsConfig | None = None):
+    """Dynamic-switching module and solving LLG analytically."""
+    if constants is None:
+        raise ValueError("constants must be provided.")
 
-    # for Anisotropy field module
     n = 1
     ENE = 1
-    # NON = 0
-    # VNV = 0 #0,to reproduce paper, 1 to reproduce manual
+    H_EFF, _ = field(theta, phi, V_MTJ, n, NON, ENE, VNV, constants)
 
-    H_EFF, _ = field(theta, phi, V_MTJ, n, NON, ENE, VNV)
+    I_MTJ = V_MTJ / R_MTJ
+    J_STT = I_MTJ / constants.A1
+    J_SOT = I_SOT / constants.A2
 
-    # Prepare parameters for LLG solving
-    I_MTJ = V_MTJ/R_MTJ
-    J_STT = I_MTJ/A1
-    J_SOT = I_SOT/A2
+    gamma_red = constants.gamma / (1 + constants.alpha**2)
+    H_DL_STT = ESTT * constants.h_bar * constants.P * J_STT / (2 * constants.e * constants.u0 * constants.Ms * constants.tf)
+    H_FL_STT = R_STT_FL_DL * H_DL_STT
+    H_DL_SOT = ESOT * constants.h_bar * constants.theta_SH * J_SOT / (2 * constants.e * constants.u0 * constants.Ms * constants.tf)
+    H_FL_SOT = R_SOT_FL_DL * H_DL_SOT
 
-    # Reduced gyromagnetic ratio
-    gamma_red = gamma/(1+alpha**2)
-    # see section II D
-    H_DL_STT = ESTT * h_bar * P * J_STT/(2*e*u0*Ms*tf)         # Damping-Like for STT, ESTT has impact
-    H_FL_STT = R_STT_FL_DL * H_DL_STT                          # Field-Like for STT
-    H_DL_SOT = ESOT * h_bar * theta_SH * J_SOT/(2*e*u0*Ms*tf)  # Damping-Like for SOT, ESOT has impact
-    H_FL_SOT = R_SOT_FL_DL * H_DL_SOT                          # Field-Like for SOT
-
-    # Landau-Lifshitz-Gilbert equation solving
-    # use equation 9 section II D
-    # m = mx ex + my ey + mz ez
-    # m_p = (0, 0, 1) = electron polarization direction of the spin polarized current induced by STT
-    # m_s = (-1, 0, 0) = pure spin current induced by spin-orbit coupling
-    # to create D 6
     dtheta_dt = gamma_red*(
-        H_EFF[0]*(alpha*cos(theta)*cos(phi) - sin(phi))
-        + H_EFF[1]*(alpha*cos(theta)*sin(phi) + cos(phi))
-        - H_EFF[2]*(alpha*sin(theta))
-        + sin(theta)*(alpha*H_FL_STT - H_DL_STT)
-        - H_DL_SOT*(alpha*sin(phi) + cos(theta)*cos(phi))
-        + H_FL_SOT*(alpha*cos(theta)*cos(phi)-sin(phi))
+        H_EFF[0]*(constants.alpha*cos(theta)*cos(phi) - sin(phi))
+        + H_EFF[1]*(constants.alpha*cos(theta)*sin(phi) + cos(phi))
+        - H_EFF[2]*(constants.alpha*sin(theta))
+        + sin(theta)*(constants.alpha*H_FL_STT - H_DL_STT)
+        - H_DL_SOT*(constants.alpha*sin(phi) + cos(theta)*cos(phi))
+        + H_FL_SOT*(constants.alpha*cos(theta)*cos(phi)-sin(phi))
     )
 
     dphi_dt = gamma_red*(
         1/sin(theta)*(
-            H_EFF[0]*(-alpha*sin(phi) - cos(theta)*cos(phi))
-            + H_EFF[1]*(alpha*cos(phi)-cos(theta)*sin(phi))
+            H_EFF[0]*(-constants.alpha*sin(phi) - cos(theta)*cos(phi))
+            + H_EFF[1]*(constants.alpha*cos(phi)-cos(theta)*sin(phi))
             + H_EFF[2]*sin(theta)
         )
-        - (alpha*H_DL_STT + H_FL_STT)
-        - H_DL_SOT/sin(theta)*(alpha*cos(theta)*cos(phi)-sin(phi))
-        - H_FL_SOT/sin(theta)*(alpha*sin(phi)-cos(theta)*cos(phi))
+        - (constants.alpha*H_DL_STT + H_FL_STT)
+        - H_DL_SOT/sin(theta)*(constants.alpha*cos(theta)*cos(phi)-sin(phi))
+        - H_FL_SOT/sin(theta)*(constants.alpha*sin(phi)-cos(theta)*cos(phi))
     )
 
-    theta_1 = theta + dtheta_dt*t_step
-    phi_1 = phi + dphi_dt*t_step
+    theta_1 = theta + dtheta_dt * constants.t_step
+    phi_1 = phi + dphi_dt * constants.t_step
     mz = cos(theta_1)
     return (mz, phi_1, theta_1)

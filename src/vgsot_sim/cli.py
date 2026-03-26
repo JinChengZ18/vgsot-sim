@@ -25,21 +25,6 @@ from .result_io import (
 )
 
 
-def _format_energy_fj(value_j: float) -> str:
-    return f"{value_j * 1e15:.2f} fJ"
-
-
-def _single_energy_text(value_j: float) -> str:
-    return f"$E_{{\\mathrm{{MTJ}}}}$ = {_format_energy_fj(value_j)}"
-
-
-def _sweep_energy_text(values: dict[str, float]) -> str:
-    lines = [r"$E_{\mathrm{MTJ}}$"]
-    for label, value in values.items():
-        lines.append(f"{label}: {_format_energy_fj(value)}")
-    return "\n".join(lines)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="vgsot-sim",
@@ -96,7 +81,7 @@ def main() -> None:
             ylabel_bot="Terminal Voltage (V)",
             tick_spacing_s=cfg.tick_spacing_s,
             x_is_time=True,
-            energy_text=_single_energy_text(res.switch_energy_j),
+            switch_energy_j=res.switch_energy_j,
         )
 
     elif args.case == "sot_only_constant_current":
@@ -127,7 +112,7 @@ def main() -> None:
             ylabel_bot=r"$I_{\mathrm{SOT}}$ ($\mu$A)",
             tick_spacing_s=cfg.tick_spacing_s,
             x_is_time=True,
-            energy_text=_single_energy_text(res.switch_energy_j),
+            switch_energy_j=res.switch_energy_j,
         )
 
     elif args.case == "sot_switching_no_vcma":
@@ -156,7 +141,7 @@ def main() -> None:
             tick_spacing_s=cfg.tick_spacing_s,
             legend_title=r"$I_{\mathrm{SOT}}$ sweep",
             x_is_time=True,
-            energy_text=_sweep_energy_text(res.switch_energy_j),
+            switch_energy_j=res.switch_energy_j,
         )
 
     elif args.case == "ser_sot_no_vcma_thermal":
@@ -205,7 +190,7 @@ def main() -> None:
             tick_spacing_s=cfg.tick_spacing_s,
             legend_title=r"$I_{\mathrm{SOT}}$ sweep",
             x_is_time=True,
-            energy_text=_sweep_energy_text(res.switch_energy_j),
+            switch_energy_j=res.switch_energy_j,
         )
 
     elif args.case == "vcma_assisted_switching_vmtj_sweep":
@@ -234,7 +219,7 @@ def main() -> None:
             tick_spacing_s=cfg.tick_spacing_s,
             legend_title=r"$V_{\mathrm{MTJ}}$ sweep",
             x_is_time=True,
-            energy_text=_sweep_energy_text(res.switch_energy_j),
+            switch_energy_j=res.switch_energy_j,
         )
 
     elif args.case == "optimized_vgsot_switching":
@@ -263,7 +248,7 @@ def main() -> None:
             tick_spacing_s=cfg.tick_spacing_s,
             legend_title="pulse timing sweep",
             x_is_time=True,
-            energy_text=_sweep_energy_text(res.switch_energy_j),
+            switch_energy_j=res.switch_energy_j,
         )
 
     elif args.case == "ser_optimized_vgsot":

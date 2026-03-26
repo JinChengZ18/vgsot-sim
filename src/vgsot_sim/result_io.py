@@ -79,6 +79,46 @@ def _summarize_seq(xs: Sequence[float], unit: str) -> str:
     return f"{_fmt_eng(mn, unit)}_{_fmt_eng(mx, unit)}_n{n}"
 
 
+def _format_energy_fj(value_j: float) -> str:
+    return f"{float(value_j) * 1e15:.2f} fJ"
+
+
+def _build_energy_text(
+    switch_energy_j: float | Mapping[str, float] | None = None,
+    energy_text: str | None = None,
+) -> str | None:
+    if energy_text is not None:
+        return energy_text
+    if switch_energy_j is None:
+        return None
+    if isinstance(switch_energy_j, Mapping):
+        lines = [r"$E_{\mathrm{MTJ}}$"]
+        for label, value in switch_energy_j.items():
+            lines.append(f"{label}: {_format_energy_fj(value)}")
+        return "\n".join(lines)
+    return rf"$E_{{\mathrm{{MTJ}}}}$ = {_format_energy_fj(switch_energy_j)}"
+
+
+def _add_energy_box(ax: plt.Axes, text: str | None) -> None:
+    if not text:
+        return
+    ax.text(
+        0.02,
+        0.98,
+        text,
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        fontsize=9,
+        bbox=dict(
+            boxstyle="round,pad=0.3",
+            facecolor="white",
+            edgecolor="gray",
+            alpha=0.85,
+        ),
+    )
+
+
 def config_to_params(cfg: Any) -> dict[str, Any]:
     if is_dataclass(cfg):
         return asdict(cfg)
@@ -193,7 +233,18 @@ def _finalize_figure(fig: plt.Figure, reserve_right: bool = False) -> None:
         fig.tight_layout()
 
 
-def save_single_plot(path: str | Path, x: np.ndarray, y_dict: Mapping[str, np.ndarray], xlabel: str, ylabel: str, tick_spacing_s: float | None = None, legend_title: str | None = None, x_is_time: bool = False) -> None:
+def save_single_plot(
+    path: str | Path,
+    x: np.ndarray,
+    y_dict: Mapping[str, np.ndarray],
+    xlabel: str,
+    ylabel: str,
+    tick_spacing_s: float | None = None,
+    legend_title: str | None = None,
+    x_is_time: bool = False,
+    switch_energy_j: float | Mapping[str, float] | None = None,
+    energy_text: str | None = None,
+) -> None:
     x_plot = x * 1e9 if x_is_time else x
     xlabel_plot = _format_time_xlabel(xlabel) if x_is_time else xlabel
     fig, ax = plt.subplots(figsize=(7.6, 4.2))
@@ -209,12 +260,26 @@ def save_single_plot(path: str | Path, x: np.ndarray, y_dict: Mapping[str, np.nd
     use_outer_legend = len(y_dict) > 1
     if use_outer_legend:
         ax.legend(title=legend_title, loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=9)
+    _add_energy_box(ax, _build_energy_text(switch_energy_j, energy_text))
     _finalize_figure(fig, reserve_right=use_outer_legend)
     fig.savefig(str(path), dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
-def save_two_panel_plot(path: str | Path, x: np.ndarray, y1: np.ndarray, y2: np.ndarray, xlabel1: str, ylabel1: str, xlabel2: str, ylabel2: str, tick_spacing_s: float | None = None, x_is_time: bool = False) -> None:
+def save_two_panel_plot(
+    path: str | Path,
+    x: np.ndarray,
+    y1: np.ndarray,
+    y2: np.ndarray,
+    xlabel1: str,
+    ylabel1: str,
+    xlabel2: str,
+    ylabel2: str,
+    tick_spacing_s: float | None = None,
+    x_is_time: bool = False,
+    switch_energy_j: float | Mapping[str, float] | None = None,
+    energy_text: str | None = None,
+) -> None:
     x_plot = x * 1e9 if x_is_time else x
     xlabel1_plot = _format_time_xlabel(xlabel1) if x_is_time else xlabel1
     xlabel2_plot = _format_time_xlabel(xlabel2) if x_is_time else xlabel2
@@ -231,12 +296,27 @@ def save_two_panel_plot(path: str | Path, x: np.ndarray, y1: np.ndarray, y2: np.
         axs[1].xaxis.set_major_locator(ticker.MultipleLocator(spacing))
     for ax in axs:
         ax.tick_params(direction="in", length=4, width=1.0)
+    _add_energy_box(axs[0], _build_energy_text(switch_energy_j, energy_text))
     _finalize_figure(fig)
     fig.savefig(str(path), dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
-def save_three_panel_plot(path: str | Path, x: np.ndarray, y_top: Mapping[str, np.ndarray], y_mid: Mapping[str, np.ndarray], y_bot: Mapping[str, np.ndarray], ylabel_top: str, ylabel_mid: str, ylabel_bot: str, tick_spacing_s: float | None = None, legend_title: str | None = None, x_is_time: bool = True, energy_text: str | None = None) -> None:
+def save_three_panel_plot(
+    path: str | Path,
+    x: np.ndarray,
+    y_top: Mapping[str, np.ndarray],
+    y_mid: Mapping[str, np.ndarray],
+    y_bot: Mapping[str, np.ndarray],
+    ylabel_top: str,
+    ylabel_mid: str,
+    ylabel_bot: str,
+    tick_spacing_s: float | None = None,
+    legend_title: str | None = None,
+    x_is_time: bool = True,
+    switch_energy_j: float | Mapping[str, float] | None = None,
+    energy_text: str | None = None,
+) -> None:
     x_plot = x * 1e9 if x_is_time else x
     xlabel_plot = "Time (ns)" if x_is_time else "X"
     fig, axs = plt.subplots(3, 1, figsize=(9.2, 8.2), sharex=True)
@@ -262,9 +342,14 @@ def save_three_panel_plot(path: str | Path, x: np.ndarray, y_top: Mapping[str, n
         ax.tick_params(direction="in", length=4, width=1.0)
     use_outer_legend = len(y_top) > 1
     if use_outer_legend:
-        axs[0].legend(title=legend_title, fontsize=9, loc="center left", bbox_to_anchor=(1.02, 0.5), borderaxespad=0.0)
-    if energy_text:
-        axs[0].text(0.02, 0.98, energy_text, transform=axs[0].transAxes, ha="left", va="top", fontsize=9, bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="gray", alpha=0.85))
+        axs[0].legend(
+            title=legend_title,
+            fontsize=9,
+            loc="center left",
+            bbox_to_anchor=(1.02, 0.5),
+            borderaxespad=0.0,
+        )
+    _add_energy_box(axs[0], _build_energy_text(switch_energy_j, energy_text))
     _finalize_figure(fig, reserve_right=use_outer_legend)
     fig.savefig(str(path), dpi=300, bbox_inches="tight")
     plt.close(fig)

@@ -1,6 +1,6 @@
 # vgsot-sim
 
-A physics-based simulation toolkit for **VGSOT-MTJ (Voltage-Gated Spin-Orbit Torque Magnetic Tunnel Junction)** switching dynamics.
+A physics-based simulation toolkit for **VGSOT-MTJ (Voltage-Gated Spin-Orbit Torque Magnetic Tunnel Junction) and SOT-MTJ** switching dynamics. 
 
 The simulator couples several physical effects into a time-domain switching model:
 
@@ -134,12 +134,6 @@ vgsot-sim vcma_assisted_switching_isot_sweep
 
 # 6) VCMA-assisted: fix I_SOT, sweep V_MTJ and overlay mz(t)
 vgsot-sim vcma_assisted_switching_vmtj_sweep
-
-# 7) optimized two-pulse scheme: sweep (t1,t2) and overlay mz(t)
-vgsot-sim optimized_vgsot_switching
-
-# 8) SER vs t1 for optimized scheme: thermal noise (Monte-Carlo)
-vgsot-sim ser_optimized_vgsot
 ```
 
 For more information, please refer to: [Simulation Cases and Their Physical Meaning](docs/cases.md)
@@ -161,6 +155,15 @@ Besides running from command line, you can **import and run each case directly i
 ---
 
 ### 1. Basic Python API usage
+
+Quick start (minimal example)
+
+```python
+from vgsot_sim import sot_only_constant_current
+
+res = sot_only_constant_current()
+print(res.mz[-1])
+```
 
 Example: run a VCMA-assisted switching simulation.
 
@@ -313,23 +316,11 @@ For more detailed API usage, please refer to: [CASES GUIDE](notebooks/docs_cases
 - `V_MTJ` units: **Volt**
 - time units: **seconds**
 
-The simulation time step is defined in: 
-
-```
-vgsot_sim/constants.py
-```
-
-via:
-
-```
-constants.t_step
-```
-
 For reproducible Monte-Carlo runs:
 
 ```
 import numpy as np
-np.random.seed(0)
+np.random.seed(100)
 ```
 
 

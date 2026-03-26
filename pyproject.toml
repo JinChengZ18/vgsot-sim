@@ -5,16 +5,26 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vgsot-sim"
 version = "0.1.0"
-description = "VGSOT MTJ switching simulation (electronic + anisotropy + LLG step solver)"
+description = "VGSOT/SOT MTJ switching simulation (electronic + anisotropy + LLG step solver)"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
-authors = [{name = "Zhang Jincheng"}]
+authors = [{name = "Jincheng Zhang"}]
 dependencies = [
   "numpy>=1.22",
   "matplotlib>=3.6",
   "tqdm>=4.64",
 ]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+keywords = ["spintronics", "mtj", "simulation", "vgsot", "sot-mram"]
+
+[project.urls]
+Repository = "https://github.com/JinChengZ18/vgsot-sim/tree/main"
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.4"]
@@ -24,6 +34,7 @@ vgsot-sim = "vgsot_sim.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["vgsot_sim*"]
 
 [tool.ruff]
 line-length = 100

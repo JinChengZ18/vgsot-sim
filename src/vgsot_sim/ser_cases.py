@@ -6,8 +6,7 @@ from typing import List
 import numpy as np
 from tqdm import trange
 
-from . import constants as C
-from .configs import SerOptimizedVgsotConfig, SerSotNoVcmaThermalConfig
+from .configs import PhysicalConstantsConfig, SerOptimizedVgsotConfig, SerSotNoVcmaThermalConfig
 from .time_series_cases import run_piecewise_direct_excitation, run_two_pulse_optimized
 
 
@@ -56,6 +55,7 @@ def _switching_error_rate_single_isot(
             non=cfg.non,
             r_sot_fl_dl=cfg.r_sot_fl_dl,
             show_progress=False,
+            constants=cfg.constants,
         )
         final_mz = float(res.mz[cfg.sim_end_step])
         if abs(final_mz - cfg.target_mz) > cfg.failure_tol:
@@ -77,6 +77,10 @@ def ser_sot_no_vcma_thermal(
     return SerResult(x=np.array(cfg.i_sot_list, dtype=float), ser=ser, x_label=r"$I_{\mathrm{SOT}}$ (A)")
 
 
+def _default_i_sot(constants: PhysicalConstantsConfig) -> float:
+    return (2 * constants.e * constants.u0 * constants.Ms * constants.tf * constants.A2 * (-50 * 1000 / (4 * np.pi))) / (constants.h_bar * constants.theta_SH)
+
+
 def ser_optimized_vgsot(
     cfg: SerOptimizedVgsotConfig | None = None,
     *,
@@ -86,9 +90,9 @@ def ser_optimized_vgsot(
 
     i_sot = cfg.i_sot
     if i_sot is None:
-        i_sot = (2 * C.e * C.u0 * C.Ms * C.tf * C.A2 * (-50 * 1000 / (4 * C.pi))) / (C.h_bar * C.theta_SH)
+        i_sot = _default_i_sot(cfg.constants)
 
-    sim_end_step = int(cfg.sim_total_time_s / C.t_step)
+    sim_end_step = int(cfg.sim_total_time_s / cfg.constants.t_step)
 
     ser_list: List[float] = []
     mz_avg_list: List[float] = []
@@ -113,9 +117,10 @@ def ser_optimized_vgsot(
                 vnv=cfg.vnv,
                 r_sot_fl_dl=cfg.r_sot_fl_dl,
                 show_progress=False,
+                constants=cfg.constants,
             )
 
-            idx_t1 = min(max(int(t1_s / C.t_step), 0), len(res.mz) - 1)
+            idx_t1 = min(max(int(t1_s / cfg.constants.t_step), 0), len(res.mz) - 1)
             mz_sum += float(res.mz[idx_t1])
 
             final_mz = float(res.mz[sim_end_step])

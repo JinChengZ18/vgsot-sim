@@ -6,8 +6,8 @@ from typing import Dict, Iterable, Optional
 import numpy as np
 from tqdm import tqdm
 
-from . import constants as C
 from .configs import (
+    PhysicalConstantsConfig,
     OptimizedVgsotSwitchingConfig,
     SotOnlyConstantCurrentConfig,
     SotSwitchingNoVcmaConfig,
@@ -59,10 +59,11 @@ def _compute_switch_energy_j(
     v_mtj: np.ndarray,
     r_mtj: np.ndarray,
     i_sot: np.ndarray,
+    constants: PhysicalConstantsConfig,
 ) -> float:
     safe_r = np.where(np.abs(r_mtj) > 1e-30, r_mtj, np.nan)
     p_mtj = np.where(np.isfinite(safe_r), (v_mtj ** 2) / safe_r, 0.0)
-    p_sot = (i_sot ** 2) * C.R_W
+    p_sot = (i_sot ** 2) * constants.R_W
     p_total = p_mtj + p_sot
     active = (np.abs(v_mtj) > 1e-15) | (np.abs(i_sot) > 1e-18)
     if not np.any(active):
@@ -75,11 +76,12 @@ def run_piecewise_terminal_voltage(
     *,
     show_progress: bool = True,
 ) -> SimResult:
+    constants = cfg.constants
     sim_mid2_step = cfg.sim_mid2_step if cfg.sim_mid2_step is not None else cfg.sim_mid1_step
 
     n_steps = cfg.sim_end_step + 1
     time_idx = np.arange(cfg.sim_start_step - 1, cfg.sim_end_step + 1)
-    time_s = time_idx * C.t_step
+    time_s = time_idx * constants.t_step
 
     mz_arr = np.zeros(n_steps)
     theta_arr = np.zeros(n_steps)
@@ -87,12 +89,11 @@ def run_piecewise_terminal_voltage(
     r_arr = np.zeros(n_steps)
     v_mtj_arr = np.zeros(n_steps)
     i_sot_arr = np.zeros(n_steps)
-
     v1_arr = np.zeros(n_steps)
     v2_arr = np.zeros(n_steps)
     v3_arr = np.zeros(n_steps)
 
-    r0, theta, mz, phi = init(cfg.pap)
+    r0, theta, mz, phi = init(cfg.pap, constants)
     r_arr[0], theta_arr[0], mz_arr[0], phi_arr[0] = r0, theta, mz, phi
 
     def stage_params(i: int):
@@ -102,18 +103,27 @@ def run_piecewise_terminal_voltage(
             return cfg.v_stage2, cfg.estt_stage2, cfg.esot_stage2
         return cfg.v_stage3, cfg.estt_stage3, cfg.esot_stage3
 
-    loop = _maybe_tqdm(range(cfg.sim_start_step - 1, cfg.sim_end_step), show_progress, desc='terminal_voltage')
+    loop = _maybe_tqdm(range(cfg.sim_start_step - 1, cfg.sim_end_step), show_progress, desc="terminal_voltage")
     for i in loop:
         (v1, v2, v3), estt, esot = stage_params(i)
         r_mtj = r_arr[i]
-        i_sot, v_mtj = electronic(v1, v2, v3, r_mtj)
+        i_sot, v_mtj = electronic(v1, v2, v3, r_mtj, constants)
 
         mz, phi_tmp, theta_tmp = switching(
-            v_mtj, i_sot, r_mtj, theta, phi, estt, esot,
-            VNV=cfg.vnv, NON=cfg.non, R_SOT_FL_DL=cfg.r_sot_fl_dl,
+            v_mtj,
+            i_sot,
+            r_mtj,
+            theta,
+            phi,
+            estt,
+            esot,
+            VNV=cfg.vnv,
+            NON=cfg.non,
+            R_SOT_FL_DL=cfg.r_sot_fl_dl,
+            constants=constants,
         )
         phi, theta = phi_tmp, theta_tmp
-        r_next = tmr(v_mtj, mz)
+        r_next = tmr(v_mtj, mz, constants)
 
         v1_arr[i] = v1
         v2_arr[i] = v2
@@ -138,7 +148,7 @@ def run_piecewise_terminal_voltage(
         r_mtj=r_arr,
         v_mtj=v_mtj_arr,
         i_sot=i_sot_arr,
-        switch_energy_j=_compute_switch_energy_j(time_s, v_mtj_arr, r_arr, i_sot_arr),
+        switch_energy_j=_compute_switch_energy_j(time_s, v_mtj_arr, r_arr, i_sot_arr, constants),
         theta=theta_arr,
         phi=phi_arr,
         v1=v1_arr,
@@ -170,13 +180,15 @@ def run_piecewise_direct_excitation(
     non: int,
     r_sot_fl_dl: float,
     show_progress: bool = True,
+    constants: PhysicalConstantsConfig | None = None,
 ) -> SimResult:
+    constants = constants or PhysicalConstantsConfig()
     if sim_mid2_step is None:
         sim_mid2_step = sim_end_step
 
     n_steps = sim_end_step + 1
     time_idx = np.arange(sim_start_step - 1, sim_end_step + 1)
-    time_s = time_idx * C.t_step
+    time_s = time_idx * constants.t_step
 
     mz_arr = np.zeros(n_steps)
     theta_arr = np.zeros(n_steps)
@@ -185,7 +197,7 @@ def run_piecewise_direct_excitation(
     v_arr = np.zeros(n_steps)
     i_sot_arr = np.zeros(n_steps)
 
-    r0, theta, mz, phi = init(pap)
+    r0, theta, mz, phi = init(pap, constants)
     r_arr[0], theta_arr[0], mz_arr[0], phi_arr[0] = r0, theta, mz, phi
 
     def stage_inputs(i: int):
@@ -195,17 +207,26 @@ def run_piecewise_direct_excitation(
             return v_mtj_stage2, i_sot_stage2, estt_stage2, esot_stage2
         return v_mtj_stage3, i_sot_stage3, estt_stage3, esot_stage3
 
-    loop = _maybe_tqdm(range(sim_start_step - 1, sim_end_step), show_progress, desc='direct_excitation')
+    loop = _maybe_tqdm(range(sim_start_step - 1, sim_end_step), show_progress, desc="direct_excitation")
     for i in loop:
         v_mtj, i_sot, estt, esot = stage_inputs(i)
         r_mtj = r_arr[i]
 
         mz, phi_tmp, theta_tmp = switching(
-            v_mtj, i_sot, r_mtj, theta, phi, estt, esot,
-            VNV=vnv, NON=non, R_SOT_FL_DL=r_sot_fl_dl,
+            v_mtj,
+            i_sot,
+            r_mtj,
+            theta,
+            phi,
+            estt,
+            esot,
+            VNV=vnv,
+            NON=non,
+            R_SOT_FL_DL=r_sot_fl_dl,
+            constants=constants,
         )
         phi, theta = phi_tmp, theta_tmp
-        r_next = tmr(v_mtj, mz)
+        r_next = tmr(v_mtj, mz, constants)
 
         v_arr[i] = v_mtj
         i_sot_arr[i] = i_sot
@@ -224,7 +245,7 @@ def run_piecewise_direct_excitation(
         r_mtj=r_arr,
         v_mtj=v_arr,
         i_sot=i_sot_arr,
-        switch_energy_j=_compute_switch_energy_j(time_s, v_arr, r_arr, i_sot_arr),
+        switch_energy_j=_compute_switch_energy_j(time_s, v_arr, r_arr, i_sot_arr, constants),
         theta=theta_arr,
         phi=phi_arr,
     )
@@ -259,6 +280,7 @@ def sot_only_constant_current(cfg: SotOnlyConstantCurrentConfig | None = None, *
         non=cfg.non,
         r_sot_fl_dl=cfg.r_sot_fl_dl,
         show_progress=show_progress,
+        constants=cfg.constants,
     )
 
 
@@ -279,11 +301,17 @@ def sot_switching_no_vcma(cfg: SotSwitchingNoVcmaConfig | None = None, *, show_p
             i_sot_stage1=i_sot,
             i_sot_stage2=cfg.i_sot_relax,
             i_sot_stage3=cfg.i_sot_relax,
-            estt_stage1=0, esot_stage1=1,
-            estt_stage2=0, esot_stage2=1,
-            estt_stage3=0, esot_stage3=1,
-            vnv=cfg.vnv, non=cfg.non, r_sot_fl_dl=cfg.r_sot_fl_dl,
+            estt_stage1=0,
+            esot_stage1=1,
+            estt_stage2=0,
+            esot_stage2=1,
+            estt_stage3=0,
+            esot_stage3=1,
+            vnv=cfg.vnv,
+            non=cfg.non,
+            r_sot_fl_dl=cfg.r_sot_fl_dl,
             show_progress=show_progress,
+            constants=cfg.constants,
         )
         label = f"I_SOT={i_sot*1e6:.1f}uA"
         if time_s is None:
@@ -292,7 +320,14 @@ def sot_switching_no_vcma(cfg: SotSwitchingNoVcmaConfig | None = None, *, show_p
         r_mtj_curves[label] = res.r_mtj
         pulse_curves[label] = res.i_sot * 1e6
         switch_energy_j[label] = res.switch_energy_j
-    return SweepResult(time_s=time_s, mz_curves=mz_curves, r_mtj_curves=r_mtj_curves, pulse_curves=pulse_curves, switch_energy_j=switch_energy_j, pulse_ylabel=r"$I_{\mathrm{SOT}}$ ($\mu$A)")
+    return SweepResult(
+        time_s=time_s,
+        mz_curves=mz_curves,
+        r_mtj_curves=r_mtj_curves,
+        pulse_curves=pulse_curves,
+        switch_energy_j=switch_energy_j,
+        pulse_ylabel=r"$I_{\mathrm{SOT}}$ ($\mu$A)",
+    )
 
 
 def vcma_assisted_switching_isot_sweep(cfg: VcmaAssistedSwitchingIsotSweepConfig | None = None, *, show_progress: bool = True) -> SweepResult:
@@ -312,11 +347,17 @@ def vcma_assisted_switching_isot_sweep(cfg: VcmaAssistedSwitchingIsotSweepConfig
             i_sot_stage1=i_sot,
             i_sot_stage2=i_sot,
             i_sot_stage3=i_sot,
-            estt_stage1=0, esot_stage1=1,
-            estt_stage2=0, esot_stage2=1,
-            estt_stage3=0, esot_stage3=1,
-            vnv=cfg.vnv, non=cfg.non, r_sot_fl_dl=cfg.r_sot_fl_dl,
+            estt_stage1=0,
+            esot_stage1=1,
+            estt_stage2=0,
+            esot_stage2=1,
+            estt_stage3=0,
+            esot_stage3=1,
+            vnv=cfg.vnv,
+            non=cfg.non,
+            r_sot_fl_dl=cfg.r_sot_fl_dl,
             show_progress=show_progress,
+            constants=cfg.constants,
         )
         label = f"I_SOT={i_sot*1e6:.1f}uA"
         if time_s is None:
@@ -325,14 +366,22 @@ def vcma_assisted_switching_isot_sweep(cfg: VcmaAssistedSwitchingIsotSweepConfig
         r_mtj_curves[label] = res.r_mtj
         pulse_curves[label] = res.i_sot * 1e6
         switch_energy_j[label] = res.switch_energy_j
-    return SweepResult(time_s=time_s, mz_curves=mz_curves, r_mtj_curves=r_mtj_curves, pulse_curves=pulse_curves, switch_energy_j=switch_energy_j, pulse_ylabel=r"$I_{\mathrm{SOT}}$ ($\mu$A)")
+    return SweepResult(
+        time_s=time_s,
+        mz_curves=mz_curves,
+        r_mtj_curves=r_mtj_curves,
+        pulse_curves=pulse_curves,
+        switch_energy_j=switch_energy_j,
+        pulse_ylabel=r"$I_{\mathrm{SOT}}$ ($\mu$A)",
+    )
 
 
 def vcma_assisted_switching_vmtj_sweep(cfg: VcmaAssistedSwitchingVmtjSweepConfig | None = None, *, show_progress: bool = True) -> SweepResult:
     cfg = cfg or VcmaAssistedSwitchingVmtjSweepConfig()
     i_sot = cfg.i_sot
     if i_sot is None:
-        i_sot = (2 * C.e * C.u0 * C.Ms * C.tf * C.A2 * (-50 * 1000 / (4 * C.pi))) / (C.h_bar * C.theta_SH)
+        cc = cfg.constants
+        i_sot = (2 * cc.e * cc.u0 * cc.Ms * cc.tf * cc.A2 * (-50 * 1000 / (4 * np.pi))) / (cc.h_bar * cc.theta_SH)
     time_s = None
     mz_curves, r_mtj_curves, pulse_curves, switch_energy_j = {}, {}, {}, {}
     for v_mtj in cfg.v_mtj_list:
@@ -348,11 +397,17 @@ def vcma_assisted_switching_vmtj_sweep(cfg: VcmaAssistedSwitchingVmtjSweepConfig
             i_sot_stage1=i_sot,
             i_sot_stage2=i_sot,
             i_sot_stage3=i_sot,
-            estt_stage1=0, esot_stage1=1,
-            estt_stage2=0, esot_stage2=1,
-            estt_stage3=0, esot_stage3=1,
-            vnv=cfg.vnv, non=cfg.non, r_sot_fl_dl=cfg.r_sot_fl_dl,
+            estt_stage1=0,
+            esot_stage1=1,
+            estt_stage2=0,
+            esot_stage2=1,
+            estt_stage3=0,
+            esot_stage3=1,
+            vnv=cfg.vnv,
+            non=cfg.non,
+            r_sot_fl_dl=cfg.r_sot_fl_dl,
             show_progress=show_progress,
+            constants=cfg.constants,
         )
         label = f"V_MTJ={v_mtj:.3f}V"
         if time_s is None:
@@ -361,10 +416,17 @@ def vcma_assisted_switching_vmtj_sweep(cfg: VcmaAssistedSwitchingVmtjSweepConfig
         r_mtj_curves[label] = res.r_mtj
         pulse_curves[label] = res.v_mtj
         switch_energy_j[label] = res.switch_energy_j
-    return SweepResult(time_s=time_s, mz_curves=mz_curves, r_mtj_curves=r_mtj_curves, pulse_curves=pulse_curves, switch_energy_j=switch_energy_j, pulse_ylabel=r"$V_{\mathrm{MTJ}}$ (V)")
+    return SweepResult(
+        time_s=time_s,
+        mz_curves=mz_curves,
+        r_mtj_curves=r_mtj_curves,
+        pulse_curves=pulse_curves,
+        switch_energy_j=switch_energy_j,
+        pulse_ylabel=r"$V_{\mathrm{MTJ}}$ (V)",
+    )
 
 
-def run_two_pulse_optimized_default(show_progress=True):
+def run_two_pulse_optimized_default(show_progress: bool = True):
     return run_two_pulse_optimized(
         t1_s=1.5e-9,
         t2_s=1.5e-9,
@@ -378,13 +440,30 @@ def run_two_pulse_optimized_default(show_progress=True):
         vnv=1,
         r_sot_fl_dl=0.0,
         show_progress=show_progress,
+        constants=PhysicalConstantsConfig(),
     )
 
 
-def run_two_pulse_optimized(*, t1_s: float, t2_s: float, v_mtj_1: float, v_mtj_2: float, i_sot_1: float, i_sot_2: float, sim_total_time_s: float, pap: int, non: int, vnv: int, r_sot_fl_dl: float, show_progress: bool = True) -> SimResult:
-    sim_end_step = int(sim_total_time_s / C.t_step)
-    mid1 = int(t1_s / C.t_step)
-    mid2 = int((t1_s + t2_s) / C.t_step)
+def run_two_pulse_optimized(
+    *,
+    t1_s: float,
+    t2_s: float,
+    v_mtj_1: float,
+    v_mtj_2: float,
+    i_sot_1: float,
+    i_sot_2: float,
+    sim_total_time_s: float,
+    pap: int,
+    non: int,
+    vnv: int,
+    r_sot_fl_dl: float,
+    show_progress: bool = True,
+    constants: PhysicalConstantsConfig | None = None,
+) -> SimResult:
+    constants = constants or PhysicalConstantsConfig()
+    sim_end_step = int(sim_total_time_s / constants.t_step)
+    mid1 = int(t1_s / constants.t_step)
+    mid2 = int((t1_s + t2_s) / constants.t_step)
     return run_piecewise_direct_excitation(
         sim_start_step=1,
         sim_mid1_step=mid1,
@@ -397,11 +476,17 @@ def run_two_pulse_optimized(*, t1_s: float, t2_s: float, v_mtj_1: float, v_mtj_2
         i_sot_stage1=i_sot_1,
         i_sot_stage2=i_sot_2,
         i_sot_stage3=0.0,
-        estt_stage1=0, esot_stage1=1,
-        estt_stage2=0, esot_stage2=1,
-        estt_stage3=0, esot_stage3=1,
-        vnv=vnv, non=non, r_sot_fl_dl=r_sot_fl_dl,
+        estt_stage1=0,
+        esot_stage1=1,
+        estt_stage2=0,
+        esot_stage2=1,
+        estt_stage3=0,
+        esot_stage3=1,
+        vnv=vnv,
+        non=non,
+        r_sot_fl_dl=r_sot_fl_dl,
         show_progress=show_progress,
+        constants=constants,
     )
 
 
@@ -409,15 +494,25 @@ def optimized_vgsot_switching(cfg: OptimizedVgsotSwitchingConfig | None = None, 
     cfg = cfg or OptimizedVgsotSwitchingConfig()
     i_sot = cfg.i_sot
     if i_sot is None:
-        i_sot = (2 * C.e * C.u0 * C.Ms * C.tf * C.A2 * (-50 * 1000 / (4 * C.pi))) / (C.h_bar * C.theta_SH)
+        cc = cfg.constants
+        i_sot = (2 * cc.e * cc.u0 * cc.Ms * cc.tf * cc.A2 * (-50 * 1000 / (4 * np.pi))) / (cc.h_bar * cc.theta_SH)
     time_s = None
     mz_curves, r_mtj_curves, pulse_curves, switch_energy_j = {}, {}, {}, {}
     for t1_s, t2_s in cfg.t_pairs_s:
         res = run_two_pulse_optimized(
-            t1_s=t1_s, t2_s=t2_s, v_mtj_1=cfg.v_mtj_1, v_mtj_2=cfg.v_mtj_2,
-            i_sot_1=i_sot, i_sot_2=0.0, sim_total_time_s=cfg.sim_total_time_s,
-            pap=cfg.pap, non=cfg.non, vnv=cfg.vnv, r_sot_fl_dl=cfg.r_sot_fl_dl,
+            t1_s=t1_s,
+            t2_s=t2_s,
+            v_mtj_1=cfg.v_mtj_1,
+            v_mtj_2=cfg.v_mtj_2,
+            i_sot_1=i_sot,
+            i_sot_2=0.0,
+            sim_total_time_s=cfg.sim_total_time_s,
+            pap=cfg.pap,
+            non=cfg.non,
+            vnv=cfg.vnv,
+            r_sot_fl_dl=cfg.r_sot_fl_dl,
             show_progress=show_progress,
+            constants=cfg.constants,
         )
         label = f"t1={t1_s*1e9:.2f}ns,t2={t2_s*1e9:.2f}ns"
         if time_s is None:
@@ -426,14 +521,21 @@ def optimized_vgsot_switching(cfg: OptimizedVgsotSwitchingConfig | None = None, 
         r_mtj_curves[label] = res.r_mtj
         pulse_curves[label] = res.v_mtj
         switch_energy_j[label] = res.switch_energy_j
-    return SweepResult(time_s=time_s, mz_curves=mz_curves, r_mtj_curves=r_mtj_curves, pulse_curves=pulse_curves, switch_energy_j=switch_energy_j, pulse_ylabel=r"$V_{\mathrm{MTJ}}$ (V)")
+    return SweepResult(
+        time_s=time_s,
+        mz_curves=mz_curves,
+        r_mtj_curves=r_mtj_curves,
+        pulse_curves=pulse_curves,
+        switch_energy_j=switch_energy_j,
+        pulse_ylabel=r"$V_{\mathrm{MTJ}}$ (V)",
+    )
 
 
 TIME_SERIES_CASES = (
-    'terminal_voltage_control',
-    'sot_only_constant_current',
-    'sot_switching_no_vcma',
-    'vcma_assisted_switching_isot_sweep',
-    'vcma_assisted_switching_vmtj_sweep',
-    'optimized_vgsot_switching',
+    "terminal_voltage_control",
+    "sot_only_constant_current",
+    "sot_switching_no_vcma",
+    "vcma_assisted_switching_isot_sweep",
+    "vcma_assisted_switching_vmtj_sweep",
+    "optimized_vgsot_switching",
 )

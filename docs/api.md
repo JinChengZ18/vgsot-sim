@@ -3,6 +3,8 @@
 This document is the detailed Python API guide for `vgsot_sim`.
 It is meant to complement the short examples in the root `README.md`.
 
+
+
 ## Import surface
 
 The package re-exports the main configuration dataclasses, result dataclasses, high-level cases, low-level building blocks, and result IO helpers from `vgsot_sim.__init__`.
@@ -41,6 +43,8 @@ from vgsot_sim import (
     run_two_pulse_optimized,
 )
 ```
+
+
 
 ## Mental model
 
