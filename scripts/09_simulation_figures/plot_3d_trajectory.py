@@ -42,7 +42,7 @@ plt.rcParams.update({
     "legend.fontsize"  : 11,
     "xtick.labelsize"  : 11,
     "ytick.labelsize"  : 11,
-    "mathtext.fontset" : "stix",
+    "mathtext.fontset" : "stixsans",
     "axes.linewidth"   : 0.9,
     "lines.linewidth"  : 1.7,
     "figure.dpi"       : 150,
