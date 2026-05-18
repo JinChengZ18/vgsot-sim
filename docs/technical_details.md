@@ -113,15 +113,16 @@ This torque drives deterministic magnetization switching.
 
 ### 1.5 Thermal Noise
 
-Thermal fluctuations are modeled as a stochastic magnetic field:
+Thermal fluctuations are modeled as a stochastic magnetic field, sampled per timestep:
 $$
-H_{thermal}
+\mathbf{H}_{thermal}
 =
-\sqrt{
+\boldsymbol{\xi}\sqrt{
 \frac{2 \alpha k_B T}
 {\gamma \mu_0 M_s V \Delta t}
 }
-\cdot G(0,1)
+,\qquad
+\xi_i \sim \mathcal{N}(0,1)\ \text{i.i.d.}
 $$
 where:
 
@@ -130,7 +131,9 @@ where:
 | $k_B$      | Boltzmann constant       |
 | $T$        | temperature              |
 | $\Delta t$ | simulation timestep      |
-| $G(0,1)$   | Gaussian random variable |
+| $\xi_i$    | independent standard Gaussian |
+
+Each Cartesian component of $\mathbf{H}_{thermal}$ is an independent standard Gaussian (fluctuation–dissipation theorem, Brown 1963). In particular, $|\mathbf{H}_{thermal}|^2$ follows a chi-square distribution with three degrees of freedom and **must not be normalised to unit length** — doing so (as the upstream Python port did) cuts the injected noise power by roughly a factor of three and produces visibly too-sharp $P_{sw}(V)$ curves near threshold. `stochastic.py` in this release returns three i.i.d. $\mathcal{N}(0,1)$ samples; the scaling is applied by `anisotropy.field()`.
 
 Thermal noise is responsible for **switching stochasticity** and **error rate**.
 
@@ -146,9 +149,11 @@ These parameters describe the MTJ geometry, magnetic properties, transport prope
 
 ### 2.1 Fundamental Physical Constants
 
+Stored in `PhysicalConstantsConfig` (`configs.py`). Values are limited-precision approximations; for higher fidelity use CODATA recommendations.
+
 | Parameter               | Symbol  | Value                 | Unit | Description          |
 | ----------------------- | ------- | --------------------- | ---- | -------------------- |
-| Vacuum permeability     | $\mu_0$ | $4\pi\times10^{-7}$   | H/m  | Magnetic constant    |
+| Vacuum permeability     | $\mu_0$ | $1.25663706\times10^{-6}$ | H/m  | Magnetic constant    |
 | Elementary charge       | $e$     | $1.6\times10^{-19}$   | C    | Charge of electron   |
 | Reduced Planck constant | $\hbar$ | $1.054\times10^{-34}$ | J·s  | Quantum constant     |
 | Bohr magneton           | $\mu_B$ | $9.274\times10^{-24}$ | J/T  | Magnetic moment unit |
@@ -163,16 +168,18 @@ where $\gamma$ is the gyromagnetic ratio.
 
 ### 2.2 Device Geometry
 
-The simulated device is a circular MTJ on top of a heavy-metal channel.
+The simulated device is a 80 nm circular MTJ on top of a β-W heavy-metal channel, matching the 300 mm wafer platform of Section 2.3.1 of the thesis.
 
 | Parameter             | Symbol   | Value | Unit | Description              |
 | --------------------- | -------- | ----- | ---- | ------------------------ |
-| Heavy metal length    | $l$      | 60    | nm   | SOT channel length       |
-| Heavy metal width     | $w$      | 50    | nm   | SOT channel width        |
-| Heavy metal thickness | $d$      | 3     | nm   | SOT channel thickness    |
-| MTJ diameter          | $D$      | 50    | nm   | Free layer diameter      |
+| Heavy metal length    | $l$      | 240   | nm   | SOT channel length       |
+| Heavy metal width     | $w$      | 200   | nm   | SOT channel width        |
+| Heavy metal thickness | $d$      | 4.3   | nm   | SOT channel thickness    |
+| MTJ diameter          | $D$      | 80    | nm   | Free-layer physical diameter |
 | Free layer thickness  | $t_f$    | 1.1   | nm   | Magnetic layer thickness |
 | Barrier thickness     | $t_{ox}$ | 1.4   | nm   | Tunnel barrier thickness |
+
+> **Note on electrical vs physical diameter.** The thesis (Section 2.2.2.4 / 2.3.1) distinguishes the physical diameter $D_{phys}$ from the electrical effective diameter $D_{elec} \approx D_{phys} - 2\delta_{edge} \approx 65$ nm; the latter is what reconciles the wafer-measured $R_P=10.89\ \text{k}\Omega$ with $RA = 36\ \Omega\cdot\mu\text{m}^2$. The current `configs.py` uses a single `D` parameter without this separation — see `docs/IMPLEMENTATION_STATUS.md`.
 
 Derived areas and volumes:
 
@@ -196,9 +203,11 @@ $$
 | Interfacial anisotropy   | $K_i$         | $0.32\times10^{-3}$ | J/m² | Perpendicular anisotropy           |
 | Saturation magnetization | $M_s$         | $6.25\times10^5$    | A/m  | Free-layer magnetization           |
 | Gilbert damping          | $\alpha$      | 0.05                | –    | Damping constant                   |
-| Spin Hall angle          | $\theta_{SH}$ | 0.25                | –    | Spin current conversion efficiency |
+| Spin Hall angle          | $\theta_{SH}$ | **0.07** (calibrated, was 0.25) | –    | Effective SOT efficiency — see note below |
 | Spin polarization        | $P$           | 0.58                | –    | Tunnel current spin polarization   |
 | Temperature              | $T$           | 300                 | K    | Operating temperature              |
+
+> **Note on calibrated $\theta_{SH}$.** The literature β-W value $\theta_{SH}\!\approx\!0.25$ leaves the simulator's deterministic threshold at $|I_{SOT}|\!\approx\!140\,\mu\mathrm{A}$ ($V_{SOT}\!\approx\!109\,\mathrm{mV}$ for $R_W\!\approx\!776\,\Omega$), about $4.7\times$ lower than the experimental Device A P→AP value $V_{th}(5\,\mathrm{ns})\!\approx\!511\,\mathrm{mV}$ ($I_{th}\!\approx\!659\,\mu\mathrm{A}$) extracted in Section 2.3.4. A scan over $\theta_{SH}$, $K_i$, $\alpha$ combinations (see `09_simulation_figures/calibrate_to_experiment.py`) converges on $\theta_{SH}\!\approx\!0.07$ as the single-parameter fix that reproduces the experimental $V_{th}$ within $0.5\%$ ($V_{th}^{sim}(5\,\mathrm{ns})\!=\!508\,\mathrm{mV}$). This is the calibrated value used as the package default. The deviation from the textbook β-W value absorbs additional loss channels not in this simplified model: Néel–Edelstein contributions, interfacial spin-memory loss, top-electrode parasitic series resistance, and (over the pulse window) any partial misalignment between charge-current and the assumed σ̂ axis. For material-level studies of the bare spin Hall effect, override with `theta_SH=0.25` (or any literature value).
 
 Effective anisotropy field:
 $$
@@ -223,20 +232,73 @@ This effect lowers the switching energy barrier during the voltage pulse.
 
 ### 2.5 Electronic Transport Parameters
 
-| Parameter                | Symbol       | Value               | Unit | Description              |
-| ------------------------ | ------------ | ------------------- | ---- | ------------------------ |
-| Heavy metal resistivity  | $\rho$       | $278\times10^{-8}$  | Ω·m  | Resistivity of β-IrMn    |
-| Channel resistance       | $R_W$        | computed            | Ω    | SOT channel resistance   |
-| Resistance-area product  | $RA$         | $650\times10^{-12}$ | Ω·m² | MTJ resistance area      |
-| TMR ratio                | TMR          | 1                   | –    | Tunnel magnetoresistance |
-| Bias suppression voltage | $V_h$        | 0.5                 | V    | TMR reduction voltage    |
-| Barrier height           | $\phi_{bar}$ | 0.4                 | V    | Tunnel barrier height    |
+| Parameter                | Symbol       | Value              | Unit | Description              |
+| ------------------------ | ------------ | ------------------ | ---- | ------------------------ |
+| Heavy metal resistivity  | $\rho$       | $278\times10^{-8}$ | Ω·m  | β-W channel resistivity  |
+| Channel resistance       | $R_W$        | computed (≈ 776 Ω) | Ω    | SOT channel resistance   |
+| Resistance-area product  | $RA$         | $36\times10^{-12}$ | Ω·m² | MTJ resistance area      |
+| TMR ratio                | TMR          | 1.19               | –    | Zero-bias tunnel magnetoresistance |
+| Bias suppression voltage | $V_h$        | 0.5                | V    | Lorentzian TMR(V) half-decay |
+| Barrier height           | $\phi_{bar}$ | 0.4                | eV   | Tunnel barrier height    |
 
 Channel resistance is computed as
 $$
 R_W = \frac{\rho l}{wd}
 $$
 The MTJ resistance depends on the magnetization orientation through the TMR relation.
+
+#### Bias-dependent TMR(V) selector
+
+Two models are available, selected via `constants.tmr_model`:
+
+- `"lorentzian"`: $\mathrm{TMR}(V) = \mathrm{TMR}_0 / (1 + (V/V_h)^2)$
+- `"pdk"` (default): three-parameter Hikstor PDK form
+  $$
+  \mathrm{TMR}_{\mathrm{PDK}}(V) = \frac{\mathrm{TMR}_0}{k_{\mathrm{TMR}}}\left[\frac{1}{a_{\mathrm{TMR}} V^2 + b_{\mathrm{TMR}} |V| + c_{\mathrm{TMR}}} - 1\right]
+  $$
+
+PDK coefficient defaults (from thesis Table 2.2.2.5):
+
+| Parameter | Default  | Unit  |
+| --------- | -------- | ----- |
+| $k_{\mathrm{TMR}}$ | 1.2346  | –   |
+| $a_{\mathrm{TMR}}$ | 0.1729  | 1/V² |
+| $b_{\mathrm{TMR}}$ | 0.1315  | 1/V  |
+| $c_{\mathrm{TMR}}$ | 0.4475  | –   |
+
+The full resistance is computed by conductance interpolation:
+$$
+R(m_z, V) = R_P \cdot \frac{1 + \mathrm{TMR}_{\mathrm{eff}}(V)}{1 + \mathrm{TMR}_{\mathrm{eff}}(V)\cdot(1+m_z)/2}
+$$
+with the code convention $m_z = +1 \to R_P$, $m_z = -1 \to R_{AP}(V) = R_P(1+\mathrm{TMR}_{\mathrm{eff}}(V))$.
+
+#### In-plane bias field $\mathbf{H}_{ex}$
+
+The bias field used to deterministically break SOT switching chirality (thesis Section 2.3.3) is exposed as three scalar fields in `PhysicalConstantsConfig`. **Sign / direction convention is critical** — see configs.py for the in-line note.
+
+| Parameter | Default                | Unit | Description              |
+| --------- | ---------------------- | ---- | ------------------------ |
+| `h_ex_x`  | 0                      | A/m  |                          |
+| `h_ex_y`  | $-50 \times 10^3 / (4\pi) \approx -3979$ | A/m | $-50$ Oe perpendicular to σ_SH |
+| `h_ex_z`  | 0                      | A/m  |                          |
+
+The closed-form LLG in `dynamic_switching.py` is expanded with the implicit
+σ_SH = $-\hat{x}$. **`H_ex` MUST be perpendicular to σ_SH** for SOT to be
+deterministic: with $\mathbf{H}_{ex} \parallel \hat\sigma$ the in-plane
+equilibrium under SOT is symmetric about the easy axis, the final $m_z$
+basin is selected with $\sim 50\%$ probability, and the SER curve flattens
+to a $\sim 0.5$ random-bit plateau (we verified this by direct $2\times2$
+factorial experiment, see thesis §2.2.6 engineering note). The chapter's
+"$200\,\mathrm{Oe}$ along current direction" maps to the simulator's
+`h_ex_y` (with the sign that gives the desired switching chirality)
+because the code's implicit current direction is along $\hat{y}$.
+
+The 50-Oe magnitude (vs the experimental 200 Oe) is a simulator-tuned
+value. Smaller $|\mathbf{H}_{ex}|$ keeps the in-plane equilibrium close
+to σ_SH, which the simplified SOT/FL torque expansion handles cleanly;
+the full experimental 200 Oe gives correct chirality but exhibits a
+higher residual SER tail (~0.4) due to mechanisms (Néel-type DMI,
+interface roughness, FL components) not yet in this model.
 
 ### 2.6 Spin-Orbit Torque Parameters
 
@@ -353,6 +415,90 @@ Higher current reduces stochastic switching failures.
 
 
 ---
+
+## 2.6 Series-resistance toggle (`R_series`)
+
+| Parameter | Default | Unit | Description |
+| --------- | ------- | ---- | ----------- |
+| `R_series` | $0$ | Ω | Additive contact/lead resistance on top of the intrinsic MTJ |
+| `tmr(V_MTJ, m_z, cc, include_series=True)` | — | — | Set `include_series=False` to recover bare $R_{MTJ}$ |
+
+When non-zero, the observed terminal resistance becomes
+$R_{obs}(m_z, V) = R_{MTJ}(m_z, V) + R_{series}$,
+which is how wafer-level R(V) sweeps measure the device. Off by default so existing simulation results stay byte-identical.
+
+## 2.7 Reproducibility — end-to-end `rng=…`
+
+`stochastic()`, `init()`, `field()`, `switching()`, and `run_piecewise_*` all accept an optional `rng=np.random.Generator`. Passing the same generator state reproduces a Monte-Carlo trial bit-for-bit, regardless of any other code path that may also be consuming `np.random.*`:
+
+```python
+import numpy as np
+from vgsot_sim.time_series_cases import run_piecewise_direct_excitation
+
+rng = np.random.default_rng(seed=42)
+res = run_piecewise_direct_excitation(..., rng=rng)
+```
+
+When `rng=None` (default) the legacy global `np.random` state is used, so `np.random.seed(42)` still works for older scripts.
+
+### 2.7.1 Per-trial RNG mode in `ser_sot_no_vcma_thermal`
+
+The Monte-Carlo SER case adds two complementary toggles:
+
+```python
+ser_sot_no_vcma_thermal(
+    cfg,
+    seed=2026,
+    rng_mode="legacy",       # "legacy" | "generator"
+    integrator=None,         # None | "euler_spherical" | "cayley"
+)
+```
+
+| `rng_mode`   | Source of trial randomness                       | When to use |
+|--------------|--------------------------------------------------|-------------|
+| `"legacy"`   | `np.random.seed(trial_seed)` (default)           | Reproduce chapter figures byte-for-byte |
+| `"generator"`| `np.random.default_rng(trial_seed)` per trial    | Multiprocessing, embedding inside larger MC drivers; cleaner — does not touch global numpy state |
+
+Both modes derive `trial_seed` from the same `_trial_seed(seed, i_sot, idx)` helper, so the *sequence of seeds* is identical; only the underlying generator differs. Statistical results converge in N → ∞ but the bit-streams of the two modes are distinct.
+
+The `integrator` argument is forwarded straight to `run_piecewise_direct_excitation`, so an MC sweep can be re-run on Cayley by passing `integrator="cayley"` without touching the global default.
+
+### 2.7.2 Symmetric coverage on `run_piecewise_terminal_voltage`
+
+Both piecewise drivers now accept the same opt-in trio (`integrator=`, `sigma_SH=`, `rng=`), so terminal-voltage simulations (with the three-terminal $V_1 / V_2 / V_3$ excitation pattern) can opt into Cayley + arbitrary σ̂_SH + byte-reproducible noise just like the direct-current driver. Defaults remain `("euler_spherical", None, None)` so legacy chapter figures are byte-identical.
+
+```python
+from vgsot_sim.time_series_cases import run_piecewise_terminal_voltage
+from vgsot_sim.configs import TerminalVoltageControlConfig
+
+rng = np.random.default_rng(seed=2026)
+cfg = TerminalVoltageControlConfig(...)
+res = run_piecewise_terminal_voltage(
+    cfg,
+    integrator="cayley",
+    sigma_SH=np.array([0.0, -1.0, 0.0]),   # rotate σ̂_SH off the default -x
+    rng=rng,
+)
+```
+
+The Cayley path in turn forwards `rng=` all the way down to `stochastic()` via `switching_vector → field → stochastic`, so the thermal-noise stream is byte-reproducible end-to-end. Verified by `tests/test_toggles.py::test_cayley_rng_byte_reproducible`.
+
+## 4.5 Integrators
+
+Two LLG steppers are available; choose via `run_piecewise_direct_excitation(..., integrator=)`:
+
+| Integrator         | Coordinates    | Norm preservation | Cost / step | σ̂_SH parameter | Module |
+|--------------------|----------------|-------------------|-------------|-----------------|--------|
+| `"euler_spherical"` (default) | $(\theta, \phi)$ | analytic (1) | low | implicit $-\hat{x}$ | `dynamic_switching.py` |
+| `"cayley"`         | $(m_x, m_y, m_z)$ | machine-precision (2) | ~2× | runtime arg | `dynamic_switching_vector.py` |
+
+(1) Spherical exact arithmetic preserves $|\mathbf{m}|=1$ analytically but the $1/\sin\theta$ term in $d\phi/dt$ amplifies round-off near the poles (a polar-region guard exists in code).
+
+(2) The Cayley transform $\mathbf{m}_{n+1} = (I-\tfrac{\Delta t}{2}[\omega]_\times)^{-1}(I+\tfrac{\Delta t}{2}[\omega]_\times)\mathbf{m}_n$ is an exact rotation; the implementation uses the closed-form
+$$\mathbf{m}_{n+1} = \mathbf{m}_n + \frac{2s}{1 + s^2|\omega|^2}\bigl(\omega\times\mathbf{m}_n + s\,\omega\times(\omega\times\mathbf{m}_n)\bigr),\ s=\Delta t/2.$$
+The Cayley step accepts `sigma_SH` and `sigma_STT` as runtime 3-vectors, removing the σ̂ direction ambiguity of the legacy spherical expansion. At $\Delta t = 1$ ps the two integrators agree on the deterministic switching outcome to within $\sim 2\times10^{-3}$ in final $m_z$; they diverge only in the threshold transition zone where Cayley reports a slightly higher SER (we attribute this to the FL-SOT $\cos\theta\cos\phi$ sign anomaly in the spherical closed-form, see §M1 of `IMPLEMENTATION_STATUS.md`).
+
+For new work that needs an explicit σ̂_SH (e.g. material studies with non-standard heavy-metal stacks) or that runs near the polar singularity, prefer `integrator="cayley"`. For regression against the §2.3 chapter figures keep the spherical default.
 
 ## 5. Full LLG Derivation
 

@@ -16,9 +16,12 @@ from .configs import (
     VcmaAssistedSwitchingVmtjSweepConfig,
 )
 from .dynamic_switching import switching
+from .dynamic_switching_vector import switching_vector
 from .electronic import electronic
 from .initialize import init
 from .tmr import tmr
+from .thermal import self_heating_step
+from .material_temperature import ms_of_T, ki_of_T
 
 
 @dataclass
@@ -34,6 +37,12 @@ class SimResult:
     v1: Optional[np.ndarray] = None
     v2: Optional[np.ndarray] = None
     v3: Optional[np.ndarray] = None
+    # Self-heating diagnostics. When `enable_self_heating=True` in the
+    # stepper, these hold the per-step instantaneous temperature and the
+    # corresponding T-corrected material parameters fed into LLG.
+    T_K: Optional[np.ndarray] = None
+    Ms_T: Optional[np.ndarray] = None
+    Ki_T: Optional[np.ndarray] = None
 
 
 @dataclass
@@ -68,13 +77,22 @@ def _compute_switch_energy_j(
     active = (np.abs(v_mtj) > 1e-15) | (np.abs(i_sot) > 1e-18)
     if not np.any(active):
         return 0.0
-    return float(np.trapz(p_total[active], time_s[active]))
+    # `trapezoid` is the post-NumPy-2.0 name; fall back to the deprecated
+    # `trapz` for older interpreters.
+    _trap = getattr(np, "trapezoid", np.trapz)
+    return float(_trap(p_total[active], time_s[active]))
 
 
 def run_piecewise_terminal_voltage(
     cfg: TerminalVoltageControlConfig,
     *,
     show_progress: bool = True,
+    enable_self_heating: bool = False,
+    T_ambient_K: float = 300.0,
+    demag_mode: str = "ellipsoid",
+    integrator: str = "euler_spherical",
+    sigma_SH=None,
+    rng=None,
 ) -> SimResult:
     constants = cfg.constants
     sim_mid2_step = cfg.sim_mid2_step if cfg.sim_mid2_step is not None else cfg.sim_mid1_step
@@ -92,9 +110,16 @@ def run_piecewise_terminal_voltage(
     v1_arr = np.zeros(n_steps)
     v2_arr = np.zeros(n_steps)
     v3_arr = np.zeros(n_steps)
+    if enable_self_heating:
+        T_arr  = np.full(n_steps, T_ambient_K, dtype=float)
+        Ms_arr = np.full(n_steps, constants.Ms, dtype=float)
+        Ki_arr = np.full(n_steps, constants.Ki, dtype=float)
+    else:
+        T_arr = Ms_arr = Ki_arr = None
 
-    r0, theta, mz, phi = init(cfg.pap, constants)
+    r0, theta, mz, phi = init(cfg.pap, constants, rng=rng)
     r_arr[0], theta_arr[0], mz_arr[0], phi_arr[0] = r0, theta, mz, phi
+    T_now = T_ambient_K
 
     def stage_params(i: int):
         if i < cfg.sim_mid1_step:
@@ -109,19 +134,57 @@ def run_piecewise_terminal_voltage(
         r_mtj = r_arr[i]
         i_sot, v_mtj = electronic(v1, v2, v3, r_mtj, constants)
 
-        mz, phi_tmp, theta_tmp = switching(
-            v_mtj,
-            i_sot,
-            r_mtj,
-            theta,
-            phi,
-            estt,
-            esot,
-            VNV=cfg.vnv,
-            NON=cfg.non,
-            R_SOT_FL_DL=cfg.r_sot_fl_dl,
-            constants=constants,
-        )
+        if enable_self_heating:
+            V_SOT_effective = i_sot * constants.R_W
+            T_now = self_heating_step(
+                T_now, v_mtj, V_SOT_effective, r_mtj, constants,
+                dt=constants.t_step, T_0=T_ambient_K,
+            )
+            Ms_T = ms_of_T(T_now, constants)
+            Ki_T = ki_of_T(T_now, constants)
+            T_arr[i + 1] = T_now
+            Ms_arr[i + 1] = Ms_T
+            Ki_arr[i + 1] = Ki_T
+        else:
+            Ms_T = None
+            Ki_T = None
+
+        if integrator == "cayley":
+            # Cartesian + Cayley-rotation step (norm-preserving, accepts an
+            # explicit sigma_SH 3-vector). Mirrors run_piecewise_direct_excitation.
+            m_vec = np.array([
+                np.sin(theta) * np.cos(phi),
+                np.sin(theta) * np.sin(phi),
+                np.cos(theta),
+            ])
+            sig_SH = np.array([-1.0, 0.0, 0.0]) if sigma_SH is None else np.asarray(sigma_SH, dtype=float)
+            m_vec_new = switching_vector(
+                m_vec, v_mtj, i_sot, r_mtj, estt, esot,
+                VNV=cfg.vnv, NON=cfg.non, R_SOT_FL_DL=cfg.r_sot_fl_dl,
+                sigma_SH=sig_SH,
+                constants=constants,
+                Ki_T=Ki_T, Ms_T=Ms_T, demag_mode=demag_mode,
+                rng=rng,
+            )
+            mz = float(m_vec_new[2])
+            theta_tmp = float(np.arccos(np.clip(m_vec_new[2], -1.0, 1.0)))
+            phi_tmp = float(np.arctan2(m_vec_new[1], m_vec_new[0]))
+        else:
+            mz, phi_tmp, theta_tmp = switching(
+                v_mtj,
+                i_sot,
+                r_mtj,
+                theta,
+                phi,
+                estt,
+                esot,
+                VNV=cfg.vnv,
+                NON=cfg.non,
+                R_SOT_FL_DL=cfg.r_sot_fl_dl,
+                constants=constants,
+                Ki_T=Ki_T, Ms_T=Ms_T, demag_mode=demag_mode,
+                rng=rng,
+            )
         phi, theta = phi_tmp, theta_tmp
         r_next = tmr(v_mtj, mz, constants)
 
@@ -154,6 +217,7 @@ def run_piecewise_terminal_voltage(
         v1=v1_arr,
         v2=v2_arr,
         v3=v3_arr,
+        T_K=T_arr, Ms_T=Ms_arr, Ki_T=Ki_arr,
     )
 
 
@@ -181,6 +245,12 @@ def run_piecewise_direct_excitation(
     r_sot_fl_dl: float,
     show_progress: bool = True,
     constants: PhysicalConstantsConfig | None = None,
+    enable_self_heating: bool = False,
+    T_ambient_K: float = 300.0,
+    demag_mode: str = "ellipsoid",
+    integrator: str = "euler_spherical",
+    sigma_SH=None,
+    rng=None,
 ) -> SimResult:
     constants = constants or PhysicalConstantsConfig()
     if sim_mid2_step is None:
@@ -196,9 +266,16 @@ def run_piecewise_direct_excitation(
     r_arr = np.zeros(n_steps)
     v_arr = np.zeros(n_steps)
     i_sot_arr = np.zeros(n_steps)
+    if enable_self_heating:
+        T_arr  = np.full(n_steps, T_ambient_K, dtype=float)
+        Ms_arr = np.full(n_steps, constants.Ms, dtype=float)
+        Ki_arr = np.full(n_steps, constants.Ki, dtype=float)
+    else:
+        T_arr = Ms_arr = Ki_arr = None
 
-    r0, theta, mz, phi = init(pap, constants)
+    r0, theta, mz, phi = init(pap, constants, rng=rng)
     r_arr[0], theta_arr[0], mz_arr[0], phi_arr[0] = r0, theta, mz, phi
+    T_now = T_ambient_K
 
     def stage_inputs(i: int):
         if i < sim_mid1_step:
@@ -212,19 +289,61 @@ def run_piecewise_direct_excitation(
         v_mtj, i_sot, estt, esot = stage_inputs(i)
         r_mtj = r_arr[i]
 
-        mz, phi_tmp, theta_tmp = switching(
-            v_mtj,
-            i_sot,
-            r_mtj,
-            theta,
-            phi,
-            estt,
-            esot,
-            VNV=vnv,
-            NON=non,
-            R_SOT_FL_DL=r_sot_fl_dl,
-            constants=constants,
-        )
+        if enable_self_heating:
+            # Thermal RC update: V_SOT across the channel is the I_SOT
+            # times its (configured) resistance. The MgO heat-sink path is
+            # already inside `self_heating_step`.
+            V_SOT_effective = i_sot * constants.R_W
+            T_now = self_heating_step(
+                T_now, v_mtj, V_SOT_effective, r_mtj, constants,
+                dt=constants.t_step, T_0=T_ambient_K,
+            )
+            Ms_T = ms_of_T(T_now, constants)
+            Ki_T = ki_of_T(T_now, constants)
+            T_arr[i + 1] = T_now
+            Ms_arr[i + 1] = Ms_T
+            Ki_arr[i + 1] = Ki_T
+        else:
+            Ms_T = None
+            Ki_T = None
+
+        if integrator == "cayley":
+            # Cartesian + Cayley-rotation step (norm-preserving, accepts
+            # an explicit sigma_SH 3-vector). Convert (θ, φ) ↔ m at the
+            # interface so the existing scalar arrays stay populated.
+            m_vec = np.array([
+                np.sin(theta) * np.cos(phi),
+                np.sin(theta) * np.sin(phi),
+                np.cos(theta),
+            ])
+            sig_SH = np.array([-1.0, 0.0, 0.0]) if sigma_SH is None else np.asarray(sigma_SH, dtype=float)
+            m_vec_new = switching_vector(
+                m_vec, v_mtj, i_sot, r_mtj, estt, esot,
+                VNV=vnv, NON=non, R_SOT_FL_DL=r_sot_fl_dl,
+                sigma_SH=sig_SH,
+                constants=constants,
+                Ki_T=Ki_T, Ms_T=Ms_T, demag_mode=demag_mode,
+                rng=rng,
+            )
+            mz = float(m_vec_new[2])
+            theta_tmp = float(np.arccos(np.clip(m_vec_new[2], -1.0, 1.0)))
+            phi_tmp = float(np.arctan2(m_vec_new[1], m_vec_new[0]))
+        else:
+            mz, phi_tmp, theta_tmp = switching(
+                v_mtj,
+                i_sot,
+                r_mtj,
+                theta,
+                phi,
+                estt,
+                esot,
+                VNV=vnv,
+                NON=non,
+                R_SOT_FL_DL=r_sot_fl_dl,
+                constants=constants,
+                Ki_T=Ki_T, Ms_T=Ms_T, demag_mode=demag_mode,
+                rng=rng,
+            )
         phi, theta = phi_tmp, theta_tmp
         r_next = tmr(v_mtj, mz, constants)
 
@@ -248,6 +367,7 @@ def run_piecewise_direct_excitation(
         switch_energy_j=_compute_switch_energy_j(time_s, v_arr, r_arr, i_sot_arr, constants),
         theta=theta_arr,
         phi=phi_arr,
+        T_K=T_arr, Ms_T=Ms_arr, Ki_T=Ki_arr,
     )
 
 

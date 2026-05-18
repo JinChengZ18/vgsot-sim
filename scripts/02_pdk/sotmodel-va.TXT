@@ -1,0 +1,174 @@
+// Copyright (c) 2024 Zhejiang Hikstor Technology Ltd.
+// All rights reserved.
+//
+// Engineer: xiexuejie@hikstor.com
+// 
+
+`include"constants.h"
+`include"discipline.h"
+
+module sotmodel(p,q,n);
+	inout p,q,n;
+	
+	electrical p,q,n;
+
+	parameter real Rsot0 = 800;
+	parameter real Rp0 = 11k;
+	parameter real TMR0 = 1.2;
+	parameter real Iop0 = 800u;
+	parameter real Hx = 20;
+	parameter integer IniState = 1 from [0:1];
+	parameter real Rsot_mis = 1;
+	parameter real Rp_mis = 1;
+	parameter real TMR_mis = 1;
+		 
+	real Rmtj, Rsot, Isot;
+	integer mtj_state;
+	integer sign_Hx, sign_Iap2p, sign_Ip2ap;
+	integer switch_ap2p, switch_p2ap;
+	real Iap2p, Ip2ap, Imin, Isw;
+	real Iap2pt, Ip2apt;
+	real Iop;
+	real Istt, Vmtj;
+	real pw_ap2p, pw_p2ap;
+	real a, b, c;
+	real Rp, Rap;
+	real TMR;
+	real timer1, timer2;
+	real pw_min,pw_max,pw_std;
+	real k1,a1,b1,c1;
+	
+	analog function real Ipw;
+		input t_pw,k1,a1,b1,c1;
+		real t_pw,k1,a1,b1,c1;
+		begin
+			Ipw = k1*(a1*exp(-b1*t_pw)+c1)/700;
+		end
+	endfunction
+
+	analog begin
+	
+		@(initial_step) begin
+			Iop = Iop0;
+			mtj_state = IniState;
+			pw_min = 0.2;  //最小脉宽
+			pw_max = 20;  //最大脉宽
+			pw_std = 5;  //标准脉宽
+						
+//			case(Hx)
+//				20,-20: begin
+//					Iap2pt = Iop;
+//					Ip2apt = Iop;
+//				end
+//			default:
+//				$strobe("Warning: Specified Hx = %f is not defined\n",Hx);
+//			endcase
+			
+			sign_Hx = (Hx>0)?1:-1;
+			sign_Iap2p = -sign_Hx;
+			sign_Ip2ap = -sign_Iap2p;
+			
+			a= 0.1729;
+			b= -0.1315;
+			c= 0.4475;
+			
+			k1 = 0.915;
+			a1 = 1096;
+			b1 = 0.3745;
+			c1 = 596.5;
+			
+//			Iap2p = sign_Iap2p*Iap2pt;
+//			Ip2ap = sign_Ip2ap*Ip2apt;
+	
+			Rsot = Rsot0*Rsot_mis;
+			Rp = Rp0*Rp_mis;
+			Rap = Rp*(TMR0*TMR_mis+1);
+			Rmtj = mtj_state*Rap+(1-mtj_state)*Rp;
+			
+		end
+		
+		Isot = V(q,n)/Rsot;
+		Istt = (2*V(p,q)+2*V(p,n))/(4*Rmtj+Rsot);
+		Vmtj = Istt*Rmtj;
+		
+		TMR = (TMR0/1.2)*(1/(a*Vmtj*Vmtj-b*abs(Vmtj)+c)-1)*TMR_mis;
+		Rap = (1+TMR)*Rp;
+			
+		if (analysis("tran")) begin
+		
+			Imin = Iop*Ipw(pw_max,k1,a1,b1,c1);		
+			switch_ap2p = sign_Iap2p>0?Isot>=Imin:Isot<=-Imin;
+			switch_p2ap = sign_Ip2ap>0?Isot>=Imin:Isot<=-Imin;
+		
+			@(cross(switch_ap2p-0.5,+1)) begin
+				timer1 = $abstime*1E9;
+			end
+			pw_ap2p = $abstime*1E9 - timer1;
+		
+			@(cross(switch_p2ap-0.5,+1)) begin
+				timer2 = $abstime*1E9;
+			end
+			pw_p2ap = $abstime*1E9 - timer2;
+			
+			Iap2p = Iop*Ipw(pw_ap2p,k1,a1,b1,c1);
+			Ip2ap = Iop*Ipw(pw_p2ap,k1,a1,b1,c1);
+			
+			if (mtj_state==1) begin
+				Rmtj = Rap;
+				if (switch_ap2p==1 && abs(Isot)>=Iap2p && pw_ap2p>=pw_min) begin
+					mtj_state = 0;
+					Rmtj = Rp;
+					if (abs(Isot)<=Iap2p+10u) begin
+						Rmtj = Rap-(Rap-Rp)/10u*(abs(Isot)-Iap2p);
+					end
+				end
+			end else if (mtj_state==0) begin
+				Rmtj = Rp;
+				if (switch_p2ap==1 && abs(Isot)>=Ip2ap && pw_p2ap>=pw_min) begin
+					mtj_state = 1;
+					Rmtj = Rap;
+					if (abs(Isot)<=Ip2ap+10u) begin
+						Rmtj = Rp+(Rap-Rp)/10u*(abs(Isot)-Ip2ap);
+					end
+				end
+			end
+		end else if (analysis("dc")) begin	
+		
+			Isw = Iop*Ipw(pw_std,k1,a1,b1,c1);		
+			switch_ap2p = sign_Iap2p>0?Isot>=Isw:Isot<=-Isw;
+			switch_p2ap = sign_Ip2ap>0?Isot>=Isw:Isot<=-Isw;
+		
+			if (mtj_state==1) begin
+				Rmtj = Rap;
+				if (switch_ap2p==1) begin
+					mtj_state = 0;					
+					Rmtj = Rp;
+					if (abs(Isot)<=Isw+10u) begin
+						Rmtj = Rap-(Rap-Rp)/10u*(abs(Isot)-Isw);
+					end
+				end
+			end else if (mtj_state==0) begin
+				Rmtj = Rp;
+				if (switch_p2ap==1) begin
+					mtj_state = 1;					
+					Rmtj = Rap;
+					if (abs(Isot)<=Isw+10u) begin
+						Rmtj = Rp+(Rap-Rp)/10u*(abs(Isot)-Isw);
+					end
+				end
+			end
+		end
+		
+//		Rmtj = mtj_state*Rap+(1-mtj_state)*Rp;
+
+		if (abs(Vmtj) > 0.5) begin
+			$strobe("Warning: The voltage applied to MTJ exceeds 0.5V, which is undefined.\n");
+		end
+
+		I(p) <+ Istt;
+		I(q) <+ V(q,n)/Rsot-0.5*Istt;
+		I(n) <+ -V(q,n)/Rsot-0.5*Istt;		
+	end
+endmodule
+		
+
