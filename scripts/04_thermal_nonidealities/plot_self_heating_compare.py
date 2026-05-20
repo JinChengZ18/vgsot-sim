@@ -6,7 +6,7 @@ RNG 种子），一次 `enable_self_heating=False`，一次 `enable_self_heating
 ON 支每步推进 RC 热扩散方程更新 T(t)，并以 T-修正后的 M_s(T)、K_i(T)
 喂入各向异性场。两条轨迹共享同一确定性噪声实现，二者之差完全由温度反馈引入。
 
-输出：fig_self_heating_trajectory.png — 紧凑 2×2 面板：
+输出：fig_06_self_heating_trajectory.png — 紧凑 2×2 面板：
   (a) m_z(t) 对比 + (b) T(t)
   (c) R_MTJ(t) 对比 + (d) 材料漂移 ΔM_s/M_s、ΔK_i/K_i (%)
 
@@ -44,7 +44,7 @@ plt.rcParams.update({
     "legend.fontsize"      : 10,
     "xtick.labelsize"      : 12,
     "ytick.labelsize"      : 12,
-    "mathtext.fontset"     : "stixsans",
+    "mathtext.fontset"     : "stix",
     "axes.linewidth"       : 0.9,
     "axes.spines.top"      : False,
     "axes.spines.right"    : False,
@@ -170,7 +170,7 @@ plt.suptitle(rf"Pure-SOT switching, $I_{{\mathrm{{SOT}}}} = {I_SOT*1e6:.0f}\,\mu
              fontsize=14, y=0.995)
 plt.subplots_adjust(top=0.92)
 
-out_path = Path(__file__).resolve().parent / "fig_self_heating_trajectory.png"
+out_path = Path(__file__).resolve().parent / "fig_06_self_heating_trajectory.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
 plt.close()
 print(f"Saved {out_path}")

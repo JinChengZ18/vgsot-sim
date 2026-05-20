@@ -8,7 +8,7 @@
   * Input data / Trace 输出仍位于左右外侧但通过顶部边线进入
   * 所有框尺寸严格对齐网格，避免越界
 
-输出：本目录 + 同步到 ../article/00_chapter_drafts/figures/fig_2_9_vgsot_sim_architecture.png
+输出：本目录 + 同步到 ../article/00_chapter_drafts/figures/fig_07_vgsot_sim_architecture.png
 """
 from pathlib import Path
 import shutil
@@ -273,12 +273,12 @@ harrow(tmr_x + MOD_W + 0.04, 15.60, K_Y + K_H * 0.50,
 # ════════════════════════════════════════════════════════════════════════
 # Save + sync
 # ════════════════════════════════════════════════════════════════════════
-out_path = Path(__file__).resolve().parent / "fig_2_9_vgsot_sim_architecture.png"
+out_path = Path(__file__).resolve().parent / "fig_07_vgsot_sim_architecture.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight",
             facecolor="white", pad_inches=0.20)
 plt.close()
 chapter_fig = (Path(__file__).resolve().parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_2_9_vgsot_sim_architecture.png")
+               "article" / "00_chapter_drafts" / "figures" / "fig_07_vgsot_sim_architecture.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")

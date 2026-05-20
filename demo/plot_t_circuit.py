@@ -11,7 +11,7 @@ HM沟道沿长度方向均分为两段 R_SOT/2，三段电阻在中间节点 N �
 读出操作在 T1—N 之间获取 V_MTJ；写入操作在 T2—T3 之间施加 V_2 − V_3
 驱动 I_SOT = (V_2 − V_3) / R_SOT。
 
-输出：fig_2_1_1_t_circuit.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
+输出：fig_01_t_circuit.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
 """
 from pathlib import Path
 import shutil
@@ -279,12 +279,12 @@ ax_r.text(0.5, 1.00, "T-equivalent resistor network",
 # Save + sync
 # ════════════════════════════════════════════════════════════════════════
 plt.tight_layout()
-out_path = Path(__file__).resolve().parent / "fig_2_1_1_t_circuit.png"
+out_path = Path(__file__).resolve().parent / "fig_01_t_circuit.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white",
             pad_inches=0.15)
 plt.close()
 chapter_fig = (Path(__file__).resolve().parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_2_1_1_t_circuit.png")
+               "article" / "00_chapter_drafts" / "figures" / "fig_01_t_circuit.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")

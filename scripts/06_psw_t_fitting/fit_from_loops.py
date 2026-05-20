@@ -67,20 +67,21 @@ THU_LIGHT_CMAP = LinearSegmentedColormap.from_list("thu_light", [
     (1.00, "#660874"),
 ])
 
-_FONT = "Arial"
+_FAMILY = ["Arial", "Liberation Sans"]
 plt.rcParams.update({
     "font.family"          : "sans-serif",
-    "font.sans-serif"      : ["Arial", "Liberation Sans"],
-    "font.size"            : 12,
+    "font.sans-serif"      : _FAMILY,
+    "font.size"            : 13,
     "axes.labelsize"       : 14,
     "axes.titlesize"       : 15,
     "axes.titleweight"     : "normal",
     "axes.titlepad"        : 9,
-    "figure.titlesize"     : 17,
-    "legend.fontsize"      : 10.5,
-    "xtick.labelsize"      : 11.5,
-    "ytick.labelsize"      : 11.5,
-    "mathtext.fontset"     : "stixsans",
+    "figure.titlesize"     : 18,
+    "figure.titleweight"   : "bold",
+    "legend.fontsize"      : 12,
+    "xtick.labelsize"      : 13,
+    "ytick.labelsize"      : 13,
+    "mathtext.fontset"     : "stix",
     "axes.linewidth"       : 0.9,
     "axes.edgecolor"       : CHARCOAL,
     "axes.facecolor"       : NEAR_WHITE,
@@ -244,9 +245,9 @@ ax_top_l.axvline(0, color=CHARCOAL, lw=0.5, linestyle=":", alpha=0.4)
 # Legend placed in the hysteresis neutral zone (|V| < 0.35, 7–8 kΩ), a region
 # never traversed by data for this device.  Compact 2-column layout.
 ax_top_l.legend(loc="center", bbox_to_anchor=(0.5, 0.50),
-                fontsize=10.5, ncol=2,
+                fontsize=11, ncol=2,
                 title=rf"Device {DEV_MAIN}  ($H_x = 200$ Oe)",
-                title_fontsize=10.5,
+                title_fontsize=11,
                 columnspacing=0.9, handletextpad=0.4)
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -283,9 +284,9 @@ ax_top_r.set_xlim(0.5, 20)
 ax_top_r.set_ylim(-1.05, 1.05)
 ax_top_r.xaxis.set_major_formatter(mticker.ScalarFormatter())
 ax_top_r.set_xticks([0.5, 1, 2, 5, 10, 20])
-# Legend anchored at upper-right; the two fit lines cross this region with
-# substantial gaps so the legend box sits in clear whitespace.
-ax_top_r.legend(loc="upper right", fontsize=10.0, framealpha=0.96)
+# Legend anchored at center-left (the two fit lines pass through ±0.8 V
+# near the origin; the y≈0 center-left region is empty between them).
+ax_top_r.legend(loc="center left", fontsize=10.5, framealpha=0.96)
 
 D_p, Vc_p      = MAIN["AP2P"]["D"], MAIN["AP2P"]["Vc"]
 D_m, Vc_m      = MAIN["P2AP"]["D"], MAIN["P2AP"]["Vc"]
@@ -298,7 +299,7 @@ annot = (rf"$\tau_0 = {TAU0:.0f}$ ns assumed" "\n"
          rf"$\tau_{{\rm ret}}={tret_m:.0f}$ ns")
 # Parameter box: bottom-right quadrant, below the P→AP line at long t_w.
 ax_top_r.text(0.98, 0.02, annot, transform=ax_top_r.transAxes,
-              fontsize=9.5, va="bottom", ha="right",
+              fontsize=10, va="bottom", ha="right",
               bbox=dict(boxstyle="round,pad=0.35",
                         facecolor=THU_TINT, edgecolor=THU_PALE, alpha=0.96))
 
@@ -332,9 +333,9 @@ CS_high = ax_bot.contour(VV * 1e3, TT, PM,
                          levels=[0.70, 0.90, 0.95],
                          colors=["white"], linewidths=0.95)
 ax_bot.clabel(CS_low, fmt={lv: f"{int(lv*100)}%" for lv in [0.05, 0.10, 0.30, 0.50]},
-              fontsize=10, inline=True, inline_spacing=3)
+              fontsize=10.5, inline=True, inline_spacing=3)
 ax_bot.clabel(CS_high, fmt={lv: f"{int(lv*100)}%" for lv in [0.70, 0.90, 0.95]},
-              fontsize=10, inline=True, inline_spacing=3)
+              fontsize=10.5, inline=True, inline_spacing=3)
 
 # 50%-probability locus — charcoal dashed line, visible on all backgrounds
 t_loc = np.logspace(np.log10(0.4), np.log10(50), 600)
@@ -366,11 +367,12 @@ ax_bot.yaxis.set_major_formatter(mticker.ScalarFormatter())
 ax_bot.set_yticks([0.5, 1, 2, 5, 10, 20, 50])
 
 # Legend placed in lower-left (empty low-probability region on the new cmap).
-ax_bot.legend(loc="lower left", fontsize=10.5,
+ax_bot.legend(loc="lower left", fontsize=11.5,
               framealpha=0.95, edgecolor=THU_PALE, ncol=1)
 
 cbar = fig.colorbar(im, ax=ax_bot, fraction=0.035, pad=0.015)
-cbar.set_label(r"$P_{\rm sw}$", fontsize=11)
+cbar.set_label(r"$P_{\rm sw}$", fontsize=12.5)
+cbar.ax.tick_params(labelsize=11)
 cbar.set_ticks([0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0])
 
 ann = (rf"$\Delta = {D_p:.2f}$, $V_{{c0}} = {Vc_p*1e3:.0f}$ mV" "\n"
@@ -379,12 +381,12 @@ ann = (rf"$\Delta = {D_p:.2f}$, $V_{{c0}} = {Vc_p*1e3:.0f}$ mV" "\n"
 # Parameter box anchored in the upper-left quadrant — the low-V, long-t_w
 # region where no iso-probability contours run, and away from the legend.
 ax_bot.text(0.02, 0.97, ann, transform=ax_bot.transAxes,
-            fontsize=10, ha="left", va="top", color=CHARCOAL,
+            fontsize=10.5, ha="left", va="top", color=CHARCOAL,
             bbox=dict(boxstyle="round,pad=0.4",
                       facecolor=NEAR_WHITE, edgecolor=THU_PALE, alpha=0.95))
 
-fig.savefig(OUTDIR + "fig_exp_nb_summary.png", dpi=300, bbox_inches="tight")
-print(f"\nSaved  fig_exp_nb_summary.png  to {OUTDIR}")
+fig.savefig(OUTDIR + "fig_12_exp_nb_summary.png", dpi=300, bbox_inches="tight")
+print(f"\nSaved  fig_12_exp_nb_summary.png  to {OUTDIR}")
 plt.close(fig)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -443,8 +445,8 @@ ax.set_ylim(0, 7.5)
 ax.legend(fontsize=10.5, loc="upper right")
 ax.grid(axis="x", visible=False)
 
-fig2.savefig(OUTDIR + "fig_exp_device_consistency.png", dpi=300, bbox_inches="tight")
-print(f"Saved  fig_exp_device_consistency.png  to {OUTDIR}")
+fig2.savefig(OUTDIR + "fig_14_device_consistency.png", dpi=300, bbox_inches="tight")
+print(f"Saved  fig_14_device_consistency.png  to {OUTDIR}")
 plt.close(fig2)
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@
 
 清华紫配色，紧凑布局，向上的抽象提升箭头连接四层。
 
-输出：fig_2_1_2_behavioral_layers.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
+输出：fig_02_behavioral_layers.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
 """
 from pathlib import Path
 import shutil
@@ -255,12 +255,12 @@ for x in (3.0, 8.0, 13.0):
 # ════════════════════════════════════════════════════════════════════════
 # Save + sync
 # ════════════════════════════════════════════════════════════════════════
-out_path = Path(__file__).resolve().parent / "fig_2_1_2_behavioral_layers.png"
+out_path = Path(__file__).resolve().parent / "fig_02_behavioral_layers.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white",
             pad_inches=0.15)
 plt.close()
 chapter_fig = (Path(__file__).resolve().parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_2_1_2_behavioral_layers.png")
+               "article" / "00_chapter_drafts" / "figures" / "fig_02_behavioral_layers.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")

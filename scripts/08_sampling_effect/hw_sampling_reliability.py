@@ -49,7 +49,7 @@ plt.rcParams.update({
     "legend.fontsize"      : 12,
     "xtick.labelsize"      : 13,
     "ytick.labelsize"      : 13,
-    "mathtext.fontset"     : "stixsans",
+    "mathtext.fontset"     : "stix",
     "axes.linewidth"       : 0.9,
     "axes.edgecolor"       : CHARCOAL,
     "axes.facecolor"       : NEAR_WHITE,
@@ -166,7 +166,7 @@ for K, col in zip(K_HIST, COL_K):
     mask = pmf >= 1e-4
     ax_a.plot(phat[mask], pmf[mask], "o-", color=col, lw=1.0,
               markersize=4.5, markerfacecolor="white", markeredgewidth=1.2,
-              label=rf"$K={K}$,  cov.$={cov*100:.1f}\%$")
+              label=rf"$K={K}$ ($\mathrm{{cov}}\,{cov*100:.1f}\%$)")
 
 ax_a.set_xlabel(r"Empirical frequency  $\hat p_K = k/K$")
 ax_a.set_ylabel(r"Probability mass  $P(\hat p_K = k/K)$")
@@ -174,7 +174,11 @@ ax_a.set_title(r"Binomial PMF of $\hat p_K$ at $p = 0.5$")
 ax_a.set_xlim(-0.02, 1.02)
 ax_a.set_yscale("log")
 ax_a.set_ylim(8e-5, 0.5)
-ax_a.legend(loc="lower center", ncol=2)
+# Single-column compact legend in the upper-left where the log-y axis
+# leaves a region empty of PMF mass. Parenthesised coverage percentages
+# stay attached to their K-row instead of floating off as a separate chip.
+ax_a.legend(loc="upper left", ncol=1, fontsize=10,
+            handletextpad=0.5, borderpad=0.35, labelspacing=0.3)
 
 # ── (b) σ(p̂_K) — exact line + MC markers ────────────────────────────────
 K_sweep = np.logspace(np.log10(2), np.log10(5000), 500)
@@ -218,6 +222,16 @@ Ks_c = np.unique(np.concatenate([
 COL_E = [NAVY, THU_DEEP, CRIMSON]
 M_HITL = 500
 
+# Annotation placement: each K_req label goes to a different relative
+# direction from its star to prevent the three labels from piling up on
+# top of one another near the 0.95 coverage line.  ε=0.10 (small K, left)
+# label goes upper-right; ε=0.05 (middle) upper-right with larger offset;
+# ε=0.02 (large K, right) goes lower-left below the 95% line.
+LABEL_OFFSETS = {
+    0.10: dict(dx=0.62, dy=-0.18),   # right + down, well below 95% line
+    0.05: dict(dx=0.80, dy=-0.30),   # further right + further down
+    0.02: dict(dx=-0.55, dy=-0.42),  # left + far down to clear other two
+}
 for eps, col in zip(EPS, COL_E):
     cov_exact = coverage_array(Ks_c, 0.5, eps)
     ax_c.plot(Ks_c, cov_exact, color=col, lw=1.5, alpha=0.95,
@@ -231,9 +245,10 @@ for eps, col in zip(EPS, COL_E):
     cov_req = exact_coverage(K_req, 0.5, eps)
     ax_c.scatter([K_req], [cov_req], s=140, marker="*",
                  facecolor=col, edgecolor="white", linewidths=1.4, zorder=9)
+    off = LABEL_OFFSETS[eps]
     ax_c.annotate(rf"$K_{{\rm req}}={K_req}$",
                   xy=(K_req, cov_req),
-                  xytext=(K_req * 1.45, cov_req - 0.12),
+                  xytext=(K_req * (1 + off["dx"]), cov_req + off["dy"]),
                   color=col, fontweight="bold",
                   arrowprops=dict(arrowstyle="-", color=col, lw=0.7))
 
@@ -319,8 +334,13 @@ ax_e.set_xticks(x_pos)
 ax_e.set_xticklabels([rf"$\varepsilon = {e:.2f}$" for e in EPS])
 ax_e.set_ylabel(r"$K_{\rm req}$ at 95% confidence")
 ax_e.set_title(r"$K_{\rm req}$: exact vs. MC vs. CLT")
-ax_e.set_ylim(8, 15000)
-ax_e.legend(loc="upper right", ncol=1)
+# Headroom for above-bar numeric labels (2451 etc.) + legend wrapped to
+# two rows (ncol=3 → MC|CLT|p=0.1 on top, p=0.5|p=0.9 on bottom) so it
+# fits inside the axis width and never overlaps the bars themselves.
+ax_e.set_ylim(8, 8e4)
+ax_e.legend(loc="upper center", bbox_to_anchor=(0.5, 1.00),
+            ncol=3, fontsize=9.5, framealpha=0.95,
+            handletextpad=0.3, columnspacing=0.8)
 ax_e.grid(axis="x", visible=False)
 
 # ── (f) K_req(ε) at p=0.5 ────────────────────────────────────────────────
@@ -361,7 +381,7 @@ fig.suptitle(
     y=0.965,
 )
 
-outpath = OUTDIR + "fig_hw_sampling_reliability.png"
+outpath = OUTDIR + "fig_17_hw_sampling_reliability.png"
 fig.savefig(outpath, dpi=300, bbox_inches="tight")
 print(f"\nSaved  {outpath}")
 plt.close(fig)

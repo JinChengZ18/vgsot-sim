@@ -21,19 +21,29 @@ IGNORE_STEM_KEYS = {
     "esot_stage3",
 }
 
-plt.rcParams["font.family"] = "Times New Roman"
-plt.rcParams["font.size"] = 12
-plt.rcParams["axes.linewidth"] = 1.2
-plt.rcParams["lines.linewidth"] = 2.0
-plt.rcParams["legend.frameon"] = False
-plt.rcParams["figure.dpi"] = 200
-plt.rcParams["savefig.dpi"] = 300
-plt.rcParams["xtick.direction"] = "in"
-plt.rcParams["ytick.direction"] = "in"
-plt.rcParams["xtick.major.width"] = 1.0
-plt.rcParams["ytick.major.width"] = 1.0
-plt.rcParams["xtick.major.size"] = 4
-plt.rcParams["ytick.major.size"] = 4
+def apply_default_style() -> None:
+    """Apply this module's historical default Matplotlib style.
+
+    Previously executed at import time, which silently overrode any
+    rcParams a downstream script set *before* importing vgsot_sim.  Now
+    opt-in: scripts that want the legacy style must call this explicitly
+    (e.g. ``from vgsot_sim.result_io import apply_default_style;
+    apply_default_style()``).  Scripts that have their own ``rcParams``
+    block should leave it untouched.
+    """
+    plt.rcParams["font.family"] = "Times New Roman"
+    plt.rcParams["font.size"] = 12
+    plt.rcParams["axes.linewidth"] = 1.2
+    plt.rcParams["lines.linewidth"] = 2.0
+    plt.rcParams["legend.frameon"] = False
+    plt.rcParams["figure.dpi"] = 200
+    plt.rcParams["savefig.dpi"] = 300
+    plt.rcParams["xtick.direction"] = "in"
+    plt.rcParams["ytick.direction"] = "in"
+    plt.rcParams["xtick.major.width"] = 1.0
+    plt.rcParams["ytick.major.width"] = 1.0
+    plt.rcParams["xtick.major.size"] = 4
+    plt.rcParams["ytick.major.size"] = 4
 
 
 def ensure_result_dir(path: str | Path = "result") -> Path:

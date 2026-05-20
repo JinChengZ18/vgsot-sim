@@ -6,7 +6,7 @@
 并在单位球面上画出轨迹，配以时间彩色梯度（清华紫调色）、起止点标记，以及
 m_x, m_y, m_z 三分量随时间的演化。明亮的现代风格 + 清华紫主题。
 
-输出 fig_3d_trajectory.png（本目录 + 同步到 article/00_chapter_drafts/figures/）。
+输出 fig_09_3d_trajectory.png（本目录 + 同步到 article/00_chapter_drafts/figures/）。
 """
 from pathlib import Path
 import shutil
@@ -42,7 +42,7 @@ plt.rcParams.update({
     "legend.fontsize"  : 11,
     "xtick.labelsize"  : 11,
     "ytick.labelsize"  : 11,
-    "mathtext.fontset" : "stixsans",
+    "mathtext.fontset" : "stix",
     "axes.linewidth"   : 0.9,
     "lines.linewidth"  : 1.7,
     "figure.dpi"       : 150,
@@ -82,12 +82,12 @@ norm  = np.sqrt(mx**2 + my**2 + mz**2)
 mx, my, mz = mx / norm, my / norm, mz / norm
 
 
-# ── Figure: dominant 3D sphere + balanced time-series panel on right ───
+# ── Figure: balanced 3D sphere and time-series panels ──────────────────
 fig = plt.figure(figsize=(12.0, 6.0), facecolor=NEAR_WHITE)
-# Sphere panel slightly larger than time-series; both balanced with the
-# colorbar tucked inside the left (sphere) panel near its inner edge.
-gs = fig.add_gridspec(1, 2, width_ratios=[1.45, 1.0],
-                      wspace=0.32, left=0.04, right=0.97,
+# Sphere panel marginally wider than time-series; gap tightened so the two
+# panels feel visually anchored rather than separated.
+gs = fig.add_gridspec(1, 2, width_ratios=[1.18, 1.0],
+                      wspace=0.16, left=0.04, right=0.97,
                       top=0.94, bottom=0.10)
 
 # ── Panel A — 3D sphere with trajectory (DOMINANT) ──────────────────────
@@ -209,12 +209,12 @@ ax2d.spines["right"].set_visible(False)
 
 
 # ── Save + sync ─────────────────────────────────────────────────────────
-out_path = Path(__file__).resolve().parent / "fig_3d_trajectory.png"
+out_path = Path(__file__).resolve().parent / "fig_09_3d_trajectory.png"
 fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=NEAR_WHITE,
             pad_inches=0.20)
 plt.close(fig)
 chapter_fig = (Path(__file__).resolve().parent.parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_3d_trajectory.png")
+               "article" / "00_chapter_drafts" / "figures" / "fig_09_3d_trajectory.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")

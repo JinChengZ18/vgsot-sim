@@ -58,7 +58,7 @@ plt.rcParams.update({
     "legend.fontsize"      : 12,
     "xtick.labelsize"      : 13,
     "ytick.labelsize"      : 13,
-    "mathtext.fontset"     : "stixsans",
+    "mathtext.fontset"     : "stix",
     "axes.linewidth"       : 0.9,
     "axes.edgecolor"       : CHARCOAL,
     "axes.facecolor"       : NEAR_WHITE,
@@ -435,7 +435,7 @@ fig.suptitle(
     y=0.965,
 )
 
-outpath = OUTDIR + "fig_mc_sampling_sensitivity.png"
+outpath = OUTDIR + "fig_16_mc_sampling_sensitivity.png"
 fig.savefig(outpath, dpi=300, bbox_inches="tight")
 print(f"\nSaved  {outpath}")
 plt.close(fig)

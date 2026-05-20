@@ -85,7 +85,7 @@ plt.rcParams.update({
     "legend.fontsize"      : 12,
     "xtick.labelsize"      : 13,
     "ytick.labelsize"      : 13,
-    "mathtext.fontset"     : "stixsans",
+    "mathtext.fontset"     : "stix",
     "axes.linewidth"       : 0.9,
     "axes.edgecolor"       : CHARCOAL,
     "axes.facecolor"       : NEAR_WHITE,
@@ -304,9 +304,10 @@ for bar, cv, pct in zip(bars, contrib_cv, contrib_pct):
               va="center", ha="left", color=CHARCOAL)
 
 ax_a.axvline(CV_DELTA_PDK * 100, color=CRIMSON, lw=1.8, ls="--", zorder=4)
-ax_a.text(CV_DELTA_PDK * 100 + 0.15, 0.62,
-          rf"Total $\mathrm{{CV}}(\Delta) = {CV_DELTA_PDK*100:.1f}$%",
-          color=CRIMSON, va="center", ha="left", fontweight="bold")
+ax_a.text(CV_DELTA_PDK * 100 + 0.15, 0.45,
+          rf"Total" "\n" rf"$\mathrm{{CV}}(\Delta) = {CV_DELTA_PDK*100:.1f}$%",
+          color=CRIMSON, va="center", ha="left", fontweight="bold",
+          linespacing=1.15)
 
 ax_a.set_yticks(y_pos)
 ax_a.set_yticklabels(contrib_labels)
@@ -468,8 +469,8 @@ fig.suptitle(
     y=0.97
 )
 
-fig.savefig(OUTDIR + "fig_variability_theory.png", dpi=300, bbox_inches="tight")
-print(f"\nSaved  fig_variability_theory.png  to {OUTDIR}")
+fig.savefig(OUTDIR + "fig_15_variability_theory.png", dpi=300, bbox_inches="tight")
+print(f"\nSaved  fig_15_variability_theory.png  to {OUTDIR}")
 plt.close(fig)
 
 # ─────────────────────────────────────────────────────────────────────────────

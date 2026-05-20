@@ -14,7 +14,7 @@ $$
 
 $$\rho_{SOT}$$、$$L_{SOT}$$、$$W_{SOT}$$与$$T_{SOT}$$分别为HM沟道的电阻率、长度、宽度与厚度。
 
-![三端SOT-sMTJ器件结构与T型等效电路网络](figures/fig_2_1_1_t_circuit.png)
+![三端SOT-sMTJ器件结构与T型等效电路网络](figures/fig_01_t_circuit.png)
 
 **图2.1：三端SOT-sMTJ器件结构与T型等效电路网络。** (a)器件物理堆叠结构，包括位于顶端的MTJ（参考层/MgO势垒/自由层）与底部的HM沟道；MTJ顶电极对应端口$$T_1$$，HM沟道两端分别引出端口$$T_2$$与$$T_3$$。(b)T型电阻网络，$$R_{MTJ}$$表示自由层与参考层之间的隧穿电阻，沟道被等分为两段$$R_{SOT}/2$$分别接$$T_2$$与$$T_3$$，三段电阻在中间节点N处汇合。读出操作通过$$T_1$$施加小偏压获取$$R_{MTJ}$$状态，写入操作通过$$T_2$$、$$T_3$$沿沟道施加大电流产生SOT，两条电流路径在物理上解耦。
 
@@ -152,7 +152,7 @@ $$
 
 参数$$u_{\mathrm{th}}$$为等效中值翻转点，随脉宽增加、温度升高或VCMA/SOT效率增大而左移；$$\beta_s$$控制曲线陡峭程度，热稳定因子越高、器件离散性越小则$$\beta_s$$越大，工艺波动导致的曲线展宽等效为$$\beta_s$$下降。从微观磁化动力学角度看，自旋翻转由随机Landau-Lifshitz-Gilbert（sLLG）方程主导，对应Fokker-Planck框架下概率团在双稳态势阱中的演化，严格求解的计算代价在SPICE仿真或阵列级评估中难以承受。Sigmoid近似将复杂的微观随机物理过程压缩为$$(u_{\mathrm{th}}, \beta_s)$$这两个兼具物理意义与工程可测性的拟合参数，输出天然位于$$[0]$$而无需额外裁剪，便于在SPICE紧凑模型与系统级仿真中直接调用。改写为$$P_{\mathrm{sw}}(u) \approx \sigma(\beta_s u + b)$$形式时，截距$$b = -\beta_s u_{\mathrm{th}}$$；增益$$\beta_s$$由热稳定因子$$\Delta$$、VCMA系数$$\xi$$、SHE效率$$\theta_{\mathrm{SH}}$$等底层物理参数共同决定，参数$$(\beta_s, u_{\mathrm{th}})$$因此可由工艺标定直接给出。
 
-![面向概率计算的sMTJ行为级模型分层架构](figures/fig_2_1_2_behavioral_layers.png)
+![面向概率计算的sMTJ行为级模型分层架构](figures/fig_02_behavioral_layers.png)
 
 **图2.2：面向概率计算的sMTJ行为级模型分层架构。** 自上而下四个层次。(a)计算层：从外部驱动量$$(t_w, I_{SOT}, V_{MTJ})$$到等效驱动$$u$$的映射，以及基于sMTJ随机性的伯努利采样，输出由$$P_{\mathrm{sw}}(u)$$参数化的随机比特流，作为可编程随机源供后续电路与系统级使用。(b)行为层：临界过渡区内$$P_{\mathrm{sw}}$$的Sigmoid近似，由等效驱动量$$u$$、阈值$$u_{\mathrm{th}}$$与斜率$$\beta_s$$定义，并展示其与底层物理参数$$\Delta$$、$$\xi$$、$$\theta_{\mathrm{SH}}$$的依赖关系。(c)物理模型层：包含SOT与热力矩的LLG方程、综合VCMA能垒压低与SOT驱动的调制能垒$$\Delta E_b$$，以及用于推导统一翻转概率$$P_{\mathrm{sw}}$$的Néel–Brown模型。(d)器件层：具有PMA的sMTJ结构与三类物理驱动机制，包括施加于MgO势垒两端的VCMA偏压$$V_{MTJ}$$、流经HM沟道的SOT电流$$I_{SOT}$$以及热涨落。
 

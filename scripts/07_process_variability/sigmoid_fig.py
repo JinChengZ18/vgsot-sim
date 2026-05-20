@@ -49,7 +49,7 @@ plt.rcParams.update({
     "legend.fontsize"      : 12,
     "xtick.labelsize"      : 13,
     "ytick.labelsize"      : 13,
-    "mathtext.fontset"     : "stixsans",
+    "mathtext.fontset"     : "stix",
     "axes.linewidth"       : 0.9,
     "axes.edgecolor"       : CHARCOAL,
     "axes.facecolor"       : NEAR_WHITE,
@@ -175,40 +175,50 @@ for (i, j), (dev, direction) in layout.items():
     P_corr = fit["y0"] + fit["L"] / (
         1.0 + np.exp(-(V_dense - fit["Vth"]) / fit["k"]))
     ax.plot(V_dense, P_corr, color=col, lw=2.4, zorder=5,
-            label=(rf"Corrected NB  ($\eta_c = {eta_c:.1f}$):" "\n"
-                   rf"$V_{{\rm th}}={fit['Vth']:.1f}$ mV, "
-                   rf"$\beta_s={fit['beta']:.1f}$ V$^{{-1}}$,  "
-                   rf"$R^2={fit['R2']:.3f}$"))
+            label=rf"Corrected NB" "\n" rf"($\eta_c = {eta_c:.1f}$)")
 
     ax.errorbar(V, P, yerr=yerr, fmt="o", markersize=7,
                 markerfacecolor="white", markeredgecolor=col,
                 markeredgewidth=1.6,
-                ecolor=col, elinewidth=1.0, capsize=2.5, zorder=7,
-                label=r"Measured (100 reps, 95% Wilson CI)")
+                ecolor=col, elinewidth=1.0, capsize=2.5, zorder=10,
+                label="Measured" "\n" r"(100 reps, 95% Wilson CI)")
 
     ax.axhline(0.5, color=CHARCOAL, lw=0.5, ls=":", alpha=0.5)
     ax.axvline(fit["Vth"], color=col, lw=0.6, ls=":", alpha=0.55)
 
-    txt = PANEL_NOTES[(dev, direction)]
-    ax.text(0.02, 0.97, txt, transform=ax.transAxes,
+    # Compact qualitative note in the top-left chip, plus a parameters
+    # annotation chip at the upper-right (always empty for these monotonic
+    # Sigmoids since the curve plateaus at Psw≈1 there).
+    note = PANEL_NOTES[(dev, direction)]
+    ax.text(0.02, 0.97, note, transform=ax.transAxes,
             va="top", ha="left",
             bbox=dict(boxstyle="round,pad=0.35",
                       facecolor=THU_TINT, edgecolor=THU_PALE, alpha=0.94))
+    params = (rf"$V_{{\rm th}}={fit['Vth']:.1f}$ mV" "\n"
+              rf"$\beta_s={fit['beta']:.1f}$ V$^{{-1}}$" "\n"
+              rf"$R^2={fit['R2']:.3f}$")
+    ax.text(0.98, 0.05, params, transform=ax.transAxes,
+            va="bottom", ha="right", fontsize=11,
+            bbox=dict(boxstyle="round,pad=0.30",
+                      facecolor=NEAR_WHITE, edgecolor=THU_PALE, alpha=0.94))
 
     ax.set_title(rf"Device {dev},  {direction}")
     ax.set_xlabel(r"$|V_{\rm SOT}|$  (mV)")
     ax.set_ylabel(r"Switching probability  $P_{\rm sw}$")
     ax.set_xlim(V.min() - 25, V.max() + 25)
     ax.set_ylim(-0.06, 1.08)
-    ax.legend(loc="lower right")
+    # Compact legend at center-right (clear of curve transition and chips);
+    # frame zorder 6 so the scatter/errorbar markers (zorder 10) overlay it.
+    leg = ax.legend(loc="center right", framealpha=0.92)
+    leg.set_zorder(6)
 
 fig.suptitle(
     r"C2C-corrected Néel-Brown model vs. measured $P_{\rm sw}$  "
     r"(100 reps per point, $H_x = 200$ Oe, $t_w = 0.75$ ns)",
     y=0.965,
 )
-fig.savefig(OUTDIR + "fig_psw_sigmoid.png", dpi=300, bbox_inches="tight")
-print(f"Saved  fig_psw_sigmoid.png")
+fig.savefig(OUTDIR + "fig_13_psw_sigmoid.png", dpi=300, bbox_inches="tight")
+print(f"Saved  fig_13_psw_sigmoid.png")
 
 # ── Summary ─────────────────────────────────────────────────────────────────
 print()

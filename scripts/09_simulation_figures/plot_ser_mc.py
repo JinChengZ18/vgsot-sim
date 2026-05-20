@@ -53,7 +53,7 @@ plt.rcParams.update({
     "legend.fontsize"      : 10,
     "xtick.labelsize"      : 12,
     "ytick.labelsize"      : 12,
-    "mathtext.fontset"     : "stixsans",
+    "mathtext.fontset"     : "stix",
     "axes.linewidth"       : 0.9,
     "axes.edgecolor"       : CHARCOAL,
     "axes.spines.top"      : False,
@@ -202,11 +202,11 @@ inset.set_ylim(-0.05, 1.08)
 inset.grid(True, linestyle="--", linewidth=0.4, color=THU_GRID, alpha=0.6)
 
 plt.tight_layout()
-out_path = Path(__file__).resolve().parent / "fig_2_11_ser_mc.png"
+out_path = Path(__file__).resolve().parent / "fig_10_ser_mc.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
 plt.close()
 # Sync to vgsot-sim/article/00_chapter_drafts/figures/ (the canonical chapter copy)
-chapter_fig = Path(__file__).resolve().parent.parent.parent / "article" / "00_chapter_drafts" / "figures" / "fig_2_11_ser_mc.png"
+chapter_fig = Path(__file__).resolve().parent.parent.parent / "article" / "00_chapter_drafts" / "figures" / "fig_10_ser_mc.png"
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved {out_path}")

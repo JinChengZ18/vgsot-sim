@@ -10,7 +10,7 @@
 中间节点表示 LLG 演化 (m(t))。所有通道汇至 P_sw，
 P_sw 响应有两个观察量：阈值漂移 u_th(T) 与斜率展宽 β_s(T, D2D)。
 
-输出：fig_2_2_1_thermal_nonidealities.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
+输出：fig_03_thermal_nonidealities.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
 """
 from pathlib import Path
 import shutil
@@ -204,12 +204,12 @@ ax.text((MID_X + MID_W + PSW_X) / 2.0, MID_Y + MID_H * 0.50 + 0.35,
 # ════════════════════════════════════════════════════════════════════════
 # Save + sync
 # ════════════════════════════════════════════════════════════════════════
-out_path = Path(__file__).resolve().parent / "fig_2_2_1_thermal_nonidealities.png"
+out_path = Path(__file__).resolve().parent / "fig_03_thermal_nonidealities.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white",
             pad_inches=0.15)
 plt.close()
 chapter_fig = (Path(__file__).resolve().parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_2_2_1_thermal_nonidealities.png")
+               "article" / "00_chapter_drafts" / "figures" / "fig_03_thermal_nonidealities.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")
