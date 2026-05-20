@@ -17,28 +17,12 @@ The package can be used either:
 - as a **command-line simulator**
 - as a **Python simulation library**
 
+For implementation status and release history, see:
+
+- [Implementation status](docs/IMPLEMENTATION_STATUS.md)
+- [Version notes](docs/version_notes.md)
 
 
----
-
-## Recent corrections (2026-05)
-
-This release fixes physics bugs inherited from the upstream Python port of the Zhang-et-al. Verilog-A VGSOT-MTJ compact model (see `01文献/vgsot_python_model-main`), then adds the temperature-coupled stepping and an alternative Cayley integrator promised by chapter §2.2.3. If you migrate from any downstream fork, **please re-run prior SER and Sigmoid-slope simulations** — quantitative results will shift.
-
-- **Thermal-field sampling now respects the FDT.** Previously `stochastic.py` returned `xi / |xi|` (a unit-length random direction), so `|H_TH|` was clamped to one value instead of being chi-square distributed. The corrected implementation draws three independent N(0,1) samples; `E[|H_TH|^2]` therefore matches the Brown 1963 / García-Palacios theory and is ~3x larger than before. This makes near-threshold P_sw(V) curves measurably broader.
-- **`H_ex` is now a configurable bias field**, defaulting to `−50 Oe @ −y` (perpendicular to the implicit σ_SH = −x̂). **Direction matters**: H_ex must be perpendicular to σ_SH or the SER curve collapses to a ~0.5 random-bit plateau (the chapter's "200 Oe along current direction" maps to `h_ex_y` in the simulator's convention — see `docs/technical_details.md §2.7`).
-- **TMR(V) defaults to the PDK three-parameter form** (Hikstor SOT-MRAM PDK extraction). Select via `constants.tmr_model = "pdk"` (default) or `"lorentzian"` for the previous behaviour. PDK coefficients `a_tmr, b_tmr, c_tmr, k_tmr` are exposed in the config.
-- **Coupled self-heating LLG step.** `run_piecewise_direct_excitation(enable_self_heating=True)` and the `ser_*` cases now advance T(t) via the RC thermal network, recompute M_s(T) / K_i(T) each step, and feed the corrected material parameters back into `anisotropy.field()`. `SimResult.T_K / Ms_T / Ki_T` carry the diagnostics.
-- **Cayley vector LLG integrator** (`dynamic_switching_vector.py`) — exact-rotation step in Cartesian with explicit `sigma_SH` 3-vector, machine-precision norm preservation, no polar singularity. Opt in via `integrator="cayley"`.
-- **Built-in process-variability case.** `ser_cases.variability_sweep` produces the §2.3.5 Brinkman/MC budget in one call, replacing the external `07_process_variability` script.
-- **`theta_SH`, `TMR_0`, `R·A` jointly calibrated to experiment** (2026-05-16): default `theta_SH = 0.04`, `TMR = 1.0`, `RA = 16.6 Ω·μm²` give R_P ≈ 5 kΩ, R_AP ≈ 10 kΩ, V_th(0.75 ns) ≈ 903 mV — matching Device A P→AP detailed-P_sw to within 1 %. Literature β-W `theta_SH = 0.25` accepted as override. See [`docs/technical_details.md`](docs/technical_details.md) §2.3 and `scripts/09_simulation_figures/calibrate_to_experiment.py`.
-- **New opt-in toggles** (2026-05-16): `R_series` parasitic resistance on `tmr()` (default 0 = byte-identical legacy), full-pipeline `rng=…` plumbing through `field()` / `switching()` / `run_piecewise_*` for byte-reproducible Monte Carlo, and a `Psw ↔ SER` display flag (`SerResult.psw`, `--metric=psw|ser` on `plot_ser_mc.py`).
-
-See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for the current correspondence between thesis sections and code modules, plus a list of effects modeled in the thesis but not yet implemented.
-
-
-
----
 
 ## Installation
 

@@ -1,74 +1,60 @@
-# ======================
-# Python 通用
-# ======================
+# Python bytecode and caches
 __pycache__/
 *.py[cod]
 *$py.class
 
-# 编译文件
+# Native build artifacts
 *.so
 *.pyd
 *.dll
 
-# ======================
-# 虚拟环境（非常重要）
-# ======================
+# Virtual environments
 venv/
-.env/
 .venv/
 env/
+.env/
 
-# ======================
-# 打包 / 构建
-# ======================
+# Packaging and build outputs
 build/
 dist/
 *.egg-info/
 
-# ======================
+# Test, coverage, and lint caches
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+.tox/
+
 # Jupyter Notebook
-# ======================
-.ipynb_checkpoints
+.ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
 notebooks/_notebook_outputs/
 notebooks/result_notebook/
 
-# ======================
-# 日志 & 临时文件
-# ======================
+# Logs and temporary files
 *.log
 *.tmp
 *.temp
+*.bak
+*.orig
 
-# ======================
-# VSCode / IDE
-# ======================
+# IDE and OS files
 .vscode/
 .idea/
-
-# ======================
-# 操作系统文件
-# ======================
 .DS_Store
 Thumbs.db
 
-# ======================
-# 项目特定
-# ======================
-# 实验结果（通常不需要上传）
+# Project-generated outputs
 result/
 pics/
-# 历史/废弃代码
+
+# Historical or local-only folders
 old/
 notebooks/version/
 
-# ======================
-# 配置敏感信息（如果以后有）
-# ======================
+# Local secrets and environment overrides
 .env
 *.env
-
-# ======================
-# Git 忽略自身
-# ======================
-.git/
