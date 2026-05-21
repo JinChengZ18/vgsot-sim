@@ -1,267 +1,366 @@
 """
-图 2.2 — 面向概率计算的sMTJ行为级模型分层架构。
+Figure 2.2: layered behavioral model for probabilistic sMTJ computing.
 
-自下而上四个层次：
-  Device layer：PMA sMTJ + 三类驱动（V_MTJ, I_SOT, thermal fluctuations）
-  Physical-model layer：LLG 方程、调制能垒 ΔE_b、Néel-Brown 模型 → P_sw
-  Behavioral layer：Sigmoid 近似 P_sw(u) ≈ σ(β_s (u - u_th))
-  Computation layer：(t_w, I_SOT, V_MTJ) → u → Bernoulli 采样 → 随机比特流
+The layout is a compact 2 x 2 journal-style composite figure. It preserves the
+logical order from computational abstraction to device mechanisms while keeping
+the aspect ratio suitable for thesis text pages.
 
-清华紫配色，紧凑布局，向上的抽象提升箭头连接四层。
-
-输出：fig_02_behavioral_layers.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
+Outputs:
+  demo/fig_02_behavioral_layers.png
+  article/00_chapter_drafts/figures/fig_02_behavioral_layers.png
 """
+from __future__ import annotations
+
 from pathlib import Path
 import shutil
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+from matplotlib.patches import Arc, Circle, Ellipse, FancyArrowPatch
+from matplotlib.patches import FancyBboxPatch, Polygon, Rectangle
 
-# ── Palette (THU purple family) ─────────────────────────────────────────
-THU_DEEP, THU_MID, THU_SOFT, THU_PALE = "#660874", "#8B3A9E", "#A966BE", "#C99FD4"
-THU_TINT, THU_LIGHT = "#EFE0F7", "#F7ECFB"
-THU_GRID = "#DDD0E8"
-CRIMSON, NAVY, TEAL, AMBER = "#A82038", "#1F5FA8", "#1A6B5A", "#C47A00"
-CHARCOAL, NEAR_WHITE = "#2B2B2B", "#FFFFFF"
 
-# Layer-band colours (light to deeper bottom-up — gradient stays in THU family)
-BAND_TOP    = "#F7ECFB"   # Computation
-BAND_BEHAV  = "#E5C9EF"   # Behavioral
-BAND_PHYS   = "#C99FD4"   # Physical-model
-BAND_DEVICE = "#A966BE"   # Device
+# Journal-style palette: restrained, high-contrast, and print friendly.
+PURPLE = "#5A136F"
+PURPLE_2 = "#8B5AA6"
+PURPLE_TINT = "#F0E8F4"
+BLUE = "#1F5EA8"
+TEAL = "#087566"
+AMBER = "#B87900"
+RED = "#A71E35"
+INK = "#202020"
+MID = "#666666"
+GRID = "#D8D3DC"
+LINE = "#2D2D2D"
+PANEL = "#FBFAFC"
+WHITE = "#FFFFFF"
 
 plt.rcParams.update({
-    "font.family"      : "sans-serif",
-    "font.sans-serif"  : ["Arial", "Liberation Sans"],
-    "font.size"        : 11,
-    "mathtext.fontset" : "stix",
-    "savefig.dpi"      : 300,
-    "figure.dpi"       : 150,
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "Liberation Sans"],
+    "font.size": 9.2,
+    "mathtext.fontset": "stixsans",
+    "axes.unicode_minus": False,
+    "figure.dpi": 150,
+    "savefig.dpi": 300,
 })
 
-# Compact landscape layout
-fig, ax = plt.subplots(figsize=(12.5, 8.0))
-ax.set_xlim(0, 16.0)
-ax.set_ylim(0, 10.5)
+
+fig, ax = plt.subplots(figsize=(8.35, 5.90))
+fig.subplots_adjust(left=0.018, right=0.985, bottom=0.025, top=0.985)
+ax.set_xlim(0, 10.0)
+ax.set_ylim(0, 6.5)
 ax.axis("off")
 
 
-# ─── Helpers ────────────────────────────────────────────────────────────
-def band(y, h, color, title, *, title_color=CHARCOAL, title_fontsize=12.5):
-    ax.add_patch(FancyBboxPatch(
-        (LAYER_X, y), LAYER_W, h,
-        boxstyle="round,pad=0.05,rounding_size=0.20",
-        facecolor=color, edgecolor="none"))
-    ax.text(LAYER_X + 0.30, y + h - 0.20, title,
-            ha="left", va="top", fontsize=title_fontsize,
-            fontweight="bold", color=title_color)
+def arrow(x0: float, y0: float, x1: float, y1: float, *,
+          color: str = PURPLE, lw: float = 1.05, ms: float = 8.5,
+          rad: float = 0.0) -> None:
+    ax.add_patch(FancyArrowPatch(
+        (x0, y0), (x1, y1),
+        arrowstyle="-|>", mutation_scale=ms, lw=lw, color=color,
+        shrinkA=1.2, shrinkB=1.2, connectionstyle=f"arc3,rad={rad}",
+    ))
 
 
-def box(x, y, w, h, label, *, fc=NEAR_WHITE, ec=CHARCOAL, fontsize=10.5,
-        bold=True, lw=1.0, sub=None, sub_fontsize=9.0):
+def text(x: float, y: float, s: str, *, fs: float = 8.2, color: str = INK,
+         weight: str = "normal", ha: str = "center", va: str = "center",
+         style: str = "normal") -> None:
+    ax.text(x, y, s, fontsize=fs, color=color, fontweight=weight,
+            ha=ha, va=va, fontstyle=style)
+
+
+def panel(x: float, y: float, w: float, h: float,
+          tag: str, title: str) -> tuple[float, float, float, float]:
+    ax.add_patch(Rectangle((x, y), w, h, facecolor=PANEL,
+                           edgecolor=LINE, lw=0.72))
+    text(x + 0.18, y + h - 0.19, f"{tag} {title}",
+         fs=10.0, weight="bold", ha="left")
+    ax.plot([x + 0.14, x + w - 0.14], [y + h - 0.34, y + h - 0.34],
+            color=GRID, lw=0.55)
+    return x + 0.18, y + 0.13, w - 0.36, h - 0.47
+
+
+def box(x: float, y: float, w: float, h: float, title: str,
+        subtitle: str = "", *, fc: str = WHITE, fs: float = 8.8,
+        sub_fs: float = 7.5, lw: float = 0.72) -> None:
     ax.add_patch(FancyBboxPatch(
-        (x, y), w, h, boxstyle="round,pad=0.04,rounding_size=0.14",
-        facecolor=fc, edgecolor=ec, linewidth=lw))
-    weight = "bold" if bold else "normal"
-    if sub is None:
-        ax.text(x + w / 2, y + h / 2, label,
-                ha="center", va="center", fontsize=fontsize, fontweight=weight,
-                color=CHARCOAL)
+        (x, y), w, h,
+        boxstyle="round,pad=0.018,rounding_size=0.035",
+        facecolor=fc, edgecolor=LINE, lw=lw,
+    ))
+    if subtitle:
+        text(x + w / 2, y + h * 0.66, title, fs=fs, weight="bold")
+        text(x + w / 2, y + h * 0.31, subtitle, fs=sub_fs)
     else:
-        ax.text(x + w / 2, y + h * 0.72, label,
-                ha="center", va="center", fontsize=fontsize, fontweight=weight,
-                color=CHARCOAL)
-        ax.text(x + w / 2, y + h * 0.28, sub,
-                ha="center", va="center", fontsize=sub_fontsize,
-                color=CHARCOAL, style="italic")
+        text(x + w / 2, y + h / 2, title, fs=fs, weight="bold")
 
 
-def arrow(x0, y0, x1, y1, *, color=CHARCOAL, lw=1.4, style="-|>", mut=14):
-    a = FancyArrowPatch((x0, y0), (x1, y1), arrowstyle=style,
-                        color=color, lw=lw, mutation_scale=mut,
-                        shrinkA=2, shrinkB=2)
-    ax.add_patch(a)
+def draw_waveforms(x: float, y: float, w: float, h: float) -> None:
+    ax.add_patch(Rectangle((x, y), w, h, facecolor=WHITE, edgecolor=LINE, lw=0.68))
+    rows = [
+        (r"$V_{\rm MTJ}$", TEAL, 0.74, 0.46, 0.76),
+        (r"$I_{\rm SOT}$", PURPLE, 0.50, 0.28, 0.70),
+        (r"$t_w$", BLUE, 0.27, 0.38, 0.66),
+    ]
+    for lab, color, frac, t0, t1 in rows:
+        yy = y + frac * h
+        x0, x1 = x + 0.30 * w, x + 0.93 * w
+        base, top = yy - 0.055 * h, yy + 0.145 * h
+        xs = [x0, x + t0 * w, x + t0 * w, x + t1 * w, x + t1 * w, x1]
+        ys = [base, base, top, top, base, base]
+        ax.plot(xs, ys, color=color, lw=1.35)
+        ax.plot([x0, x1], [base, base], color=GRID, lw=0.48)
+        text(x + 0.08 * w, yy + 0.01, lab, fs=8.2, color=color, ha="left")
+    text(x + w / 2, y + 0.055 * h, "drives", fs=7.2, color=MID)
 
 
-# ─── Layer geometry — tighter rows, wider boxes ─────────────────────────
-LAYER_X, LAYER_W = 0.4, 15.2
-DEVICE_Y, DEVICE_H = 0.5, 2.10
-PHYS_Y,   PHYS_H   = 3.0, 2.10
-BEHAV_Y,  BEHAV_H  = 5.5, 2.10
-COMP_Y,   COMP_H   = 8.0, 2.20
-
-# Bands (bottom-up, header text in top-left of each band)
-band(DEVICE_Y, DEVICE_H, BAND_DEVICE, "Device layer",
-     title_color=NEAR_WHITE, title_fontsize=12.5)
-band(PHYS_Y, PHYS_H, BAND_PHYS, "Physical-model layer",
-     title_color=NEAR_WHITE, title_fontsize=12.5)
-band(BEHAV_Y, BEHAV_H, BAND_BEHAV, "Behavioral layer",
-     title_color=CHARCOAL, title_fontsize=12.5)
-band(COMP_Y, COMP_H, BAND_TOP, "Computation layer",
-     title_color=CHARCOAL, title_fontsize=12.5)
-
-# Layer-tagline at top-right of each band (deeper info, italic)
-def tagline(y, h, text, color):
-    ax.text(LAYER_X + LAYER_W - 0.30, y + h - 0.20, text,
-            ha="right", va="top", fontsize=10.5,
-            style="italic", color=color)
-tagline(DEVICE_Y, DEVICE_H, "PMA sMTJ + drives", NEAR_WHITE)
-tagline(PHYS_Y,   PHYS_H,   "LLG + Néel–Brown", NEAR_WHITE)
-tagline(BEHAV_Y,  BEHAV_H,  "Sigmoid approximation", CHARCOAL)
-tagline(COMP_Y,   COMP_H,   "programmable Bernoulli source", CHARCOAL)
+def draw_bitstream(x: float, y: float, w: float, h: float) -> None:
+    bits = np.array([1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0])
+    gap = 0.018
+    cell = (w - (len(bits) - 1) * gap) / len(bits)
+    for i, bit in enumerate(bits):
+        xx = x + i * (cell + gap)
+        ax.add_patch(Rectangle((xx, y), cell, h,
+                               facecolor=PURPLE if bit else "#E9E7EB",
+                               edgecolor=LINE, lw=0.35))
+        text(xx + cell / 2, y + h / 2, str(bit), fs=6.3,
+             color=WHITE if bit else INK, weight="bold")
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Device layer — sMTJ pillar (left) + three drive boxes (right)
-# ════════════════════════════════════════════════════════════════════════
-# sMTJ pillar schematic (left side)
-SCH_X0, SCH_X1 = 0.9, 3.7
-HM_Y0, HM_Y1   = DEVICE_Y + 0.20, DEVICE_Y + 0.45
-ax.add_patch(Rectangle((SCH_X0, HM_Y0), SCH_X1 - SCH_X0, HM_Y1 - HM_Y0,
-                       facecolor="#6E6E6E", edgecolor=CHARCOAL, lw=0.9))
-ax.text((SCH_X0 + SCH_X1) / 2.0, (HM_Y0 + HM_Y1) / 2.0, "HM channel",
-        ha="center", va="center", fontsize=8.5, color=NEAR_WHITE)
-MTJ_CX = (SCH_X0 + SCH_X1) / 2.0
-MTJ_HW = 0.48
-RL_Y0, RL_Y1 = HM_Y1, HM_Y1 + 0.28
-ax.add_patch(Rectangle((MTJ_CX - MTJ_HW, RL_Y0), 2 * MTJ_HW, RL_Y1 - RL_Y0,
-                       facecolor="#3F5F8C", edgecolor=CHARCOAL, lw=0.9))
-ax.annotate("", xy=(MTJ_CX - 0.15, RL_Y1 - 0.04),
-            xytext=(MTJ_CX - 0.15, RL_Y0 + 0.04),
-            arrowprops=dict(arrowstyle="-|>", color=NEAR_WHITE, lw=1.1))
-MGO_Y0, MGO_Y1 = RL_Y1, RL_Y1 + 0.16
-ax.add_patch(Rectangle((MTJ_CX - MTJ_HW, MGO_Y0), 2 * MTJ_HW, MGO_Y1 - MGO_Y0,
-                       facecolor="#D9C28A", edgecolor=CHARCOAL, lw=0.9))
-FL_Y0, FL_Y1 = MGO_Y1, MGO_Y1 + 0.28
-ax.add_patch(Rectangle((MTJ_CX - MTJ_HW, FL_Y0), 2 * MTJ_HW, FL_Y1 - FL_Y0,
-                       facecolor="#3F5F8C", edgecolor=CHARCOAL, lw=0.9))
-ax.annotate("", xy=(MTJ_CX - 0.15, FL_Y1 - 0.04),
-            xytext=(MTJ_CX - 0.15, FL_Y0 + 0.04),
-            arrowprops=dict(arrowstyle="<|-|>", color=NEAR_WHITE, lw=1.1))
-TOP_Y0, TOP_Y1 = FL_Y1, FL_Y1 + 0.12
-ax.add_patch(Rectangle((MTJ_CX - MTJ_HW, TOP_Y0), 2 * MTJ_HW, TOP_Y1 - TOP_Y0,
-                       facecolor=CHARCOAL))
-
-# Three drive boxes (right of pillar)
-DRV_Y = DEVICE_Y + 0.40
-DRV_H = 1.20
-DRV_W = 3.55
-box(4.4,  DRV_Y, DRV_W, DRV_H, "VCMA bias",
-    sub=r"$V_{\rm MTJ}$ on MgO barrier",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
-box(8.2,  DRV_Y, DRV_W, DRV_H, "SOT current",
-    sub=r"$I_{\rm SOT}$ through HM channel",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
-box(12.0, DRV_Y, DRV_W, DRV_H, "Thermal noise",
-    sub=r"$\mathbf{H}_{\rm th}(t)$ (Brown 1963)",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
+def draw_sigmoid_plot(x: float, y: float, w: float, h: float) -> None:
+    ax.add_patch(Rectangle((x, y), w, h, facecolor=WHITE, edgecolor=LINE, lw=0.68))
+    px0, py0 = x + 0.34, y + 0.27
+    pw, ph = w - 0.60, h - 0.62
+    u = np.linspace(-4.0, 4.0, 320)
+    psw = 1 / (1 + np.exp(-1.55 * u))
+    X = px0 + (u - u.min()) / (u.max() - u.min()) * pw
+    Y = py0 + psw * ph
+    ax.add_patch(Rectangle((px0 + 0.43 * pw, py0), 0.16 * pw, ph,
+                           facecolor=PURPLE_TINT, edgecolor="none"))
+    ax.plot([px0, px0 + pw], [py0, py0], color=LINE, lw=0.65)
+    ax.plot([px0, px0], [py0, py0 + ph], color=LINE, lw=0.65)
+    ax.plot(X, Y, color=PURPLE, lw=1.85)
+    uth = px0 + 0.50 * pw
+    ax.plot([uth, uth], [py0, py0 + ph], color=GRID, lw=0.75, ls="--")
+    ax.plot([uth - 0.36, uth + 0.48], [py0 + 0.35 * ph, py0 + 0.66 * ph],
+            color=RED, lw=1.1)
+    text(px0 - 0.08, py0 + ph / 2, r"$P_{\rm sw}$", fs=7.5, ha="right")
+    text(px0 + pw / 2, py0 - 0.13, r"$u-u_{\rm th}$", fs=7.5)
+    text(uth + 0.04, py0 + 0.09, r"$u_{\rm th}$", fs=7.0, color=MID, ha="left")
+    text(uth + 0.26, py0 + 0.68 * ph, r"$\beta_s$", fs=7.5, color=RED, ha="left")
+    text(uth - 0.02, py0 + 0.86 * ph, "critical\nregion",
+         fs=6.7, color=PURPLE)
+    ax.text(x + 0.26, y + h - 0.14,
+            r"$P_{\rm sw}(u)\simeq[1+\exp[-\beta_s(u-u_{\rm th})]]^{-1}$",
+            ha="left", va="top", fontsize=7.7, color=INK)
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Physical-model layer
-# ════════════════════════════════════════════════════════════════════════
-PHY_Y0 = PHYS_Y + 0.40
-PHY_H = 1.20
+def draw_device_stack(x: float, y: float, w: float, h: float) -> None:
+    hm = Polygon([
+        (x + 0.10 * w, y + 0.20 * h),
+        (x + 0.76 * w, y + 0.20 * h),
+        (x + 0.90 * w, y + 0.33 * h),
+        (x + 0.24 * w, y + 0.33 * h),
+    ], closed=True, facecolor="#696969", edgecolor=LINE, lw=0.65)
+    ax.add_patch(hm)
+    text(x + 0.49 * w, y + 0.265 * h, "HM channel", fs=6.9, color=WHITE)
+    arrow(x + 0.18 * w, y + 0.10 * h, x + 0.72 * w, y + 0.10 * h,
+          color=INK, lw=0.75, ms=7)
+    text(x + 0.45 * w, y + 0.015 * h, r"$I_{\rm SOT}$", fs=7.2)
 
-box(0.9, PHY_Y0, 4.8, PHY_H, "Stochastic LLG",
-    sub=r"$d\mathbf{m}/dt$ with SOT, Gilbert, $\mathbf{H}_{\rm th}$",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
-box(6.0, PHY_Y0, 4.5, PHY_H, "Modulated barrier",
-    sub=r"$\Delta E_b(V_{\rm MTJ}, I_{\rm SOT})$  via VCMA + SHE",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
-box(10.8, PHY_Y0, 4.4, PHY_H, r"Néel–Brown $\to P_{\rm sw}$",
-    sub=r"$P_{\rm sw}=1-e^{-t_w/\tau_0\cdot e^{-\Delta_{\rm eff}}}$",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
+    cx = x + 0.48 * w
+    stack_w = 0.34 * w
+    yy = y + 0.33 * h
+    layers = [
+        ("Free layer", "#4772A5", 0.19 * h),
+        ("MgO", "#DCC783", 0.13 * h),
+        ("Pinned layer", "#752A86", 0.19 * h),
+    ]
+    for name, color, hh in layers:
+        ax.add_patch(Rectangle((cx - stack_w / 2, yy), stack_w, hh,
+                               facecolor=color, edgecolor=LINE, lw=0.6))
+        text(cx, yy + hh / 2, name, fs=6.6,
+             color=WHITE if name != "MgO" else INK)
+        yy += hh
+    ax.add_patch(Ellipse((cx, yy), stack_w, 0.10 * h,
+                         facecolor="#752A86", edgecolor=LINE, lw=0.6))
 
-
-# ════════════════════════════════════════════════════════════════════════
-# Behavioral layer — sigmoid sketch (left) + parameter boxes (right)
-# ════════════════════════════════════════════════════════════════════════
-# Sigmoid sketch as inline plot
-SIG_X0, SIG_Y0, SIG_W, SIG_H = 0.9, BEHAV_Y + 0.35, 3.8, 1.30
-ax.add_patch(FancyBboxPatch(
-    (SIG_X0, SIG_Y0), SIG_W, SIG_H,
-    boxstyle="round,pad=0.04,rounding_size=0.14",
-    facecolor=NEAR_WHITE, edgecolor=CHARCOAL, lw=1.0))
-# Mini sigmoid curve
-mini_x = np.linspace(-4, 4, 200)
-mini_y = 1.0 / (1.0 + np.exp(-mini_x))
-mx0, my0 = SIG_X0 + 0.45, SIG_Y0 + 0.18
-mw, mh   = SIG_W - 0.60, SIG_H - 0.55
-ax.plot(mx0 + (mini_x + 4) / 8.0 * mw, my0 + mini_y * mh,
-        color=THU_DEEP, lw=2.0)
-ax.plot([mx0, mx0 + mw], [my0, my0], color=CHARCOAL, lw=0.9)
-ax.plot([mx0, mx0], [my0, my0 + mh], color=CHARCOAL, lw=0.9)
-ax.text(mx0 + mw / 2.0, my0 - 0.13, r"$u - u_{\rm th}$",
-        ha="center", va="top", fontsize=9.5)
-ax.text(mx0 - 0.10, my0 + mh / 2.0, r"$P_{\rm sw}$",
-        ha="right", va="center", fontsize=9.5)
-ax.text(SIG_X0 + SIG_W / 2.0, SIG_Y0 + SIG_H - 0.18,
-        r"$P_{\rm sw}(u)=\sigma(\beta_s(u-u_{\rm th}))$",
-        ha="center", va="top", fontsize=11, fontweight="bold", color=CHARCOAL)
-
-box(5.0, BEHAV_Y + 0.35, 4.8, 1.30, "Behavioral parameters",
-    sub=r"$\beta_s\!=\!2\kappa\ln 2/(k_BT)$;  $u_{\rm th}\!\downarrow$ with $t_w,T$",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
-
-box(10.1, BEHAV_Y + 0.35, 5.1, 1.30, "Physics-to-parameter map",
-    sub=r"$\beta_s = f(\Delta,\xi,\theta_{\rm SH})$;  D2D $\to\beta_s\!\downarrow$",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
+    arrow(cx + 0.23 * w, y + 0.36 * h, cx + 0.23 * w, y + 0.90 * h,
+          color=PURPLE, lw=0.85, ms=7)
+    text(cx + 0.27 * w, y + 0.63 * h, r"$V_{\rm MTJ}$", fs=7.1,
+         color=PURPLE, ha="left")
+    arrow(cx - 0.26 * w, y + 0.35 * h, cx - 0.26 * w, y + 0.86 * h,
+          color=LINE, lw=0.75, ms=7)
+    text(cx - 0.31 * w, y + 0.61 * h, "PMA", fs=7.1, weight="bold", ha="right")
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Computation layer
-# ════════════════════════════════════════════════════════════════════════
-CMP_Y0 = COMP_Y + 0.50
-CMP_H = 1.30
-
-box(0.9,  CMP_Y0, 3.5, CMP_H, "External drives",
-    sub=r"$(t_w,\ I_{\rm SOT},\ V_{\rm MTJ})$",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10.5)
-box(4.7,  CMP_Y0, 3.0, CMP_H, r"$u$-mapping",
-    sub="effective drive",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
-box(8.0,  CMP_Y0, 3.5, CMP_H, "Bernoulli sampler",
-    sub=r"$m\sim\mathrm{Bern}(P_{\rm sw}(u))$",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
-box(11.8, CMP_Y0, 3.4, CMP_H, "Random bit stream",
-    sub="stochastic source",
-    fc=NEAR_WHITE, fontsize=11.5, sub_fontsize=10)
-
-# Horizontal flow arrows
-for x0, x1 in [(4.4, 4.7), (7.7, 8.0), (11.5, 11.8)]:
-    arrow(x0, CMP_Y0 + CMP_H / 2, x1, CMP_Y0 + CMP_H / 2,
-          color=THU_DEEP, lw=1.4, mut=12)
+def draw_thermal_icon(x: float, y: float, r: float) -> None:
+    center = (x, y)
+    ax.add_patch(Circle(center, r, facecolor="#FFF7E8", edgecolor=AMBER, lw=0.68))
+    for deg in np.linspace(20, 340, 8):
+        th = np.deg2rad(deg)
+        arrow(x + 1.55 * r * np.cos(th), y + 1.55 * r * np.sin(th),
+              x + 2.25 * r * np.cos(th), y + 2.25 * r * np.sin(th),
+              color=AMBER, lw=0.55, ms=5.3)
+    text(x, y, r"$H_{\rm th}$", fs=6.3, color=AMBER, weight="bold")
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Inter-layer upward arrows (compact — 3 columns to keep visual order)
-# ════════════════════════════════════════════════════════════════════════
-def vertical_arrow(x, y0, y1, color=THU_DEEP, lw=1.4):
-    arrow(x, y0, x, y1, color=color, lw=lw, mut=12)
-
-# Device -> Physics
-for x in (3.0, 8.0, 13.0):
-    vertical_arrow(x, DEVICE_Y + DEVICE_H, PHYS_Y)
-# Physics -> Behavioral
-for x in (3.0, 8.0, 13.0):
-    vertical_arrow(x, PHYS_Y + PHYS_H, BEHAV_Y)
-# Behavioral -> Computation
-for x in (3.0, 8.0, 13.0):
-    vertical_arrow(x, BEHAV_Y + BEHAV_H, COMP_Y)
+def draw_llg_icon(x: float, y: float, s: float) -> None:
+    cx, cy = x + 0.42 * s, y + 0.50 * s
+    ax.add_patch(Circle((cx, cy), 0.34 * s, facecolor="#F8F6FA",
+                        edgecolor=GRID, lw=0.75))
+    ax.add_patch(Arc((cx, cy), 0.58 * s, 0.36 * s, theta1=30, theta2=325,
+                     color=PURPLE, lw=1.35))
+    arrow(cx, cy, cx + 0.25 * s, cy + 0.25 * s, color=BLUE, lw=1.0, ms=7)
+    arrow(cx, cy, cx - 0.08 * s, cy + 0.32 * s, color=TEAL, lw=1.0, ms=7)
+    text(cx + 0.29 * s, cy + 0.28 * s, r"$\mathbf{m}$", fs=6.8, color=BLUE, ha="left")
+    text(cx - 0.12 * s, cy + 0.36 * s, r"$\mathbf{H}_{\rm eff}$",
+         fs=6.7, color=TEAL, ha="right")
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Save + sync
-# ════════════════════════════════════════════════════════════════════════
+def draw_barrier_plot(x: float, y: float, w: float, h: float) -> None:
+    ax.add_patch(Rectangle((x, y), w, h, facecolor=WHITE, edgecolor=LINE, lw=0.68))
+    text(x + w / 2, y + h - 0.16, "modulated barrier", fs=8.0, weight="bold")
+    px0, py0 = x + 0.28, y + 0.27
+    pw, ph = w - 0.50, h - 0.60
+    q = np.linspace(-1.25, 1.25, 240)
+    high = 0.82 * (q**2 - 1.0) ** 2
+    low = 0.50 * (q**2 - 1.0) ** 2 + 0.05 * q
+    lo, hi = min(high.min(), low.min()), max(high.max(), low.max())
+    X = px0 + (q - q.min()) / (q.max() - q.min()) * pw
+    Yh = py0 + (high - lo) / (hi - lo) * ph
+    Yl = py0 + (low - lo) / (hi - lo) * ph
+    ax.plot(X, Yh, color=MID, lw=1.0, ls=(0, (4, 2)))
+    ax.plot(X, Yl, color=PURPLE, lw=1.65)
+    mid = len(q) // 2
+    arrow(X[mid] + 0.08, Yh[mid] - 0.02, X[mid] + 0.08, Yl[mid] + 0.03,
+          color=RED, lw=0.8, ms=6)
+    text(X[mid] + 0.17, (Yh[mid] + Yl[mid]) / 2, r"$\Delta E_b$",
+         fs=6.8, color=RED, ha="left")
+    text(x + w / 2, y + 0.10,
+         r"$\Delta E_b=\Delta E_0-\eta_VV_{\rm MTJ}-\eta_II_{\rm SOT}$",
+         fs=6.6)
+
+
+def draw_escape_plot(x: float, y: float, w: float, h: float) -> None:
+    ax.add_patch(Rectangle((x, y), w, h, facecolor=WHITE, edgecolor=LINE, lw=0.68))
+    text(x + w / 2, y + h - 0.20, "Neel-Brown\nescape", fs=6.2, weight="bold")
+    px0, py0 = x + 0.22, y + 0.38
+    pw, ph = w - 0.40, h - 0.82
+    q = np.linspace(-1.18, 1.18, 220)
+    E = (q**2 - 1.0) ** 2
+    X = px0 + (q - q.min()) / (q.max() - q.min()) * pw
+    Y = py0 + (E - E.min()) / (E.max() - E.min()) * ph
+    ax.plot(X, Y, color=LINE, lw=1.05)
+    i0 = 36
+    ax.add_patch(Circle((X[i0], Y[i0]), 0.035, facecolor=PURPLE,
+                        edgecolor=WHITE, lw=0.45))
+    arrow(X[i0] + 0.04, Y[i0] + 0.02, px0 + 0.60 * pw, py0 + 0.76 * ph,
+          color=PURPLE, lw=1.0, ms=7, rad=-0.10)
+    arrow(px0 + 0.60 * pw, py0 + 0.76 * ph, px0 + 0.82 * pw, py0 + 0.22 * ph,
+          color=PURPLE, lw=1.0, ms=7, rad=-0.08)
+    text(x + w / 2, y + 0.22, r"$\tau=\tau_0e^{\Delta_{\rm eff}}$", fs=6.1)
+    text(x + w / 2, y + 0.08, r"$P_{\rm sw}=1-\exp(-t_w/\tau)$", fs=6.1)
+
+
+# Balanced composite layout.
+W, H = 4.72, 2.94
+px1, px2 = 0.18, 5.10
+py_top, py_bot = 3.28, 0.18
+
+ca = panel(px1, py_top, W, H, "(a)", "Computational layer")
+cb = panel(px2, py_top, W, H, "(b)", "Behavioral layer")
+cc = panel(px1, py_bot, W, H, "(c)", "Physical-model layer")
+cd = panel(px2, py_bot, W, H, "(d)", "Device layer")
+
+
+# (a) Computational layer.
+x, y, w, h = ca
+draw_waveforms(x + 0.04, y + 1.08, 1.25, 1.27)
+text(x + 1.58, y + 1.78, r"$(t_w,I_{\rm SOT},V_{\rm MTJ})$", fs=8.1)
+arrow(x + 2.00, y + 1.78, x + 2.24, y + 1.78)
+box(x + 2.26, y + 1.42, 0.86, 0.74, "map", r"$u=g(\cdot)$",
+    fs=7.8, sub_fs=7.1)
+arrow(x + 3.14, y + 1.78, x + 3.36, y + 1.78)
+box(x + 3.38, y + 1.42, 0.88, 0.74, "sampler",
+    r"$b_k\sim{\rm Bern}(P_{\rm sw})$", fs=7.6, sub_fs=6.2)
+text(x + 2.73, y + 1.04, r"$P_{\rm sw}(u)$", fs=8.8, weight="bold")
+arrow(x + 2.92, y + 1.10, x + 3.66, y + 1.37, rad=0.14)
+draw_bitstream(x + 1.38, y + 0.45, 2.52, 0.31)
+text(x + 2.64, y + 0.23, "programmable stochastic bit source", fs=6.8, color=MID)
+box(x + 0.06, y + 0.30, 1.06, 0.62, "bit stream", r"$m\in\{0,1\}$",
+    fs=7.2, sub_fs=6.5, fc="#F7F5F8")
+arrow(x + 1.16, y + 0.61, x + 1.34, y + 0.61)
+
+
+# (b) Behavioral layer.
+x, y, w, h = cb
+draw_sigmoid_plot(x + 0.06, y + 0.45, 2.62, 1.93)
+box(x + 2.86, y + 1.66, 0.72, 0.58, "drive", r"$u,u_{\rm th}$",
+    fs=7.2, sub_fs=6.5)
+box(x + 3.72, y + 1.66, 0.68, 0.58, "slope", r"$\beta_s$",
+    fs=7.2, sub_fs=6.8)
+arrow(x + 3.60, y + 1.95, x + 3.70, y + 1.95, color=MID, lw=0.75, ms=6)
+ax.add_patch(Rectangle((x + 2.80, y + 0.34), 1.54, 0.94,
+                       facecolor=WHITE, edgecolor=LINE, lw=0.62))
+text(x + 3.57, y + 1.12, "parameter map", fs=7.0, weight="bold")
+for i, (lab, col) in enumerate([(r"$\Delta$", BLUE), (r"$\xi$", TEAL), (r"$\theta_{\rm SH}$", PURPLE)]):
+    cx = x + 3.08 + i * 0.32
+    ax.add_patch(Circle((cx, y + 0.79), 0.115, facecolor=col, edgecolor=WHITE, lw=0.45))
+    text(cx, y + 0.79, lab, fs=5.3, color=WHITE, weight="bold")
+arrow(x + 3.80, y + 0.79, x + 4.00, y + 0.79, color=MID, lw=0.65, ms=5.5)
+text(x + 4.08, y + 0.79, r"$u_{\rm th},\beta_s$", fs=6.0, ha="left")
+text(x + 3.57, y + 0.52, r"$f(\Delta,\xi,\theta_{\rm SH})$", fs=6.2)
+
+
+# (c) Physical-model layer.
+x, y, w, h = cc
+box(x + 0.06, y + 1.58, 1.52, 0.66, "LLG + torques",
+    r"$\dot{\bf m}=-\gamma\mu_0{\bf m}\times{\bf H}_{\rm eff}+\tau_{\rm SOT}+\tau_{\rm th}$",
+    fs=7.2, sub_fs=5.9)
+draw_llg_icon(x + 0.10, y + 0.45, 1.34)
+arrow(x + 1.60, y + 1.48, x + 1.76, y + 1.48)
+draw_barrier_plot(x + 1.76, y + 0.86, 1.36, 1.34)
+arrow(x + 3.16, y + 1.48, x + 3.24, y + 1.48)
+draw_escape_plot(x + 3.26, y + 0.86, 1.08, 1.34)
+ax.add_patch(Rectangle((x + 1.34, y + 0.18), 2.96, 0.45,
+                       facecolor="#F7F5F8", edgecolor=LINE, lw=0.62))
+text(x + 2.82, y + 0.405,
+     r"unified switching probability  $P_{\rm sw}(t_w,I_{\rm SOT},V_{\rm MTJ})$",
+     fs=6.9)
+arrow(x + 2.45, y + 0.84, x + 2.70, y + 0.64, color=PURPLE, lw=0.85, ms=6)
+arrow(x + 3.84, y + 0.84, x + 3.70, y + 0.64, color=PURPLE, lw=0.85, ms=6)
+
+
+# (d) Device layer.
+x, y, w, h = cd
+draw_device_stack(x + 0.00, y + 0.22, 2.22, 2.14)
+box(x + 2.34, y + 1.66, 0.90, 0.56, "VCMA",
+    r"$V_{\rm MTJ}$ across MgO", fs=7.2, sub_fs=6.2)
+box(x + 3.38, y + 1.66, 0.78, 0.56, "SOT",
+    r"$I_{\rm SOT}$ in HM", fs=7.2, sub_fs=6.2)
+box(x + 2.52, y + 0.64, 1.28, 0.60, "thermal activation",
+    r"$\mathbf{H}_{\rm th}(t)$", fs=7.0, sub_fs=6.4)
+draw_thermal_icon(x + 4.18, y + 0.94, 0.155)
+arrow(x + 2.23, y + 1.34, x + 2.50, y + 0.99, color=MID, lw=0.75, ms=6)
+arrow(x + 2.24, y + 1.78, x + 2.32, y + 1.94, color=PURPLE, lw=0.85, ms=6)
+arrow(x + 2.24, y + 0.89, x + 2.50, y + 0.89, color=AMBER, lw=0.85, ms=6)
+text(x + 2.90, y + 0.22,
+     "PMA free layer, VCMA barrier tuning,\nSOT drive, and thermal fluctuation",
+     fs=6.4, color=MID)
+
+
 out_path = Path(__file__).resolve().parent / "fig_02_behavioral_layers.png"
-plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white",
-            pad_inches=0.15)
-plt.close()
-chapter_fig = (Path(__file__).resolve().parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_02_behavioral_layers.png")
+plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white", pad_inches=0.06)
+plt.close(fig)
+
+chapter_fig = (
+    Path(__file__).resolve().parent.parent
+    / "article" / "00_chapter_drafts" / "figures" / "fig_02_behavioral_layers.png"
+)
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
+
 print(f"Saved  {out_path}")
 print(f"Synced {chapter_fig}")

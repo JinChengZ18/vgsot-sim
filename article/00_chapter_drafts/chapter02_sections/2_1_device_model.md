@@ -1,6 +1,6 @@
 # 2.1三端SOT-sMTJ器件模型
 
-sMTJ的器件层模型需要在静态电学特性、自由层磁化动力学、写入概率以及行为级抽象四个层次之间保持自洽，才能够支撑后续阵列级与系统级的建模工作。本节首先建立三端SOT-sMTJ的T型等效电路并阐明读写路径解耦的物理意义，随后由Néel–Brown热激活模型给出受驱动调制的翻转概率，综合SOT与VCMA两类驱动机制得到联合写入概率表达式，最终将复杂的指数嵌套形式压缩为工作区内便于工程使用的Sigmoid近似。
+sMTJ的器件层模型需要在静态电学特性、自由层磁化动力学、写入概率以及行为级抽象四个层次之间保持自洽，才能够支撑后续阵列级与系统级的建模工作。本节首先建立三端SOT-sMTJ的T型等效电路并阐明读写路径解耦的物理意义，随后由Néel–Brown热激活模型给出受驱动调制的翻转概率，综合SOT与VCMA两类驱动机制得到联合写入概率表达式，最终将复杂的指数嵌套形式压缩为工作区内便于工程使用的Sigmoid近似。[1] [2]
 
 ## 2.1.1三端SOT-sMTJ器件结构与基础电学模型
 
@@ -173,3 +173,5 @@ $$
 [7] T. Nozaki, J. Okabayashi, S. Tamaru, *et al.* Understanding voltage-controlled magnetic anisotropy effect at Co/oxide interface. *Scientific Reports*, 13: 10640, 2023. [https://doi.org/10.1038/s41598-023-37422-4](https://doi.org/10.1038/s41598-023-37422-4)
 
 [8] Y. Lv, B. Dixit, J.-P. Wang. Modulation of switching dynamics in magnetic tunnel junctions for low-error-rate computational random-access memory. *AIP Advances*, 16(2): 025134, 2026. [https://doi.org/10.1063/9.0001026](https://doi.org/10.1063/9.0001026)
+
+[2]:
