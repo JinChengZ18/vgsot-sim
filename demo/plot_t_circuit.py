@@ -11,7 +11,7 @@ HM沟道沿长度方向均分为两段 R_SOT/2，三段电阻在中间节点 N �
 读出操作在 T1—N 之间获取 V_MTJ；写入操作在 T2—T3 之间施加 V_2 − V_3
 驱动 I_SOT = (V_2 − V_3) / R_SOT。
 
-输出：fig_01_t_circuit.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
+输出：Chapter02_local_01.png（本目录 + 同步到 ../article/00_chapter_drafts/figs/）
 """
 from pathlib import Path
 import shutil
@@ -195,7 +195,7 @@ def terminal_dot(ax, x, y, label, label_offset=(0.0, 0.30), fontsize=12):
             color=CHARCOAL)
 
 # T1 terminal (top) — aligned vertically with left panel T1
-T1_RX, T1_RY = 5.0, 7.0
+T1_RX, T1_RY = 5.0, 6.35
 terminal_dot(ax_r, T1_RX, T1_RY, r"T$_1$  ($V_1$)", label_offset=(0.0, 0.30))
 ax_r.plot([T1_RX - 0.45, T1_RX + 0.45], [T1_RY - 0.50, T1_RY - 0.50],
           color=CHARCOAL, lw=2.6)
@@ -209,7 +209,7 @@ ax_r.text(T1_RX - 1.10, T1_RY - 0.55, r"$I_{\rm MTJ}$",
           ha="center", va="center", fontsize=11)
 
 # MTJ resistor (variable-R)
-MTJ_Y_TOP, MTJ_Y_BOT = 6.25, 3.80
+MTJ_Y_TOP, MTJ_Y_BOT = 5.60, 3.15
 vresistor(ax_r, T1_RX, MTJ_Y_TOP, MTJ_Y_BOT, n_zigs=10, amp=0.22,
           color=CHARCOAL, lw=1.8, variable=True)
 ax_r.text(T1_RX - 1.05, (MTJ_Y_TOP + MTJ_Y_BOT) / 2.0, r"$R_{\rm MTJ}$",
@@ -224,7 +224,7 @@ ax_r.text(v_arrow_x + 0.45, (T1_RY + MTJ_Y_BOT) / 2.0 - 0.10,
           r"$V_{\rm MTJ}$", ha="center", va="center", fontsize=12)
 
 # Mid node N
-MID_RX, MID_RY = T1_RX, 3.45
+MID_RX, MID_RY = T1_RX, 2.80
 ax_r.plot(MID_RX, MID_RY, "o", ms=8, mec=CHARCOAL, mfc=CHARCOAL, zorder=3)
 ax_r.plot([T1_RX, T1_RX], [MTJ_Y_BOT - 0.05, MID_RY], color=CHARCOAL, lw=1.6)
 ax_r.text(MID_RX + 0.20, MID_RY - 0.10, r"N", ha="left", va="top",
@@ -278,13 +278,12 @@ ax_r.text(0.5, 1.00, "T-equivalent resistor network",
 # ════════════════════════════════════════════════════════════════════════
 # Save + sync
 # ════════════════════════════════════════════════════════════════════════
-plt.tight_layout()
-out_path = Path(__file__).resolve().parent / "fig_01_t_circuit.png"
+out_path = Path(__file__).resolve().parent / "Chapter02_local_01.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white",
             pad_inches=0.15)
 plt.close()
 chapter_fig = (Path(__file__).resolve().parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_01_t_circuit.png")
+               "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_01.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")

@@ -48,8 +48,10 @@ notebooks/result_notebook/
 Thumbs.db
 
 # Project-generated outputs
-result/
-pics/
+result/*
+!result/Chapter02_local_*.png
+pics/*
+!pics/Chapter02_local_*.png
 
 # Historical or local-only folders
 old/

@@ -10,18 +10,18 @@
 
 | 文件 | 对应图号 | 内容 |
 |:---|:---:|:---|
-| `fig_exp_nb_summary.png` | 图2.3-3 | 三面板：(上左)四脉宽滞回回线、(上右)临界电压$$V_{\mathrm{th}\pm}$$对数线性拟合、(下)Néel-Brown联合概率$$P_{\mathrm{sw}}(V, t_w)$$热力图 |
-| `fig_psw_sigmoid.png` | 图2.3-4 | **同批次**$$t_w = 0.75\,\mathrm{ns}$$、四组合(Device A/B × AP→P/P→AP)的Sigmoid实测与NB外推对比；每面板独立Sigmoid拟合并叠加NB外推虚线 |
-| `fig_variability_theory.png` | 图2.3-5 | 工艺波动四面板综合图：(左上)CV(Δ)方差预算分解、(右上)C2C校准的晶圆平均Sigmoid曲线族、(左下)D2D传递函数$$\mathcal{F}(\mathrm{CV}_\Delta)$$、(右下)联合预测vs同批次实测对比 |
-| `fig_exp_device_consistency.png` | (附录) | Device A与Device B跨器件一致性检查 |
+| `Chapter02_local_12.png` | 图2.3-3 | 三面板：(上左)四脉宽滞回回线、(上右)临界电压$$V_{\mathrm{th}\pm}$$对数线性拟合、(下)Néel-Brown联合概率$$P_{\mathrm{sw}}(V, t_w)$$热力图 |
+| `Chapter02_local_13.png` | 图2.3-4 | **同批次**$$t_w = 0.75\,\mathrm{ns}$$、四组合(Device A/B × AP→P/P→AP)的Sigmoid实测与NB外推对比；每面板独立Sigmoid拟合并叠加NB外推虚线 |
+| `Chapter02_local_15.png` | 图2.3-5 | 工艺波动四面板综合图：(左上)CV(Δ)方差预算分解、(右上)C2C校准的晶圆平均Sigmoid曲线族、(左下)D2D传递函数$$\mathcal{F}(\mathrm{CV}_\Delta)$$、(右下)联合预测vs同批次实测对比 |
+| `Chapter02_local_14.png` | (附录) | Device A与Device B跨器件一致性检查 |
 
 ## 代码
 
 | 文件 | 功能 | 输入 | 输出 |
 |:---|:---|:---|:---|
-| `fit_from_loops.py` | 从实测滞回数据提取临界电压、对数线性拟合、NB模型参数反推、联合概率热力图 | `/mnt/user-data/uploads/device{2,4}pulse_width_*_ns_200_Oe.txt` | `fig_exp_nb_summary.png`, `fig_exp_device_consistency.png` |
-| `sigmoid_fig.py` | 四组合同批次0.75 ns Sigmoid实测与NB外推对比 | 硬编码的Psw数据(解析自文件名) | `fig_psw_sigmoid.png` |
-| `variability_sim.py` | PDK mismatch经Brinkman反推$$\mathrm{CV}_\Delta$$、Monte Carlo D2D展宽仿真、校准后晶圆级$$\beta$$预测 | PDK statistics block参数(硬编码) | `fig_variability_theory.png` |
+| `fit_from_loops.py` | 从实测滞回数据提取临界电压、对数线性拟合、NB模型参数反推、联合概率热力图 | `/mnt/user-data/uploads/device{2,4}pulse_width_*_ns_200_Oe.txt` | `Chapter02_local_12.png`, `Chapter02_local_14.png` |
+| `sigmoid_fig.py` | 四组合同批次0.75 ns Sigmoid实测与NB外推对比 | 硬编码的Psw数据(解析自文件名) | `Chapter02_local_13.png` |
+| `variability_sim.py` | PDK mismatch经Brinkman反推$$\mathrm{CV}_\Delta$$、Monte Carlo D2D展宽仿真、校准后晶圆级$$\beta$$预测 | PDK statistics block参数(硬编码) | `Chapter02_local_15.png` |
 
 ## 关键数值汇总
 

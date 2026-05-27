@@ -1,4 +1,13 @@
-# API Reference
+# API Reference (legacy draft — superseded)
+
+> ⚠️ **This file is an earlier draft of the API reference and is superseded by
+> [`api.md`](api.md)** (which carries the full coverage of the 2026-05 toggles:
+> `enable_self_heating`, `integrator`, `sigma_SH`, `rng`, `rng_mode`, the
+> `SerResult.psw` property, the `analysis` sub-package, `variability_sweep`,
+> and the calibrated `PhysicalConstantsConfig` defaults).
+>
+> Kept here only so legacy links don't break — please prefer [`api.md`](api.md)
+> for current information.
 
 This document is the detailed Python API guide for `vgsot_sim`.
 It is meant to complement the short examples in the root `README.md`.

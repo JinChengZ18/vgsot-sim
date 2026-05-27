@@ -9,12 +9,13 @@ the same machinery can be invoked from a vgsot-sim case or notebook.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import numpy as np
 from scipy.optimize import curve_fit
 
 from . import nb_fit
 from .sigmoid_fit import sigmoid4p
+from ..configs import PhysicalConstantsConfig
 
 
 @dataclass
@@ -45,6 +46,13 @@ class CVBudgetResult:
     components: dict = field(default_factory=dict)
 
 
+@dataclass
+class MacrospinMismatchSample:
+    """One sampled macrospin device plus the process scale factors used."""
+    constants: PhysicalConstantsConfig
+    scales: dict = field(default_factory=dict)
+
+
 def cv_delta_budget(inp: PDKBudgetInputs | None = None) -> CVBudgetResult:
     """Brinkman-decomposed CV(Δ) from PDK mismatch parameters.
 
@@ -66,15 +74,111 @@ def cv_delta_budget(inp: PDKBudgetInputs | None = None) -> CVBudgetResult:
     CV_V  = float(np.sqrt((2 * CV_D) ** 2 + inp.CV_TF ** 2))
     CV_HK = inp.CV_TMR
     CV_Delta = float(np.sqrt(CV_HK ** 2 + inp.CV_MS ** 2 + CV_V ** 2))
+    total_var = CV_Delta ** 2
+
+    def variance_fraction(component_var: float) -> float:
+        return float(component_var / total_var) if total_var > 0.0 else 0.0
+
     return CVBudgetResult(
         CV_RA=CV_RA, CV_D=CV_D, CV_V=CV_V,
         CV_HK=CV_HK, CV_MS=inp.CV_MS, CV_TF=inp.CV_TF,
         CV_Delta=CV_Delta,
         components={
-            "V_mag":    CV_V ** 2 / CV_Delta ** 2,
-            "H_k":      CV_HK ** 2 / CV_Delta ** 2,
-            "M_s":      inp.CV_MS ** 2 / CV_Delta ** 2,
-            "t_f":      inp.CV_TF ** 2 / CV_Delta ** 2,
+            # Split the volume term into lateral-area and thickness pieces.
+            # CV_V already includes CV_TF, so reporting CV_V and CV_TF as
+            # separate variance-budget bars would count thickness twice.
+            "V_mag_area": variance_fraction((2 * CV_D) ** 2),
+            "H_k":        variance_fraction(CV_HK ** 2),
+            "M_s":        variance_fraction(inp.CV_MS ** 2),
+            "t_f":        variance_fraction(inp.CV_TF ** 2),
+        },
+    )
+
+
+def _positive_gaussian_scale(rng, cv: float, *, floor: float = 0.05,
+                             z_score: float | None = None) -> float:
+    """Draw a Gaussian multiplicative factor and keep physical values positive."""
+    if cv <= 0.0:
+        return 1.0
+    z = rng.normal() if z_score is None else z_score
+    return float(max(1.0 + cv * z, floor))
+
+
+def sample_macrospin_process_constants(
+    base: PhysicalConstantsConfig | None = None,
+    inp: PDKBudgetInputs | None = None,
+    *,
+    rng=None,
+    z_scores: dict | None = None,
+) -> MacrospinMismatchSample:
+    """Sample one macrospin device from the PDK process-mismatch budget.
+
+    The NB-level variability figure reduces PDK mismatch to a CV(Delta)
+    distribution.  Macrospin switching is sensitive to more knobs than
+    Delta alone, so this helper maps the same budget onto solver parameters:
+
+    - residual Rp mismatch after the Brinkman RA term -> D and D_elec
+    - t_f and M_s process terms -> tf and Ms
+    - the CV(TMR) anisotropy proxy used by the NB budget -> Ki
+    - Rsot mismatch -> rho, hence R_W and voltage-to-current conversion
+    - t_ox / phi terms -> tox, phi_bar and the first-order RA scale
+
+    Actual TMR is scaled with the same CV(TMR) draw as the Ki proxy.  In a
+    pure SOT, V_MTJ=0 sweep that transport scale is mostly diagnostic; Ki,
+    D_elec, tf, Ms, and R_W carry the switching impact.  `z_scores` may
+    override selected standard-normal draws (`D`, `tf`, `Ms`, `Ki_proxy`,
+    `Rsot`, `tox`, `phi`) for stratified or antithetic populations.
+    """
+    base = base or PhysicalConstantsConfig()
+    inp = inp or PDKBudgetInputs()
+    if rng is None:
+        rng = np.random.default_rng()
+
+    budget = cv_delta_budget(inp)
+    z_scores = z_scores or {}
+    d_scale = _positive_gaussian_scale(rng, budget.CV_D, z_score=z_scores.get("D"))
+    tf_scale = _positive_gaussian_scale(rng, inp.CV_TF, z_score=z_scores.get("tf"))
+    ms_scale = _positive_gaussian_scale(rng, inp.CV_MS, z_score=z_scores.get("Ms"))
+    hk_proxy_scale = _positive_gaussian_scale(
+        rng, inp.CV_TMR, z_score=z_scores.get("Ki_proxy")
+    )
+    rsot_scale = _positive_gaussian_scale(rng, inp.CV_RSOT, z_score=z_scores.get("Rsot"))
+    tox_scale = _positive_gaussian_scale(rng, inp.CV_TOX, z_score=z_scores.get("tox"))
+    phi_scale = _positive_gaussian_scale(rng, inp.CV_PHI, z_score=z_scores.get("phi"))
+
+    sens_tox = inp.KAPPA * np.sqrt(inp.PHI_BAR)
+    sens_phi = inp.KAPPA * inp.T_OX / (2.0 * np.sqrt(inp.PHI_BAR))
+    ln_ra = (
+        sens_tox * inp.T_OX * (tox_scale - 1.0)
+        + sens_phi * inp.PHI_BAR * (phi_scale - 1.0)
+    )
+    ra_scale = float(np.exp(ln_ra))
+
+    constants = replace(
+        base,
+        D=base.D * d_scale,
+        D_elec=base.D_elec * d_scale,
+        tf=base.tf * tf_scale,
+        Ms=base.Ms * ms_scale,
+        Ki=base.Ki * hk_proxy_scale,
+        H_k_eff_RT=base.H_k_eff_RT * hk_proxy_scale,
+        rho=base.rho * rsot_scale,
+        tox=base.tox * tox_scale,
+        phi_bar=base.phi_bar * phi_scale,
+        RA=base.RA * ra_scale,
+        TMR=base.TMR * hk_proxy_scale,
+    )
+    return MacrospinMismatchSample(
+        constants=constants,
+        scales={
+            "D": d_scale,
+            "tf": tf_scale,
+            "Ms": ms_scale,
+            "Ki_proxy": hk_proxy_scale,
+            "Rsot": rsot_scale,
+            "tox": tox_scale,
+            "phi": phi_scale,
+            "RA": ra_scale,
         },
     )
 

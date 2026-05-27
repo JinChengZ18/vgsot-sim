@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 import numpy as np
 from tqdm import trange
 
-from .configs import PhysicalConstantsConfig, SerOptimizedVgsotConfig, SerSotNoVcmaThermalConfig
-from .time_series_cases import run_piecewise_direct_excitation, run_two_pulse_optimized
+from .configs import PhysicalConstantsConfig, SerSotNoVcmaThermalConfig
+from .time_series_cases import run_piecewise_direct_excitation
 
 
 @dataclass
@@ -27,13 +26,6 @@ class SerResult:
     def psw(self) -> np.ndarray:
         """Switching success probability  P_sw = 1 − SER."""
         return 1.0 - np.asarray(self.ser)
-
-
-@dataclass
-class SerOptimizedResult:
-    t1_s: np.ndarray
-    ser: np.ndarray
-    mz_at_t1_avg: np.ndarray
 
 
 def _trial_seed(seed: int, i_sot: float, trial_idx: int) -> int:
@@ -149,66 +141,6 @@ def ser_sot_no_vcma_thermal(
     return SerResult(x=np.array(cfg.i_sot_list, dtype=float), ser=ser, x_label=r"$I_{\mathrm{SOT}}$ (A)")
 
 
-def _default_i_sot(constants: PhysicalConstantsConfig) -> float:
-    return (2 * constants.e * constants.u0 * constants.Ms * constants.tf * constants.A2 * (-50 * 1000 / (4 * np.pi))) / (constants.h_bar * constants.theta_SH)
-
-
-def ser_optimized_vgsot(
-    cfg: SerOptimizedVgsotConfig | None = None,
-    *,
-    show_progress: bool = True,
-) -> SerOptimizedResult:
-    cfg = cfg or SerOptimizedVgsotConfig()
-
-    i_sot = cfg.i_sot
-    if i_sot is None:
-        i_sot = _default_i_sot(cfg.constants)
-
-    sim_end_step = int(cfg.sim_total_time_s / cfg.constants.t_step)
-
-    ser_list: List[float] = []
-    mz_avg_list: List[float] = []
-
-    for t1_s in cfg.t1_list_s:
-        t2_s = cfg.total_pulse_s - t1_s
-        failures = 0
-        mz_sum = 0.0
-
-        loop = trange(cfg.iterations_num, desc=f"MC t1={t1_s:.3e}s", disable=not show_progress)
-        for _ in loop:
-            res = run_two_pulse_optimized(
-                t1_s=t1_s,
-                t2_s=t2_s,
-                v_mtj_1=cfg.v_mtj_1,
-                v_mtj_2=cfg.v_mtj_2,
-                i_sot_1=i_sot,
-                i_sot_2=0.0,
-                sim_total_time_s=cfg.sim_total_time_s,
-                pap=cfg.pap,
-                non=cfg.non,
-                vnv=cfg.vnv,
-                r_sot_fl_dl=cfg.r_sot_fl_dl,
-                show_progress=False,
-                constants=cfg.constants,
-            )
-
-            idx_t1 = min(max(int(t1_s / cfg.constants.t_step), 0), len(res.mz) - 1)
-            mz_sum += float(res.mz[idx_t1])
-
-            final_mz = float(res.mz[sim_end_step])
-            if abs(final_mz - cfg.target_final_mz) > cfg.failure_tol:
-                failures += 1
-
-        ser_list.append(failures / float(cfg.iterations_num))
-        mz_avg_list.append(mz_sum / float(cfg.iterations_num))
-
-    return SerOptimizedResult(
-        t1_s=np.array(cfg.t1_list_s, dtype=float),
-        ser=np.array(ser_list, dtype=float),
-        mz_at_t1_avg=np.array(mz_avg_list, dtype=float),
-    )
-
-
 @dataclass
 class VariabilitySweepResult:
     """D2D variability MC: wafer-averaged Sigmoid slope vs CV(Δ).
@@ -288,6 +220,5 @@ def variability_sweep(
 
 SER_CASES = (
     "ser_sot_no_vcma_thermal",
-    "ser_optimized_vgsot",
     "variability_sweep",
 )

@@ -381,7 +381,7 @@ fig.suptitle(
     y=0.965,
 )
 
-outpath = OUTDIR + "fig_17_hw_sampling_reliability.png"
+outpath = OUTDIR + "Chapter02_local_18.png"
 fig.savefig(outpath, dpi=300, bbox_inches="tight")
 print(f"\nSaved  {outpath}")
 plt.close(fig)

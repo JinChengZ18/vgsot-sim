@@ -16,32 +16,25 @@ from vgsot_sim import (
     SotOnlyConstantCurrentConfig,
     SotSwitchingNoVcmaConfig,
     SerSotNoVcmaThermalConfig,
-    VcmaAssistedSwitchingIsotSweepConfig,
-    VcmaAssistedSwitchingVmtjSweepConfig,
-    OptimizedVgsotSwitchingConfig,
-    SerOptimizedVgsotConfig,
 
     # result types
     SimResult,
     SweepResult,
     SerResult,
-    SerOptimizedResult,
 
     # high-level cases
     terminal_voltage_control,
     sot_only_constant_current,
     sot_switching_no_vcma,
-    vcma_assisted_switching_isot_sweep,
-    vcma_assisted_switching_vmtj_sweep,
-    optimized_vgsot_switching,
     ser_sot_no_vcma_thermal,
-    ser_optimized_vgsot,
 
     # low-level kernels
     run_piecewise_terminal_voltage,
     run_piecewise_direct_excitation,
-    run_two_pulse_optimized,
 )
+
+# Process-variability analysis (Python-only, no CLI surface)
+from vgsot_sim.ser_cases import variability_sweep, VariabilitySweepResult
 ```
 
 
@@ -58,15 +51,15 @@ A typical workflow is:
 
 ```python
 from vgsot_sim import (
-    VcmaAssistedSwitchingIsotSweepConfig,
-    vcma_assisted_switching_isot_sweep,
+    SerSotNoVcmaThermalConfig,
+    ser_sot_no_vcma_thermal,
 )
 
-cfg = VcmaAssistedSwitchingIsotSweepConfig(
-    v_mtj=1.1,
-    i_sot_list=[-40e-6, -30e-6, -20e-6],
-)
-res = vcma_assisted_switching_isot_sweep(cfg)
+# Defaults already match the chapter §2.3.3 protocol
+# (0.75 ns write + 3.25 ns relax, |I_SOT| spans 0.7–1.5 mA).
+cfg = SerSotNoVcmaThermalConfig(trials=80)
+res = ser_sot_no_vcma_thermal(cfg, seed=2026, enable_self_heating=True)
+print(res.psw)
 ```
 
 
@@ -92,7 +85,7 @@ cfg = SerSotNoVcmaThermalConfig(trials=200)
 
 ### `SimResult`
 
-Returned by single-run simulations such as `terminal_voltage_control`, `sot_only_constant_current`, `run_piecewise_direct_excitation`, and `run_two_pulse_optimized`.
+Returned by single-run simulations such as `terminal_voltage_control`, `sot_only_constant_current`, and `run_piecewise_direct_excitation`.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -102,11 +95,14 @@ Returned by single-run simulations such as `terminal_voltage_control`, `sot_only
 | `v_mtj` | `np.ndarray` | MTJ voltage waveform actually used in simulation. |
 | `i_sot` | `np.ndarray` | SOT current waveform actually used in simulation. |
 | `switch_energy_j` | `float` | Estimated MTJ switching energy in joules. |
-| `theta` | `np.ndarray | None` | Polar angle history. |
-| `phi` | `np.ndarray | None` | Azimuth angle history. |
-| `v1` | `np.ndarray | None` | Terminal voltage V1 history, only for terminal-voltage mode. |
-| `v2` | `np.ndarray | None` | Terminal voltage V2 history, only for terminal-voltage mode. |
-| `v3` | `np.ndarray | None` | Terminal voltage V3 history, only for terminal-voltage mode. |
+| `theta` | `np.ndarray \| None` | Polar angle history. |
+| `phi` | `np.ndarray \| None` | Azimuth angle history. |
+| `v1` | `np.ndarray \| None` | Terminal voltage V1 history, only for terminal-voltage mode. |
+| `v2` | `np.ndarray \| None` | Terminal voltage V2 history, only for terminal-voltage mode. |
+| `v3` | `np.ndarray \| None` | Terminal voltage V3 history, only for terminal-voltage mode. |
+| `T_K` | `np.ndarray \| None` | Per-step temperature, populated when `enable_self_heating=True`. |
+| `Ms_T` | `np.ndarray \| None` | Per-step `M_s(T)` fed into LLG, populated when `enable_self_heating=True`. |
+| `Ki_T` | `np.ndarray \| None` | Per-step `K_i(T)` fed into LLG, populated when `enable_self_heating=True`. |
 
 ### `SweepResult`
 
@@ -130,19 +126,14 @@ Returned by `ser_sot_no_vcma_thermal`.
 |---|---|---|
 | `x` | `np.ndarray` | Sweep axis values. |
 | `ser` | `np.ndarray` | Switching error rate for each point. |
+| `psw` | `property → np.ndarray` | Switching success probability `P_sw = 1 − ser`. The thesis §2.3.3 reports `P_sw` directly; chapter figures default to this convention. |
 | `x_label` | `str` | Suggested x-axis label. |
 
-### `SerOptimizedResult`
+### `VariabilitySweepResult`
 
-Returned by `ser_optimized_vgsot`.
-
-| Field | Type | Meaning |
-|---|---|---|
-| `t1_s` | `np.ndarray` | First-pulse duration values in seconds. |
-| `ser` | `np.ndarray` | Switching error rate for each `t1`. |
-| `mz_at_t1_avg` | `np.ndarray` | Average `mz` sampled at the end of the first pulse. |
-
-
+Returned by `variability_sweep` (chapter §2.3.5 D2D Monte-Carlo). See the
+[Analysis sub-package](#analysis-sub-package-new-in-2026-05) section below
+for fields and usage.
 
 ## Shared physical flags (PAP / NON / VNV)
 
@@ -211,7 +202,7 @@ res = sot_only_constant_current(cfg)
 | `sim_mid1_step` | `2000` | End of pulse stage. |
 | `sim_end_step` | `5000` | Final simulation index. |
 | `pap` | `1` | Initial state selector. |
-| `i_sot_stage1` | `-95e-6` | SOT current during stage 1. |
+| `i_sot_stage1` | `-400e-6` | SOT current during stage 1 (~3× sub-threshold for the calibrated `theta_SH=0.04`). |
 | `i_sot_stage2` | `0.0` | SOT current during stage 2 and stage 3. |
 | `v_mtj_stage1` | `0.0` | MTJ voltage during stage 1. |
 | `v_mtj_stage2` | `0.0` | MTJ voltage during stage 2 and stage 3. |
@@ -238,119 +229,26 @@ print(res.mz_curves.keys())
 
 | Field | Default | Meaning |
 |---|---:|---|
-| `i_sot_list` | `(-85e-6, -90e-6, -95e-6, -100e-6)` | SOT currents to sweep. |
+| `i_sot_list` | `(-800e-6, -700e-6, -750e-6, -600e-6, -500e-6, -400e-6, -300e-6, -200e-6)` | SOT currents to sweep. Bracket the calibrated `theta_SH = 0.04` threshold near 1.1 mA. |
 | `sim_start_step` | `1` | Simulation start index. |
-| `sim_mid1_step` | `2000` | End of pulse stage. |
-| `sim_end_step` | `5000` | Final simulation index. |
+| `sim_mid1_step` | `5000` | End of pulse stage (5 ns at `t_step = 1 ps`). |
+| `sim_end_step` | `10000` | Final simulation index. |
 | `pap` | `1` | Initial state selector. |
 | `non` | `1` | Thermal-noise toggle. |
 | `v_mtj` | `0.0` | Constant MTJ voltage for all stages. |
 | `i_sot_relax` | `0.0` | Relaxation-stage current after the main pulse. |
 | `vnv` | `0` | VCMA toggle. |
-| `r_sot_fl_dl` | `0.0` | Damping-like ratio. |
-| `tick_spacing_s` | `5e-10` | Suggested plot tick spacing. |
+| `r_sot_fl_dl` | `0.83` | Damping-like ratio. |
+| `tick_spacing_s` | `1e-9` | Suggested plot tick spacing. |
 
 **Returns:** `SweepResult`
 
 `pulse_curves` stores `I_SOT` in microamps for this case, and `pulse_ylabel` is already set accordingly.
 
-### `vcma_assisted_switching_isot_sweep`
-
-Fixes `V_MTJ` and sweeps `I_SOT`.
-
-```python
-from vgsot_sim import (
-    VcmaAssistedSwitchingIsotSweepConfig,
-    vcma_assisted_switching_isot_sweep,
-)
-
-cfg = VcmaAssistedSwitchingIsotSweepConfig(
-    v_mtj=1.1,
-    i_sot_list=[-40e-6, -30e-6, -20e-6],
-)
-res = vcma_assisted_switching_isot_sweep(cfg)
-```
-
-**Config:** `VcmaAssistedSwitchingIsotSweepConfig`
-
-| Field | Default | Meaning |
-|---|---:|---|
-| `v_mtj` | `1.2` | Constant MTJ bias during the full simulation. |
-| `i_sot_list` | `(-90e-6, -30e-6, -18e-6, -16e-6)` | Currents to sweep. |
-| `sim_start_step` | `1` | Simulation start index. |
-| `sim_end_step` | `25000` | Final simulation index. |
-| `pap` | `1` | Initial state selector. |
-| `non` | `1` | Thermal-noise toggle. |
-| `vnv` | `1` | VCMA toggle. |
-| `r_sot_fl_dl` | `0.0` | Damping-like ratio. |
-| `tick_spacing_s` | `5e-9` | Suggested plot tick spacing. |
-
-**Returns:** `SweepResult`
-
-### `vcma_assisted_switching_vmtj_sweep`
-
-Fixes `I_SOT` and sweeps `V_MTJ`.
-
-```python
-from vgsot_sim import (
-    VcmaAssistedSwitchingVmtjSweepConfig,
-    vcma_assisted_switching_vmtj_sweep,
-)
-
-cfg = VcmaAssistedSwitchingVmtjSweepConfig(
-    i_sot=-50e-6,
-    v_mtj_list=[1.2, 1.3, 1.4],
-)
-res = vcma_assisted_switching_vmtj_sweep(cfg)
-```
-
-**Config:** `VcmaAssistedSwitchingVmtjSweepConfig`
-
-| Field | Default | Meaning |
-|---|---:|---|
-| `i_sot` | `None` | SOT current. If `None`, the code computes an internal default from device constants. |
-| `v_mtj_list` | `(1.3189, 1.3191, 1.333, 1.3489, 1.4937)` | MTJ voltages to sweep. |
-| `sim_start_step` | `1` | Simulation start index. |
-| `sim_end_step` | `25000` | Final simulation index. |
-| `pap` | `1` | Initial state selector. |
-| `non` | `1` | Thermal-noise toggle. |
-| `vnv` | `1` | VCMA toggle. |
-| `r_sot_fl_dl` | `0.0` | Damping-like ratio. |
-| `tick_spacing_s` | `5e-9` | Suggested plot tick spacing. |
-
-**Returns:** `SweepResult`
-
-### `optimized_vgsot_switching`
-
-Runs the proposed two-pulse VGSOT scheme for several `(t1, t2)` pairs.
-
-```python
-from vgsot_sim import OptimizedVgsotSwitchingConfig, optimized_vgsot_switching
-
-cfg = OptimizedVgsotSwitchingConfig(
-    t_pairs_s=[(1.4e-9, 1.6e-9), (1.8e-9, 1.2e-9)],
-)
-res = optimized_vgsot_switching(cfg)
-```
-
-**Config:** `OptimizedVgsotSwitchingConfig`
-
-| Field | Default | Meaning |
-|---|---:|---|
-| `v_mtj_1` | `1.4937` | MTJ voltage during first pulse. |
-| `v_mtj_2` | `-1.0` | MTJ voltage during second pulse. |
-| `i_sot` | `None` | First-stage SOT current. If `None`, the code computes an internal default. |
-| `t_pairs_s` | see code | Sequence of `(t1_s, t2_s)` pulse durations. |
-| `sim_total_time_s` | `25e-9` | Total simulated time. |
-| `pap` | `1` | Initial state selector. |
-| `non` | `1` | Thermal-noise toggle. |
-| `vnv` | `1` | VCMA toggle. |
-| `r_sot_fl_dl` | `0.0` | Damping-like ratio. |
-| `tick_spacing_s` | `5e-9` | Suggested plot tick spacing. |
-
-**Returns:** `SweepResult`
-
-`pulse_curves` stores the MTJ voltage waveform for this case.
+> **Removed in 2026-05** — `vcma_assisted_switching_isot_sweep`,
+> `vcma_assisted_switching_vmtj_sweep`, and `optimized_vgsot_switching` were
+> dropped together with their configs. None of them had a counterpart in the
+> same-batch Device A measurements that the package is now calibrated against.
 
 ### `ser_sot_no_vcma_thermal`
 
@@ -367,79 +265,42 @@ res = ser_sot_no_vcma_thermal(cfg)
 
 | Field | Default | Meaning |
 |---|---:|---|
-| `i_sot_list` | `(-100e-6, -98e-6, -96e-6, -94e-6, -92e-6, -90e-6)` | Currents to sweep. |
-| `trials` | `1000` | Monte-Carlo trials per point. |
+| `i_sot_list` | `(-800e-6, -700e-6, -750e-6, -600e-6, -500e-6, -400e-6, -300e-6, -200e-6)` | Currents to sweep — bracket the calibrated `theta_SH = 0.04` threshold near `\|I_SOT\| ≈ 1.1 mA`. |
+| `trials` | `200` | Monte-Carlo trials per point. |
 | `sim_start_step` | `1` | Simulation start index. |
-| `sim_mid1_step` | `2000` | End of active pulse. |
-| `sim_end_step` | `5000` | Final simulation index. |
-| `pap` | `1` | Initial state selector. |
+| `sim_mid1_step` | `5000` | End of active pulse (5 ns at `t_step = 1 ps`). |
+| `sim_end_step` | `10000` | Final simulation index. |
+| `pap` | `1` | Initial state selector (1 ≡ AP). |
 | `non` | `1` | Thermal-noise toggle. |
 | `v_mtj` | `0.0` | MTJ bias. |
 | `vnv` | `0` | VCMA toggle. |
 | `r_sot_fl_dl` | `0.0` | Damping-like ratio. |
-| `target_mz` | `-1.0` | Desired final magnetization for success. |
+| `target_mz` | `1.0` | Desired final magnetization for success (P, since `pap=1` starts AP). |
 | `failure_tol` | `1e-1` | Allowed deviation from `target_mz`. |
 
-**Returns:** `SerResult`
+**Run-time keyword arguments** (passed to `ser_sot_no_vcma_thermal(cfg, ...)`):
 
-### `ser_optimized_vgsot`
+| Argument | Default | Meaning |
+|---|---|---|
+| `show_progress` | `True` | Toggle the tqdm bar (CLI inherits `--no_progress`). |
+| `enable_self_heating` | `False` | Per-trial advance of `T(t)` with `M_s(T)` / `K_i(T)` feedback. |
+| `T_ambient_K` | `300.0` | Sink temperature for the thermal network. |
+| `seed` | `None` | Master MC seed; per-trial seeds derived from `_trial_seed(seed, i_sot, idx)`. |
+| `rng_mode` | `"legacy"` | `"legacy"` = `np.random.seed` (chapter-figure bit-stream); `"generator"` = `np.random.default_rng` (multiprocessing-friendly). Both share the seed stream. |
+| `integrator` | `None` | `None` → stepper default (`"euler_spherical"`); `"euler_spherical"` or `"cayley"` force the step type. |
 
-Monte-Carlo SER for the proposed two-pulse scheme.
+**Returns:** `SerResult` (with `psw = 1 − ser` property).
 
-```python
-from vgsot_sim import SerOptimizedVgsotConfig, ser_optimized_vgsot
-
-cfg = SerOptimizedVgsotConfig(
-    iterations_num=100,
-    t1_list_s=[1.4e-9, 1.5e-9, 1.6e-9],
-    total_pulse_s=3e-9,
-)
-res = ser_optimized_vgsot(cfg)
-```
-
-**Config:** `SerOptimizedVgsotConfig`
-
-| Field | Default | Meaning |
-|---|---:|---|
-| `iterations_num` | `300` | Monte-Carlo trials per `t1`. |
-| `v_mtj_1` | `1.4937` | First-pulse MTJ voltage. |
-| `v_mtj_2` | `-1.0` | Second-pulse MTJ voltage. |
-| `i_sot` | `None` | First-stage current. If `None`, an internal default is computed. |
-| `t1_list_s` | see code | Candidate first-pulse durations. |
-| `total_pulse_s` | `3e-9` | Fixed `t1 + t2`. |
-| `sim_total_time_s` | `25e-9` | Total simulated time. |
-| `pap` | `1` | Initial state selector. |
-| `non` | `1` | Thermal-noise toggle. |
-| `vnv` | `1` | VCMA toggle. |
-| `r_sot_fl_dl` | `0.0` | Damping-like ratio. |
-| `target_final_mz` | `1.0` | Desired final magnetization. |
-| `failure_tol` | `1e-1` | Allowed deviation from target. |
-
-**Returns:** `SerOptimizedResult`
+> **Removed in 2026-05** — `ser_optimized_vgsot` and its `SerOptimizedVgsotConfig`
+> / `SerOptimizedResult` types were dropped together with the
+> `optimized_vgsot_switching` case. The two-pulse VGSOT protocol came from the
+> upstream Verilog-A port and has no counterpart in the same-batch Device A
+> experiments. If you need a similar SER vs pulse-shape sweep, drive
+> `run_piecewise_direct_excitation` from a Python loop directly.
 
 ## Low-level kernels for custom waveforms
 
 Use these when the built-in cases are not flexible enough.
-
-### `run_piecewise_terminal_voltage`
-
-Accepts a `TerminalVoltageControlConfig` and simulates up to three voltage stages.
-
-```python
-from vgsot_sim import TerminalVoltageControlConfig, run_piecewise_terminal_voltage
-
-cfg = TerminalVoltageControlConfig(
-    sim_mid1_step=2000,
-    sim_mid2_step=3500,
-    sim_end_step=5000,
-    v_stage1=(1.0, 0.0, 0.1),
-    v_stage2=(-1.0, 0.0, 0.0),
-    v_stage3=(0.0, 0.0, 0.0),
-)
-res = run_piecewise_terminal_voltage(cfg)
-```
-
-This is the lowest-level entry point for cases driven by terminal voltages rather than directly specified `V_MTJ` and `I_SOT`.
 
 ### `run_piecewise_direct_excitation`
 
@@ -450,29 +311,29 @@ from vgsot_sim import run_piecewise_direct_excitation
 
 res = run_piecewise_direct_excitation(
     sim_start_step=1,
-    sim_mid1_step=2000,
-    sim_mid2_step=3500,
-    sim_end_step=5000,
+    sim_mid1_step=750,         # 0.75 ns write pulse at t_step = 1 ps
+    sim_mid2_step=4000,
+    sim_end_step=4000,
     pap=1,
 
-    v_mtj_stage1=0.0,
-    v_mtj_stage2=0.8,
-    v_mtj_stage3=0.0,
+    v_mtj_stage1=0.0, v_mtj_stage2=0.0, v_mtj_stage3=0.0,
+    i_sot_stage1=-2000e-6, i_sot_stage2=0.0, i_sot_stage3=0.0,  # super-threshold
 
-    i_sot_stage1=-90e-6,
-    i_sot_stage2=0.0,
-    i_sot_stage3=0.0,
+    estt_stage1=0, esot_stage1=1,
+    estt_stage2=0, esot_stage2=1,
+    estt_stage3=0, esot_stage3=1,
 
-    estt_stage1=0,
-    esot_stage1=1,
-    estt_stage2=0,
-    esot_stage2=1,
-    estt_stage3=0,
-    esot_stage3=1,
-
-    vnv=1,
-    non=0,
+    vnv=0,
+    non=1,
     r_sot_fl_dl=0.83,
+
+    # Optional toggles (default: chapter behaviour)
+    enable_self_heating=True,
+    T_ambient_K=300.0,
+    integrator="euler_spherical",   # or "cayley"
+    sigma_SH=None,                  # Cayley only; default = [-1, 0, 0]
+    rng=None,                       # pass np.random.default_rng(seed) for byte-repro
+    demag_mode="ellipsoid",         # or "thin_disk"
 )
 ```
 
@@ -488,31 +349,47 @@ stage2: [sim_mid1_step, sim_mid2_step)
 stage3: [sim_mid2_step, sim_end_step)
 ```
 
+- `integrator="cayley"` dispatches to `dynamic_switching_vector.switching_vector`,
+  which is norm-preserving to machine precision and takes the spin-Hall
+  polarisation `sigma_SH` as an explicit 3-vector. The default
+  `"euler_spherical"` matches the chapter calibration; switching to `"cayley"`
+  shifts the deterministic threshold by ~10 % near 0.75 ns.
+- With `enable_self_heating=True` the returned `SimResult` additionally
+  populates `T_K`, `Ms_T`, `Ki_T` so the temperature trajectory and the
+  T-corrected material parameters are available for post-hoc inspection.
+- `rng` accepts an `np.random.Generator`; the same generator state reproduces
+  the trajectory bit-for-bit across `field()` → `switching()`/`switching_vector()`
+  → `stochastic()`.
+
 This function is the recommended choice for user-defined protocols.
 
-### `run_two_pulse_optimized`
+### `run_piecewise_terminal_voltage`
 
-Convenience wrapper for the built-in two-pulse VGSOT protocol.
+Symmetric to `run_piecewise_direct_excitation`, but the upstream drive signal
+is the terminal-voltage triple `(V1, V2, V3)` (with the electronic module
+computing `I_SOT`, `V_MTJ` at each step). Since 2026-05 it accepts the same
+opt-in trio `integrator=`, `sigma_SH=`, `rng=` so terminal-voltage simulations
+can use the Cayley path, arbitrary `sigma_SH`, and byte-reproducible noise:
 
 ```python
-from vgsot_sim import run_two_pulse_optimized
+import numpy as np
+from vgsot_sim import TerminalVoltageControlConfig, run_piecewise_terminal_voltage
 
-res = run_two_pulse_optimized(
-    t1_s=1.5e-9,
-    t2_s=1.5e-9,
-    v_mtj_1=1.4937,
-    v_mtj_2=-1.0,
-    i_sot_1=-50e-6,
-    i_sot_2=0.0,
-    sim_total_time_s=25e-9,
-    pap=1,
-    non=0,
-    vnv=1,
-    r_sot_fl_dl=0.0,
+rng = np.random.default_rng(seed=2026)
+cfg = TerminalVoltageControlConfig(v_stage1=(1.0, 0.0, 0.1))
+res = run_piecewise_terminal_voltage(
+    cfg,
+    integrator="cayley",
+    sigma_SH=np.array([0.0, -1.0, 0.0]),   # rotate σ̂_SH off the default -x
+    rng=rng,
+    enable_self_heating=True, T_ambient_K=300.0,
 )
 ```
 
-Internally it converts `t1_s` and `t2_s` into step boundaries and then calls `run_piecewise_direct_excitation`.
+> **Removed in 2026-05** — `run_two_pulse_optimized` was dropped together with
+> the `optimized_vgsot_switching` / `ser_optimized_vgsot` cases it backed. If
+> you need a two-stage protocol, call `run_piecewise_direct_excitation` with
+> `sim_mid1_step` and `sim_mid2_step` placed at the pulse boundaries.
 
 ## Low-level physics modules
 
@@ -674,32 +551,80 @@ for i_sot in [-20e-6, -30e-6, -40e-6]:
     curves[f"I_SOT={i_sot*1e6:.1f}uA"] = res.mz
 ```
 
-### Custom protocol 3: two-pulse timing exploration
+### Custom protocol 3: two-stage SOT pulse (replaces the removed two-pulse VGSOT helper)
 
 ```python
-from vgsot_sim import run_two_pulse_optimized
+# Drive the §2.3.3 protocol with a custom two-stage SOT current — the same
+# building block that the old `run_two_pulse_optimized` helper used internally.
+from vgsot_sim import run_piecewise_direct_excitation
+from vgsot_sim.configs import PhysicalConstantsConfig
 
-for t1_s in [1.4e-9, 1.6e-9, 1.8e-9]:
-    t2_s = 3e-9 - t1_s
-    res = run_two_pulse_optimized(
-        t1_s=t1_s,
-        t2_s=t2_s,
-        v_mtj_1=1.4937,
-        v_mtj_2=-1.0,
-        i_sot_1=-50e-6,
-        i_sot_2=0.0,
-        sim_total_time_s=25e-9,
+cc = PhysicalConstantsConfig()
+for t1_s in [0.5e-9, 0.75e-9, 1.0e-9]:
+    sim_end = int(round(4e-9 / cc.t_step))
+    mid1    = int(round(t1_s / cc.t_step))
+    res = run_piecewise_direct_excitation(
+        sim_start_step=1,
+        sim_mid1_step=mid1,
+        sim_mid2_step=sim_end,
+        sim_end_step=sim_end,
         pap=1,
-        non=0,
-        vnv=1,
-        r_sot_fl_dl=0.0,
-        show_progress=False,
+        v_mtj_stage1=0.0, v_mtj_stage2=0.0, v_mtj_stage3=0.0,
+        i_sot_stage1=-1500e-6, i_sot_stage2=0.0, i_sot_stage3=0.0,
+        estt_stage1=0, esot_stage1=1, estt_stage2=0, esot_stage2=1,
+        estt_stage3=0, esot_stage3=1,
+        vnv=0, non=1, r_sot_fl_dl=0.83,
+        show_progress=False, constants=cc,
     )
     print(t1_s, res.switch_energy_j, res.mz[-1])
 ```
+
+## Analysis sub-package (new in 2026-05)
+
+Math helpers previously inlined in chapter scripts 06/07/08 are now importable
+from `vgsot_sim.analysis`:
+
+```python
+from vgsot_sim.analysis import nb_fit, sigmoid_fit, variability, sampling
+```
+
+| Module | Highlights |
+|---|---|
+| `nb_fit` | `extract_Vc(V, R)`, `loglin_fit(t_w, V_c)`, `nb_params(a, b, tau0)`, `psw_nb(V, t_ns, Δ, V_c0)` — Néel-Brown thermal-activation fitting from hysteresis loops |
+| `sigmoid_fit` | `sigmoid4p`, `fit_sigmoid(V, P) → SigmoidFitResult(y0, L, V_th, k, β, R²)`, `wilson(p, n)` |
+| `variability` | `cv_delta_budget(...)`, `transfer_function_F(cv_sweep, Δ, V_c0, ...)`, `wafer_average_psw(...)`, `fit_sigmoid_to_average(...)` |
+| `sampling` | `exact_coverage(K, p, ε)`, `K_required_exact(p, ε)`, `clt_K_required(p, ε)`, MC sampling-size sensitivity helpers |
+
+The `variability_sweep` case in `vgsot_sim.ser_cases` wraps
+`variability.transfer_function_F` and returns a `VariabilitySweepResult`:
+
+```python
+from vgsot_sim.ser_cases import variability_sweep
+
+res = variability_sweep(Delta=5.15, Vc0=0.884, tw_ns=0.75, beta_meas=44.6)
+res.cv_sweep        # array of CV(Δ) scanned
+res.beta_eff        # wafer-averaged Sigmoid slope at each CV
+res.F_func          # β_eff(CV) / β_eff(CV=0)
+res.eta_c           # β_meas / β_NB^fit (C2C calibration factor)
+res.beta_combined   # η_c · F(CV) · β_NB^fit — joint D2D + C2C prediction
+```
+
+## Temperature-coupled cases (`temperature_cases.py`)
+
+Produces the chapter §2.2.2 figures directly without the chapter-04 driver
+scripts having to re-implement the math:
+
+- `sweep_material_temperature(...)` — `M_s(T)`, `K_i(T)`, `η(T)`, `K_U^eff(T)`
+  closed-form scalings.
+- `tmr_voltage_sweep(...)` — `R_P(V)`, `R_AP(V)` under either Lorentzian or
+  PDK TMR(V) selectable at the config level.
+- `thermal_transient(...)` — pure RC thermal response without LLG coupling
+  (the LLG-coupled version is `run_piecewise_direct_excitation(enable_self_heating=True)`).
 
 ## Compatibility notes
 
 - Older examples may use `result.curves`. In current versions, prefer `result.mz_curves`. The old attribute is still available as a compatibility alias on `SweepResult`.
 - Older examples may omit `sim_mid2_step` in `run_piecewise_direct_excitation`. Current code expects a three-stage interface, so include it explicitly.
 - Sweep CSV export should use `save_grouped_timeseries_csv(...)` rather than flattening several dicts with overlapping labels.
+- The `PhysicalConstantsConfig` defaults changed in 2026-05 (`theta_SH 0.25 → 0.04`, `TMR 1.19 → 1.0`, `RA 36e-12 → 16.6e-12`, plus new fields `D_elec`, `t_mtj`, `Cv`, `lambda_MgO`, `t_MgO`, `T_RT`, `T_C`, `cc_exponent`, `H_k_eff_RT`, `R_series`, `h_ex_{x,y,z}`, `tmr_model`, `a_tmr/b_tmr/c_tmr/k_tmr`). Old code that instantiated the full dataclass with every field set explicitly will keep working; code that relied on the old defaults producing a ~140 µA threshold needs to either set `theta_SH=0.25` explicitly or move its sweep range to the millisecond scale.
+- `SerResult.psw = 1 − SER` is the chapter convention. New figure scripts default to plotting `psw`; the legacy `ser` field is still there for back-compat.

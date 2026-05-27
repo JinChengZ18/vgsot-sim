@@ -9,7 +9,7 @@ The closed-form T(t) = T_0 + ΔT_eq (1 − exp(−t/τ_th)) and the
 operating-mode comparison (STT-only / SOT-only / STT+SOT) are both
 returned ready to plot.
 
-Generates fig_04_thermal_transients.png with two stacked panels:
+Generates Chapter02_local_04.png with two stacked panels:
   (top)    three operating modes at V = 0.8 V
   (bottom) pure SOT mode, V_SOT swept from 0.4 V to 1.2 V
 """
@@ -151,7 +151,7 @@ ax.set_xlim(0, 100)
 ax.set_ylim(298, 375)
 
 plt.tight_layout()
-out_path = str(Path(__file__).resolve().parent / 'fig_04_thermal_transients.png')
+out_path = str(Path(__file__).resolve().parent / 'Chapter02_local_04.png')
 plt.savefig(out_path, dpi=300, bbox_inches='tight', facecolor='white')
 plt.close()
 print(f'Saved: {out_path}')

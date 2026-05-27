@@ -1,216 +1,228 @@
 """
-图 2.3 — sMTJ温度效应与非理想性建模总览。
+Figure 2.3: thermal and non-ideal effects in the sMTJ behavioral model.
 
-四条非理想通道（左侧），共同汇聚到右侧 P_sw 响应：
-  (i)   自热源 → 热扩散 → T(t)
-  (ii)  T-依赖材料参数：M_s(T), K_i(T), η(T)
-  (iii) TMR 与电输运非线性：R_MTJ(V, T, θ)
-  (iv)  退磁与形状效应：N_x, N_y, N_z
+Top-journal style revision: fewer words, larger typography, stronger visual
+hierarchy, and compact 2 x 2 panel geometry.
 
-中间节点表示 LLG 演化 (m(t))。所有通道汇至 P_sw，
-P_sw 响应有两个观察量：阈值漂移 u_th(T) 与斜率展宽 β_s(T, D2D)。
-
-输出：fig_03_thermal_nonidealities.png（本目录 + 同步到 ../article/00_chapter_drafts/figures/）
+Outputs:
+  demo/Chapter02_local_03.png
+  article/00_chapter_drafts/figs/Chapter02_local_03.png
 """
+from __future__ import annotations
+
 from pathlib import Path
 import shutil
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from matplotlib.patches import Arc, Circle, FancyArrowPatch, FancyBboxPatch
+from matplotlib.patches import Rectangle
 
-# Palette
-THU_DEEP, THU_MID, THU_SOFT, THU_PALE = "#660874", "#8B3A9E", "#A966BE", "#C99FD4"
-THU_TINT, THU_GRID = "#EFE0F7", "#DDD0E8"
-CRIMSON, NAVY, TEAL, AMBER = "#A82038", "#1F5FA8", "#1A6B5A", "#C47A00"
-CHARCOAL, NEAR_WHITE = "#2B2B2B", "#FFFFFF"
 
-# Per-channel accent colours
-SH_COLOR = "#C0392B"   # self-heating
-TM_COLOR = "#1F5FA8"   # T-dep materials
-TR_COLOR = "#1A6B5A"   # TMR / transport
-DM_COLOR = "#C47A00"   # demag / shape
+PURPLE = "#5A136F"
+PURPLE_TINT = "#F3EAF7"
+BLUE = "#1F5EA8"
+TEAL = "#087566"
+AMBER = "#B87900"
+RED = "#A71E35"
+INK = "#202020"
+MID = "#666666"
+GRID = "#D8D3DC"
+LINE = "#2D2D2D"
+PANEL = "#FBFAFC"
+WHITE = "#FFFFFF"
 
 plt.rcParams.update({
-    "font.family"      : "sans-serif",
-    "font.sans-serif"  : ["Arial", "Liberation Sans"],
-    "font.size"        : 11,
-    "mathtext.fontset" : "stix",
-    "savefig.dpi"      : 300,
-    "figure.dpi"       : 150,
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "Liberation Sans"],
+    "font.size": 12.0,
+    "mathtext.fontset": "stixsans",
+    "axes.unicode_minus": False,
+    "figure.dpi": 150,
+    "savefig.dpi": 300,
 })
 
-# More compact aspect, less empty space
-fig, ax = plt.subplots(figsize=(12.5, 6.4))
-ax.set_xlim(0, 14.5)
-ax.set_ylim(0, 8.5)
+
+fig, ax = plt.subplots(figsize=(7.35, 5.05))
+fig.subplots_adjust(left=0.018, right=0.985, bottom=0.025, top=0.985)
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 6.0)
 ax.axis("off")
 
 
-def box(x, y, w, h, label, *, fc=NEAR_WHITE, ec=CHARCOAL, lw=1.2,
-        fontsize=11.5, sub=None, sub_fontsize=10):
+def text(x: float, y: float, s: str, *, fs: float = 10.0,
+         color: str = INK, weight: str = "normal",
+         ha: str = "center", va: str = "center",
+         style: str = "normal") -> None:
+    ax.text(x, y, s, fontsize=fs, color=color, fontweight=weight,
+            ha=ha, va=va, fontstyle=style)
+
+
+def arrow(x0: float, y0: float, x1: float, y1: float, *,
+          color: str = PURPLE, lw: float = 1.05, ms: float = 8.5,
+          rad: float = 0.0) -> None:
+    ax.add_patch(FancyArrowPatch(
+        (x0, y0), (x1, y1), arrowstyle="-|>", mutation_scale=ms,
+        lw=lw, color=color, shrinkA=1.2, shrinkB=1.2,
+        connectionstyle=f"arc3,rad={rad}",
+    ))
+
+
+def panel(x: float, y: float, w: float, h: float,
+          tag: str, title: str) -> tuple[float, float, float, float]:
+    ax.add_patch(Rectangle((x, y), w, h, facecolor=PANEL,
+                           edgecolor=LINE, lw=0.70))
+    text(x + 0.16, y + h - 0.17, f"{tag} {title}",
+         fs=12.5, weight="bold", ha="left")
+    ax.plot([x + 0.12, x + w - 0.12], [y + h - 0.31, y + h - 0.31],
+            color=GRID, lw=0.55)
+    return x + 0.14, y + 0.12, w - 0.28, h - 0.40
+
+
+def box(x: float, y: float, w: float, h: float, title: str,
+        subtitle: str = "", *, fc: str = WHITE, ec: str = LINE,
+        fs: float = 9.2, sub_fs: float = 8.0) -> None:
     ax.add_patch(FancyBboxPatch(
-        (x, y), w, h, boxstyle="round,pad=0.05,rounding_size=0.16",
-        facecolor=fc, edgecolor=ec, linewidth=lw))
-    if sub is None:
-        ax.text(x + w / 2, y + h / 2, label, ha="center", va="center",
-                fontsize=fontsize, fontweight="bold", color=CHARCOAL)
+        (x, y), w, h,
+        boxstyle="round,pad=0.014,rounding_size=0.030",
+        facecolor=fc, edgecolor=ec, lw=0.68,
+    ))
+    if subtitle:
+        text(x + w / 2, y + h * 0.64, title, fs=fs, weight="bold")
+        text(x + w / 2, y + h * 0.30, subtitle, fs=sub_fs)
     else:
-        ax.text(x + w / 2, y + h * 0.66, label, ha="center", va="center",
-                fontsize=fontsize, fontweight="bold", color=CHARCOAL)
-        ax.text(x + w / 2, y + h * 0.30, sub, ha="center", va="center",
-                fontsize=sub_fontsize, color=CHARCOAL, style="italic")
+        text(x + w / 2, y + h / 2, title, fs=fs, weight="bold")
 
 
-def arrow(x0, y0, x1, y1, *, color=CHARCOAL, lw=1.6, style="-|>", mut=16):
-    a = FancyArrowPatch((x0, y0), (x1, y1), arrowstyle=style,
-                        color=color, lw=lw, mutation_scale=mut,
-                        shrinkA=3, shrinkB=3)
-    ax.add_patch(a)
+def draw_heat(x: float, y: float, w: float, h: float) -> None:
+    text(x + 0.08, y + h - 0.18,
+         r"$C_v\dot T=\lambda\nabla^2T+Q_{\rm J}$",
+         fs=11.3, ha="left")
+    cx, cy = x + 0.66, y + 0.90
+    ax.add_patch(Circle((cx, cy), 0.24, facecolor="#FFF5E4",
+                        edgecolor=AMBER, lw=0.8))
+    for deg in np.linspace(20, 340, 8):
+        th = np.deg2rad(deg)
+        arrow(cx + 0.32 * np.cos(th), cy + 0.32 * np.sin(th),
+              cx + 0.50 * np.cos(th), cy + 0.50 * np.sin(th),
+              color=AMBER, lw=0.58, ms=5.5)
+    text(cx, cy, r"$Q_{\rm J}$", fs=9.3, color=AMBER, weight="bold")
+
+    px, py = x + 1.30, y + 0.28
+    pw, ph = w - 1.55, h - 0.68
+    ax.plot([px, px + pw], [py, py], color=LINE, lw=0.76)
+    ax.plot([px, px], [py, py + ph], color=LINE, lw=0.76)
+    t = np.linspace(0, 1, 220)
+    hot = 1.0 - np.exp(-3.2 * t)
+    cool = 0.62 * (1.0 - np.exp(-5.8 * t))
+    ax.plot(px + t * pw, py + hot * ph, color=RED, lw=1.95)
+    ax.plot(px + t * pw, py + cool * ph, color=AMBER, lw=1.35, ls=(0, (4, 2)))
+    text(px - 0.08, py + ph / 2, r"$T(t)$", fs=10.5, ha="right")
+    text(px + pw / 2, py - 0.12, r"$t$", fs=10.5)
+    text(px + 0.65 * pw, py + 0.62 * ph, r"$\Delta T$", fs=9.8, color=RED)
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Title (top, full-width)
-# ════════════════════════════════════════════════════════════════════════
-ax.text(7.25, 8.20, "Thermal & non-ideal effects in sMTJ behavioural modelling",
-        ha="center", va="top", fontsize=13.5, fontweight="bold", color=CHARCOAL)
+def draw_channels(x: float, y: float, w: float, h: float) -> None:
+    rows = [
+        ("materials", r"$M_s,K_i,\eta$", BLUE, -0.30),
+        ("transport", r"$R_{\rm MTJ}$", TEAL, 0.55),
+        ("demag", r"$\mathbf{H}_{\rm D}$", AMBER, 0.05),
+    ]
+    for i, (name, eq, col, trend) in enumerate(rows):
+        yy = y + h - 0.62 - i * 0.56
+        box(x + 0.04, yy, 1.43, 0.42, name, eq, fs=9.4, sub_fs=9.0, ec=col)
+        px, py = x + 1.75, yy + 0.09
+        pw, ph = w - 1.95, 0.28
+        ax.plot([px, px + pw], [py, py], color=GRID, lw=0.48)
+        u = np.linspace(0, 1, 90)
+        if name == "materials":
+            curve = 0.80 + trend * u
+        elif name == "transport":
+            curve = 0.18 + trend * u**1.45
+        else:
+            curve = 0.48 + 0.18 * np.sin(2 * np.pi * u)
+        ax.plot(px + u * pw, py + curve * ph, color=col, lw=1.45)
+    text(x + w / 2, y + 0.16, r"$T$-corrected inputs", fs=9.5, color=MID)
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Left column — four non-ideality channels (tighter rows)
-# ════════════════════════════════════════════════════════════════════════
-CH_X, CH_W = 0.5, 4.20
-CH_H = 1.30
-CH_Y_LIST = [6.30, 4.65, 3.00, 1.35]
-CH_LABELS = [
-    ("Self-heating",
-     r"$C_v\,dT/dt=\lambda\nabla^2T+Q\to T(t)$",
-     SH_COLOR),
-    ("T-dependent materials",
-     r"$M_s(T),\ K_i(T),\ \eta(T)$",
-     TM_COLOR),
-    ("TMR & transport",
-     r"$R_{\rm MTJ}(V,T,\theta)$",
-     TR_COLOR),
-    ("Demag & shape",
-     r"$\mathbf{H}_{\rm D}=-N_{\!xyz}\,\mathbf{M}$",
-     DM_COLOR),
-]
-for (y, (title, sub, col)) in zip(CH_Y_LIST, CH_LABELS):
-    box(CH_X, y, CH_W, CH_H, title, sub=sub,
-        fc=NEAR_WHITE, ec=col, lw=1.7,
-        fontsize=12, sub_fontsize=10.5)
-    # accent stripe
-    ax.add_patch(plt.Rectangle((CH_X, y), 0.10, CH_H, facecolor=col,
-                               edgecolor="none"))
+def draw_llg(x: float, y: float, w: float, h: float) -> None:
+    cx, cy = x + 0.78, y + 0.98
+    ax.add_patch(Circle((cx, cy), 0.53, facecolor="#F7F5F9",
+                        edgecolor=GRID, lw=0.82))
+    ax.add_patch(Arc((cx, cy), 0.88, 0.54, theta1=25, theta2=325,
+                     color=PURPLE, lw=1.65))
+    arrow(cx, cy, cx + 0.36, cy + 0.36, color=BLUE, lw=1.05, ms=7.5)
+    arrow(cx, cy, cx - 0.14, cy + 0.44, color=TEAL, lw=1.05, ms=7.5)
+    text(cx + 0.42, cy + 0.38, r"$\mathbf{m}$", fs=9.2, color=BLUE, ha="left")
+    text(cx - 0.18, cy + 0.47, r"$\mathbf{H}_{\rm eff}(T)$",
+         fs=8.8, color=TEAL, ha="right")
 
-# Channel index labels (i)–(iv)
-for i, y in enumerate(CH_Y_LIST):
-    label = ["(i)", "(ii)", "(iii)", "(iv)"][i]
-    ax.text(CH_X - 0.30, y + CH_H / 2, label,
-            ha="right", va="center", fontsize=12,
-            fontweight="bold", color=CHARCOAL)
+    box(x + 1.58, y + 0.94, w - 1.68, 0.74, "stochastic LLG",
+        r"$\dot{\bf m}=-\gamma\mu_0{\bf m}\times{\bf H}_{\rm eff}"
+        r"+\tau_{\rm SOT}+\tau_{\rm th}$",
+        fs=10.2, sub_fs=8.6, ec=PURPLE)
+    box(x + 1.58, y + 0.28, 1.22, 0.46, r"$\Delta t$", "update",
+        fs=9.7, sub_fs=8.0, fc="#F7F5F9")
+    box(x + 3.00, y + 0.28, 1.22, 0.46, r"$t_w$", "sample",
+        fs=9.7, sub_fs=8.0, fc="#F7F5F9")
+    arrow(x + 2.82, y + 0.51, x + 2.98, y + 0.51, color=MID, lw=0.70, ms=6)
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Middle column — LLG dynamic core (taller, more central)
-# ════════════════════════════════════════════════════════════════════════
-MID_X, MID_Y, MID_W, MID_H = 5.55, 3.25, 3.80, 2.80
-ax.add_patch(FancyBboxPatch(
-    (MID_X, MID_Y), MID_W, MID_H,
-    boxstyle="round,pad=0.06,rounding_size=0.22",
-    facecolor=THU_TINT, edgecolor=THU_DEEP, linewidth=1.8))
-ax.text(MID_X + MID_W / 2, MID_Y + MID_H - 0.35,
-        "Magnetisation dynamics",
-        ha="center", va="top", fontsize=13, fontweight="bold", color=THU_DEEP)
-ax.text(MID_X + MID_W / 2, MID_Y + MID_H * 0.50,
-        r"$\dfrac{d\mathbf{m}}{dt}=-\gamma\mathbf{m}\!\times\!\mathbf{H}_{\rm eff}"
-        r"\,+\,\alpha\mathbf{m}\!\times\!\dfrac{d\mathbf{m}}{dt}\,+\,"
-        r"\boldsymbol{\tau}_{\rm SOT}\,+\,\boldsymbol{\tau}_{\rm th}$",
-        ha="center", va="center", fontsize=11, color=CHARCOAL)
-ax.text(MID_X + MID_W / 2, MID_Y + MID_H * 0.13,
-        r"updated each $\Delta t$ with $T$-corrected parameters",
-        ha="center", va="center", fontsize=10, color=CHARCOAL, style="italic")
+def draw_psw(x: float, y: float, w: float, h: float) -> None:
+    px, py = x + 0.44, y + 0.28
+    pw, ph = w - 0.78, h - 0.62
+    ax.plot([px, px + pw], [py, py], color=LINE, lw=0.76)
+    ax.plot([px, px], [py, py + ph], color=LINE, lw=0.76)
+    u = np.linspace(-4, 4, 260)
+    nominal = 1 / (1 + np.exp(-1.55 * u))
+    shifted = 1 / (1 + np.exp(-0.95 * (u + 0.70)))
+    X = px + (u - u.min()) / (u.max() - u.min()) * pw
+    ax.plot(X, py + nominal * ph, color=INK, lw=1.85)
+    ax.plot(X, py + shifted * ph, color=RED, lw=1.85, ls=(0, (4, 2)))
+    text(px - 0.08, py + ph / 2, r"$P_{\rm sw}$", fs=10.3, ha="right")
+    text(px + pw / 2, py - 0.12, r"$u$", fs=10.3)
+    arrow(px + 0.30 * pw, py + 0.45 * ph, px + 0.55 * pw, py + 0.45 * ph,
+          color=RED, lw=1.20, ms=7.5)
+    text(px + 0.26 * pw, py + 0.34 * ph, r"$u_{\rm th}$ shift",
+         fs=9.0, color=RED, ha="left", style="italic")
+    ax.annotate("",
+                xy=(px + 0.84 * pw, py + 0.26 * ph),
+                xytext=(px + 0.84 * pw, py + 0.86 * ph),
+                arrowprops=dict(arrowstyle="<->", color=RED, lw=1.20))
+    text(px + 0.86 * pw, py + 0.56 * ph, r"$\beta_s$" + "\n" + "broadening",
+         fs=9.0, color=RED, ha="left", style="italic")
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Right column — P_sw response with two observables
-# ════════════════════════════════════════════════════════════════════════
-PSW_X, PSW_Y, PSW_W, PSW_H = 9.80, 2.80, 4.40, 3.70
-ax.add_patch(FancyBboxPatch(
-    (PSW_X, PSW_Y), PSW_W, PSW_H,
-    boxstyle="round,pad=0.06,rounding_size=0.22",
-    facecolor="#FFF8DC", edgecolor=CRIMSON, linewidth=1.8))
-ax.text(PSW_X + PSW_W / 2, PSW_Y + PSW_H - 0.30,
-        r"$P_{\rm sw}(u)$ response",
-        ha="center", va="top", fontsize=13, fontweight="bold", color=CRIMSON)
+W, H = 4.72, 2.62
+px1, px2 = 0.18, 5.10
+py_top, py_bot = 3.04, 0.16
 
-# Mini sigmoid plot inside (larger, more usable space)
-sig_x = np.linspace(-4, 4, 200)
-sig_y_nom = 1.0 / (1.0 + np.exp(-1.4 * sig_x))
-sig_y_drift = 1.0 / (1.0 + np.exp(-0.9 * (sig_x + 0.8)))
+pa = panel(px1, py_top, W, H, "(a)", "Self-heating")
+pb = panel(px2, py_top, W, H, "(b)", "T-dependent channels")
+pc = panel(px1, py_bot, W, H, "(c)", "Stochastic LLG")
+pd = panel(px2, py_bot, W, H, "(d)", r"$P_{\rm sw}$ response")
 
-mx0, my0 = PSW_X + 0.55, PSW_Y + 0.55
-mw, mh   = PSW_W - 0.90, PSW_H - 1.30
-ax.plot(mx0 + (sig_x + 4) / 8.0 * mw, my0 + sig_y_nom * mh,
-        color=CHARCOAL, lw=1.8)
-ax.plot(mx0 + (sig_x + 4) / 8.0 * mw, my0 + sig_y_drift * mh,
-        color=CRIMSON, lw=1.8, ls="--")
-ax.plot([mx0, mx0 + mw], [my0, my0], color=CHARCOAL, lw=0.9)
-ax.plot([mx0, mx0], [my0, my0 + mh], color=CHARCOAL, lw=0.9)
-ax.text(mx0 + mw / 2, my0 - 0.20, r"$u$",
-        ha="center", va="top", fontsize=11)
-ax.text(mx0 - 0.10, my0 + mh / 2, r"$P_{\rm sw}$",
-        ha="right", va="center", fontsize=11)
+draw_heat(*pa)
+draw_channels(*pb)
+draw_llg(*pc)
+draw_psw(*pd)
 
-# Threshold shift annotation
-ax.annotate("",
-            xy=(mx0 + 0.30 * mw, my0 + 0.50 * mh),
-            xytext=(mx0 + 0.55 * mw, my0 + 0.50 * mh),
-            arrowprops=dict(arrowstyle="<|-", color=CRIMSON, lw=1.3))
-ax.text(mx0 + 0.07 * mw, my0 + 0.40 * mh, "threshold shift",
-        ha="left", va="top", fontsize=9, color=CRIMSON, style="italic")
-
-ax.annotate("",
-            xy=(mx0 + 0.82 * mw, my0 + 0.30 * mh),
-            xytext=(mx0 + 0.82 * mw, my0 + 0.85 * mh),
-            arrowprops=dict(arrowstyle="<->", color=CRIMSON, lw=1.3))
-ax.text(mx0 + 0.84 * mw, my0 + 0.55 * mh, "slope\nbroadening",
-        ha="left", va="center", fontsize=9, color=CRIMSON, style="italic")
+arrow(2.55, 3.01, 2.55, 2.79, color=AMBER, lw=0.88, ms=6.5)
+arrow(7.45, 3.01, 7.45, 2.79, color=TEAL, lw=0.88, ms=6.5)
+arrow(4.90, 1.47, 5.08, 1.47, color=PURPLE, lw=0.92, ms=7.0)
 
 
-# ════════════════════════════════════════════════════════════════════════
-# Arrows: each channel → middle LLG core (colour-matched)
-# ════════════════════════════════════════════════════════════════════════
-def channel_to_core(idx, col):
-    y_c = CH_Y_LIST[idx] + CH_H / 2.0
-    y_mid_attach = MID_Y + MID_H * (0.86 - 0.22 * idx)
-    arrow(CH_X + CH_W + 0.05, y_c,
-          MID_X - 0.05, y_mid_attach,
-          color=col, lw=1.6, mut=16)
-
-for i, (_, _, c) in enumerate(CH_LABELS):
-    channel_to_core(i, c)
-
-# LLG → P_sw arrow
-arrow(MID_X + MID_W + 0.05, MID_Y + MID_H * 0.50,
-      PSW_X - 0.05, PSW_Y + PSW_H * 0.55,
-      color=THU_DEEP, lw=2.0, mut=18)
-ax.text((MID_X + MID_W + PSW_X) / 2.0, MID_Y + MID_H * 0.50 + 0.35,
-        r"sampling + $t_w$ window",
-        ha="center", va="bottom", fontsize=10, color=THU_DEEP, style="italic")
-
-
-# ════════════════════════════════════════════════════════════════════════
-# Save + sync
-# ════════════════════════════════════════════════════════════════════════
-out_path = Path(__file__).resolve().parent / "fig_03_thermal_nonidealities.png"
+out_path = Path(__file__).resolve().parent / "Chapter02_local_03.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white",
-            pad_inches=0.15)
-plt.close()
-chapter_fig = (Path(__file__).resolve().parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_03_thermal_nonidealities.png")
+            pad_inches=0.04)
+plt.close(fig)
+
+chapter_fig = (
+    Path(__file__).resolve().parent.parent
+    / "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_03.png"
+)
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
+
 print(f"Saved  {out_path}")
 print(f"Synced {chapter_fig}")

@@ -53,3 +53,19 @@ Sigmoid-slope simulations because quantitative results will shift.
   plumbing through `field()`, `switching()`, and `run_piecewise_*` for
   byte-reproducible Monte Carlo, and a `Psw`/`SER` display flag
   (`SerResult.psw`, `--metric=psw|ser` on `plot_ser_mc.py`).
+- **Case pruning + default realignment to §2.3.3 protocol** (2026-05-23). The
+  CLI now exposes only the four cases that map to the same-batch Device A
+  experiment: `terminal_voltage_control` (device-level T-circuit demo),
+  `sot_only_constant_current`, `sot_switching_no_vcma`, and
+  `ser_sot_no_vcma_thermal`. Removed: `vcma_assisted_switching_isot_sweep`,
+  `vcma_assisted_switching_vmtj_sweep`, `optimized_vgsot_switching`,
+  `ser_optimized_vgsot` (plus the `run_two_pulse_optimized` low-level kernel,
+  `SerOptimizedResult` dataclass, and the matching configs). These came from
+  the upstream Verilog-A port and had no counterpart in our measurements.
+  Defaults of the remaining SOT-only cases are now aligned to the §2.3.3
+  protocol: 0.75 ns write pulse (`sim_mid1_step=750`) + 3.25 ns relaxation
+  (`sim_end_step=4000`), `i_sot_list` brackets the calibrated `I_th ≈ 1.1 mA`,
+  `r_sot_fl_dl=0.83` unified across all three, `target_mz=1.0` /
+  `failure_tol=0.2` for the SER case to match the chapter-figure protocol.
+  Existing user code that explicitly instantiates the removed configs needs
+  to migrate to `run_piecewise_direct_excitation` Python loops.

@@ -6,8 +6,8 @@ logical order from computational abstraction to device mechanisms while keeping
 the aspect ratio suitable for thesis text pages.
 
 Outputs:
-  demo/fig_02_behavioral_layers.png
-  article/00_chapter_drafts/figures/fig_02_behavioral_layers.png
+  demo/Chapter02_local_02.png
+  article/00_chapter_drafts/figs/Chapter02_local_02.png
 """
 from __future__ import annotations
 
@@ -351,13 +351,13 @@ text(x + 2.90, y + 0.22,
      fs=6.4, color=MID)
 
 
-out_path = Path(__file__).resolve().parent / "fig_02_behavioral_layers.png"
+out_path = Path(__file__).resolve().parent / "Chapter02_local_02.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white", pad_inches=0.06)
 plt.close(fig)
 
 chapter_fig = (
     Path(__file__).resolve().parent.parent
-    / "article" / "00_chapter_drafts" / "figures" / "fig_02_behavioral_layers.png"
+    / "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_02.png"
 )
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)

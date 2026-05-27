@@ -10,7 +10,7 @@ This script only carries layout, labels and style; the math lives in the
 library so it can be regenerated from the same code path used in the chapter
 simulations.
 
-Generates fig_05_material_params.png as a 2x2 panel:
+Generates Chapter02_local_05.png as a 2x2 panel:
   (a) Saturation magnetization  M_s(T)  — Bloch T^{3/2} law
   (b) Interfacial anisotropy     K_i(T)  — modified Callen-Callen (exponent 2.18)
   (c) Spin polarization ratio    eta(T)  — follows M_s(T)
@@ -157,7 +157,7 @@ ax.legend(frameon=False, loc='upper right')
 style(ax, 'TMR ratio vs bias voltage')
 
 plt.tight_layout()
-out_path = str(Path(__file__).resolve().parent / 'fig_05_material_params.png')
+out_path = str(Path(__file__).resolve().parent / 'Chapter02_local_05.png')
 plt.savefig(out_path, dpi=300, bbox_inches='tight', facecolor='white')
 plt.close()
 print(f'Saved: {out_path}')

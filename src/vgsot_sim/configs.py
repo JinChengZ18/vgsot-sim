@@ -218,20 +218,33 @@ class TerminalVoltageControlConfig:
     constants: PhysicalConstantsConfig = field(default_factory=PhysicalConstantsConfig)
 
 
+# ─────────────────────────────────────────────────────────────────────────
+# Default protocol for all SOT-only cases is the chapter §2.3.3 same-batch
+# detailed-P_sw measurement on Device A:
+#   - write pulse `t_w = 0.75 ns`  → sim_mid1_step = 750  (t_step = 1 ps)
+#   - relaxation tail 3.25 ns      → sim_end_step  = 4000
+#   - V_MTJ = 0  (no VCMA in this protocol)
+#   - I_SOT swept across the calibrated threshold |I_th| ≈ 1.1 mA
+#     (theta_SH = 0.04 calibration; see configs.PhysicalConstantsConfig
+#     and docs/technical_details.md §2.3)
+# Override fields explicitly when running a different protocol.
+# ─────────────────────────────────────────────────────────────────────────
+
+
 @dataclass
 class SotOnlyConstantCurrentConfig:
     sim_start_step: int = 1
-    sim_mid1_step: int = 2000
-    sim_end_step: int = 5000
-    pap: int = 1
+    sim_mid1_step: int = 750       # 0.75 ns write pulse (matches §2.3.3 detailed-P_sw)
+    sim_end_step: int = 4000       # + 3.25 ns relaxation tail
+    pap: int = 1                   # 1 ≡ AP start; success state is `target_mz = +1` (P)
 
-    i_sot_stage1: float = -400e-6
+    i_sot_stage1: float = -1500e-6 # super-threshold (~1.4× I_th) for a clean deterministic switch
     i_sot_stage2: float = 0.0
-    v_mtj_stage1: float = 0.0
+    v_mtj_stage1: float = 0.0      # §2.3.3 protocol drives SOT only; VCMA disabled
     v_mtj_stage2: float = 0.0
 
-    vnv: int = 1
-    non: int = 1
+    vnv: int = 0                   # VCMA term disabled
+    non: int = 1                   # thermal noise enabled (matches experiment)
     r_sot_fl_dl: float = 0.83
     tick_spacing_s: float = 5e-10
     constants: PhysicalConstantsConfig = field(default_factory=PhysicalConstantsConfig)
@@ -239,10 +252,13 @@ class SotOnlyConstantCurrentConfig:
 
 @dataclass
 class SotSwitchingNoVcmaConfig:
-    i_sot_list: Sequence[float] = (-800e-6, -700e-6, -750e-6, -600e-6, -500e-6, -400e-6, -300e-6, -200e-6)
+    # Bracket the calibrated I_th ≈ 1.1 mA so the sigmoid is sampled either side.
+    i_sot_list: Sequence[float] = (
+        -1500e-6, -1300e-6, -1200e-6, -1100e-6, -1000e-6, -900e-6, -700e-6,
+    )
     sim_start_step: int = 1
-    sim_mid1_step: int = 5000
-    sim_end_step: int = 10000
+    sim_mid1_step: int = 750
+    sim_end_step: int = 4000
     pap: int = 1
 
     non: int = 1
@@ -250,93 +266,26 @@ class SotSwitchingNoVcmaConfig:
     i_sot_relax: float = 0.0
     vnv: int = 0
     r_sot_fl_dl: float = 0.83
-    tick_spacing_s: float = 1e-9
+    tick_spacing_s: float = 5e-10
     constants: PhysicalConstantsConfig = field(default_factory=PhysicalConstantsConfig)
 
 
 @dataclass
 class SerSotNoVcmaThermalConfig:
-    i_sot_list: Sequence[float] = (-800e-6, -700e-6, -750e-6, -600e-6, -500e-6, -400e-6, -300e-6, -200e-6)
-    trials: int = 200
+    # Bracket the calibrated I_th ≈ 1.1 mA so the P_sw sigmoid is sampled either side.
+    i_sot_list: Sequence[float] = (
+        -1500e-6, -1300e-6, -1200e-6, -1100e-6, -1000e-6, -900e-6, -700e-6,
+    )
+    trials: int = 100              # interactive-friendly; chapter Chapter02_local_10 uses 80
     sim_start_step: int = 1
-    sim_mid1_step: int = 5000
-    sim_end_step: int = 10000
+    sim_mid1_step: int = 750
+    sim_end_step: int = 4000
     pap: int = 1
 
     non: int = 1
     v_mtj: float = 0.0
     vnv: int = 0
-    r_sot_fl_dl: float = 0.0
-    target_mz: float = 1.0
-    failure_tol: float = 1e-1
-    constants: PhysicalConstantsConfig = field(default_factory=PhysicalConstantsConfig)
-
-
-@dataclass
-class VcmaAssistedSwitchingIsotSweepConfig:
-    v_mtj: float = 1.2
-    i_sot_list: Sequence[float] = (-60e-6, -40e-6, -20e-6, -10e-6)
-    sim_start_step: int = 1
-    sim_end_step: int = 10000
-    pap: int = 1
-
-    non: int = 1
-    vnv: int = 1
-    r_sot_fl_dl: float = 0.83
-    tick_spacing_s: float = 1e-9
-    constants: PhysicalConstantsConfig = field(default_factory=PhysicalConstantsConfig)
-
-
-@dataclass
-class VcmaAssistedSwitchingVmtjSweepConfig:
-    i_sot: Optional[float] = -20e-6
-    v_mtj_list: Sequence[float] = (1.3, 1.2, 1.1, 1.0, 0.9)
-    sim_start_step: int = 1
-    sim_end_step: int = 10000
-    pap: int = 1
-
-    non: int = 1
-    vnv: int = 1
-    r_sot_fl_dl: float = 0.83
-    tick_spacing_s: float = 1e-9
-    constants: PhysicalConstantsConfig = field(default_factory=PhysicalConstantsConfig)
-
-
-@dataclass
-class OptimizedVgsotSwitchingConfig:
-    v_mtj_1: float = 1.5
-    v_mtj_2: float = -1.0
-    i_sot: Optional[float] = -20e-6
-    t_pairs_s: Sequence[Tuple[float, float]] = (
-        (25e-9, 0.0),
-        (1.4e-9, 1.6e-9),
-        (1.8e-9, 1.2e-9),
-        (2.2e-9, 0.8e-9),
-    )
-    sim_total_time_s: float = 10e-9
-    pap: int = 1
-
-    non: int = 1
-    vnv: int = 1
-    r_sot_fl_dl: float = 0.83
-    tick_spacing_s: float = 1e-9
-    constants: PhysicalConstantsConfig = field(default_factory=PhysicalConstantsConfig)
-
-
-@dataclass
-class SerOptimizedVgsotConfig:
-    iterations_num: int = 300
-    v_mtj_1: float = 1.5
-    v_mtj_2: float = -1.0
-    i_sot: Optional[float] = -20e-6
-    t1_list_s: Sequence[float] = (1.3e-9, 1.4e-9, 1.5e-9, 1.6e-9, 1.7e-9, 1.8e-9, 1.9e-9)
-    total_pulse_s: float = 3e-9
-    sim_total_time_s: float = 10e-9
-    pap: int = 1
-
-    non: int = 1
-    vnv: int = 1
-    r_sot_fl_dl: float = 0.83
-    target_final_mz: float = 1.0
-    failure_tol: float = 1e-1
+    r_sot_fl_dl: float = 0.83      # unified with the other SOT-only cases (was 0.0)
+    target_mz: float = 1.0         # pap=1 starts AP; success = end at P (m_z = +1)
+    failure_tol: float = 0.2       # matches the chapter-figure tolerance
     constants: PhysicalConstantsConfig = field(default_factory=PhysicalConstantsConfig)

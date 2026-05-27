@@ -283,12 +283,12 @@ ax_d = fig.add_subplot(gs[1, 1])
 # Top-left — CV(Delta) budget from PDK-Brinkman decomposition
 # ════════════════════════════════════════════════════════════════════════════
 contrib_labels = [
-    r"Volume $V_{\rm mag}$" "\n" r"(via $R_P$ + Brinkman)",
+    r"Area part of $V_{\rm mag}$" "\n" r"(via $R_P$ + Brinkman)",
     r"Anisotropy $H_k$" "\n" r"(via TMR proxy)",
     r"Magnetisation $M_s$" "\n" r"(literature)",
     r"Thickness $t_f$" "\n" r"(MBE precision)",
 ]
-contrib_cv   = np.array([CV_V, CV_HK, CV_MS, CV_TF])
+contrib_cv   = np.array([2 * CV_D, CV_HK, CV_MS, CV_TF])
 contrib_var  = contrib_cv**2
 contrib_pct  = contrib_var / contrib_var.sum() * 100
 contrib_cols = [THU_DEEP, THU_MID, THU_SOFT, THU_PALE]
@@ -469,8 +469,8 @@ fig.suptitle(
     y=0.97
 )
 
-fig.savefig(OUTDIR + "fig_15_variability_theory.png", dpi=300, bbox_inches="tight")
-print(f"\nSaved  fig_15_variability_theory.png  to {OUTDIR}")
+fig.savefig(OUTDIR + "Chapter02_local_15.png", dpi=300, bbox_inches="tight")
+print(f"\nSaved  Chapter02_local_15.png  to {OUTDIR}")
 plt.close(fig)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -481,12 +481,14 @@ print("=" * 72)
 print("  Key numerical results")
 print("=" * 72)
 print(f"  PDK-Brinkman derived CV(Delta)           = {CV_DELTA_PDK*100:.2f} %")
-print(f"    V_mag   (geometry, from R_P)            = "
-      f"{CV_V**2/CV_DELTA_PDK_SQ*100:5.1f} %")
+print(f"    V_mag area term (geometry, from R_P)    = "
+      f"{(2*CV_D)**2/CV_DELTA_PDK_SQ*100:5.1f} %")
 print(f"    H_k     (interface, from TMR)           = "
       f"{CV_HK**2/CV_DELTA_PDK_SQ*100:5.1f} %")
 print(f"    M_s     (bulk magnetisation)            = "
       f"{CV_MS**2/CV_DELTA_PDK_SQ*100:5.1f} %")
+print(f"    t_f     (thickness part of V_mag)       = "
+      f"{CV_TF**2/CV_DELTA_PDK_SQ*100:5.1f} %")
 print()
 print(f"  NB single-device fit beta                 = {BETA_SINGLE_FIT:.3f} V^-1")
 print(f"  Measured beta                             = {BETA_MEAS:.3f} V^-1")

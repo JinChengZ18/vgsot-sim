@@ -6,7 +6,7 @@
 并在单位球面上画出轨迹，配以时间彩色梯度（清华紫调色）、起止点标记，以及
 m_x, m_y, m_z 三分量随时间的演化。明亮的现代风格 + 清华紫主题。
 
-输出 fig_09_3d_trajectory.png（本目录 + 同步到 article/00_chapter_drafts/figures/）。
+输出 Chapter02_local_09.png（本目录 + 同步到 article/00_chapter_drafts/figs/）。
 """
 from pathlib import Path
 import shutil
@@ -29,7 +29,7 @@ SPHERE_LINE = "#E8E0EE"   # very light lavender for sphere wireframe
 
 # Use matplotlib's coolwarm (NAVY-blue → CRIMSON-red diverging) so the
 # time-encoded trajectory matches the cool-warm palette used in
-# fig_2_11_ser_mc and naturally maps "cold start at AP" → "warm end at P".
+# Chapter02_local_10 and naturally maps "cold start at AP" → "warm end at P".
 TRAJ_CMAP = plt.get_cmap("coolwarm")
 
 plt.rcParams.update({
@@ -209,12 +209,12 @@ ax2d.spines["right"].set_visible(False)
 
 
 # ── Save + sync ─────────────────────────────────────────────────────────
-out_path = Path(__file__).resolve().parent / "fig_09_3d_trajectory.png"
+out_path = Path(__file__).resolve().parent / "Chapter02_local_09.png"
 fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=NEAR_WHITE,
             pad_inches=0.20)
 plt.close(fig)
 chapter_fig = (Path(__file__).resolve().parent.parent.parent /
-               "article" / "00_chapter_drafts" / "figures" / "fig_09_3d_trajectory.png")
+               "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_09.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")

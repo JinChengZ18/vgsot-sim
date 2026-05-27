@@ -1,8 +1,23 @@
 # Technical Details
 
-This document describes the **physical model**, **device parameters**, **example simulations**, and **benchmark results** of the VGSOT-MTJ simulator.
+This document describes the **physical model**, **device parameters**,
+**example simulations**, and **benchmark results** of the VGSOT-MTJ simulator.
 
-The simulator models **voltage-gated spin-orbit torque switching** in magnetic tunnel junction devices.
+The simulator models **voltage-gated spin-orbit torque switching** in magnetic
+tunnel junction devices.
+
+### Simulator architecture at a glance
+
+The behavioural-modelling stack and the kernel-level dataflow of `vgsot_sim`
+are summarised in the following two chapter figures.
+
+| Behavioural model layers | vgsot-sim kernel architecture |
+|---|---|
+| ![](../article/00_chapter_drafts/figs/Chapter02_local_02.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_07.png) |
+| [`Chapter02_local_02.png`](../article/00_chapter_drafts/figs/Chapter02_local_02.png) — §2.1.2 abstraction layers | [`Chapter02_local_07.png`](../article/00_chapter_drafts/figs/Chapter02_local_07.png) — §2.2.4 module dataflow |
+
+The three-terminal T-circuit that backs the electronic mapping is shown in
+[`Chapter02_local_01.png`](../article/00_chapter_drafts/figs/Chapter02_local_01.png).
 
 
 
@@ -137,6 +152,17 @@ Each Cartesian component of $\mathbf{H}_{thermal}$ is an independent standard Ga
 
 Thermal noise is responsible for **switching stochasticity** and **error rate**.
 
+#### Thermal non-idealities — chapter §2.2.2 figures
+
+| Overview | T-transient (closed-form) | M_s(T), K_i(T) scaling | Self-heating in LLG |
+|---|---|---|---|
+| ![](../article/00_chapter_drafts/figs/Chapter02_local_03.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_04.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_05.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_06.png) |
+| `Chapter02_local_03` — overview of thermal-coupled effects | `Chapter02_local_04` — RC step response vs analytic steady state | `Chapter02_local_05` — Bloch / mod. Callen–Callen scalings | `Chapter02_local_06` — `m_z(t)` with vs without self-heating |
+
+Sources: [`demo/plot_thermal_nonideal_overview.py`](../demo/plot_thermal_nonideal_overview.py)
+and the [`scripts/04_thermal_nonidealities/`](../scripts/04_thermal_nonidealities/)
+driver bundle.
+
 
 
 ------
@@ -203,11 +229,11 @@ $$
 | Interfacial anisotropy   | $K_i$         | $0.32\times10^{-3}$ | J/m² | Perpendicular anisotropy           |
 | Saturation magnetization | $M_s$         | $6.25\times10^5$    | A/m  | Free-layer magnetization           |
 | Gilbert damping          | $\alpha$      | 0.05                | –    | Damping constant                   |
-| Spin Hall angle          | $\theta_{SH}$ | **0.07** (calibrated, was 0.25) | –    | Effective SOT efficiency — see note below |
+| Spin Hall angle          | $\theta_{SH}$ | **0.04** (calibrated, was 0.25) | –    | Effective SOT efficiency — see note below |
 | Spin polarization        | $P$           | 0.58                | –    | Tunnel current spin polarization   |
 | Temperature              | $T$           | 300                 | K    | Operating temperature              |
 
-> **Note on calibrated $\theta_{SH}$.** The literature β-W value $\theta_{SH}\!\approx\!0.25$ leaves the simulator's deterministic threshold at $|I_{SOT}|\!\approx\!140\,\mu\mathrm{A}$ ($V_{SOT}\!\approx\!109\,\mathrm{mV}$ for $R_W\!\approx\!776\,\Omega$), about $4.7\times$ lower than the experimental Device A P→AP value $V_{th}(5\,\mathrm{ns})\!\approx\!511\,\mathrm{mV}$ ($I_{th}\!\approx\!659\,\mu\mathrm{A}$) extracted in Section 2.3.4. A scan over $\theta_{SH}$, $K_i$, $\alpha$ combinations (see `09_simulation_figures/calibrate_to_experiment.py`) converges on $\theta_{SH}\!\approx\!0.07$ as the single-parameter fix that reproduces the experimental $V_{th}$ within $0.5\%$ ($V_{th}^{sim}(5\,\mathrm{ns})\!=\!508\,\mathrm{mV}$). This is the calibrated value used as the package default. The deviation from the textbook β-W value absorbs additional loss channels not in this simplified model: Néel–Edelstein contributions, interfacial spin-memory loss, top-electrode parasitic series resistance, and (over the pulse window) any partial misalignment between charge-current and the assumed σ̂ axis. For material-level studies of the bare spin Hall effect, override with `theta_SH=0.25` (or any literature value).
+> **Note on calibrated $\theta_{SH}$.** The literature β-W value $\theta_{SH}\!\approx\!0.25$ leaves the simulator's deterministic threshold at $|I_{SOT}|\!\approx\!140\,\mu\mathrm{A}$ ($V_{SOT}\!\approx\!109\,\mathrm{mV}$ for $R_W\!\approx\!776\,\Omega$), about $8\times$ lower than the same-batch Device A P→AP detailed-$P_{sw}$ value $V_{th}(0.75\,\mathrm{ns})\!\approx\!894\,\mathrm{mV}$ ($I_{th}\!\approx\!1152\,\mu\mathrm{A}$) extracted in Section 2.3.3 (Sigmoid fit, $\beta_s = 44.6\,\mathrm{V^{-1}}$). A scan over $\theta_{SH}$ combinations (see `09_simulation_figures/calibrate_to_experiment.py`) converges on $\theta_{SH}\!\approx\!0.04$ as the calibration that — jointly with $TMR = 1.0$ and $RA = 16.6\times 10^{-12}\,\Omega\cdot\mathrm{m}^2$ — reproduces the same-batch $V_{th}(0.75\,\mathrm{ns})$ within $\sim 1\%$. This is the calibrated value used as the package default. The deviation from the textbook β-W value absorbs additional loss channels not in this simplified model: Néel–Edelstein contributions, interfacial spin-memory loss, top-electrode parasitic series resistance, and (over the pulse window) any partial misalignment between charge-current and the assumed σ̂ axis. For material-level studies of the bare spin Hall effect, override with `theta_SH=0.25` (or any literature value).
 
 Effective anisotropy field:
 $$
@@ -304,11 +330,11 @@ interface roughness, FL components) not yet in this model.
 
 Spin-orbit torque strength depends on material and geometry:
 
-| Parameter            | Symbol        | Value    | Unit | Description                |
-| -------------------- | ------------- | -------- | ---- | -------------------------- |
-| Spin Hall angle      | $\theta_{SH}$ | 0.25     | –    | Spin conversion efficiency |
-| SOT current          | $I_{SOT}$     | variable | A    | Applied current            |
-| Free-layer thickness | $t_f$         | 1.1      | nm   | Magnetic thickness         |
+| Parameter            | Symbol        | Value    | Unit | Description                                          |
+| -------------------- | ------------- | -------- | ---- | ---------------------------------------------------- |
+| Spin Hall angle      | $\theta_{SH}$ | 0.04     | –    | Effective SOT efficiency (calibrated; see §2.3 note) |
+| SOT current          | $I_{SOT}$     | variable | A    | Applied current                                      |
+| Free-layer thickness | $t_f$         | 1.1      | nm   | Magnetic thickness                                   |
 
 Effective SOT field:
 $$
@@ -381,36 +407,63 @@ This approach enables **lower current switching while maintaining reliability**.
 
 ## 4. Benchmark Results
 
+> **Calibrated baseline.** All numbers below use the 2026-05 package defaults
+> ($\theta_{SH} = 0.04$, $TMR = 1.0$, $RA = 16.6\times 10^{-12}\,\Omega\cdot\mathrm{m}^2$,
+> $D_{elec} = 65\,\mathrm{nm}$). With the literature $\theta_{SH} = 0.25$ all
+> threshold currents drop by roughly the $0.25/0.04 \approx 6.25$ ratio.
+
 ### 4.1 Switching Current Threshold
 
 Switching occurs when
 $$
 |I_{SOT}| > I_{critical}
 $$
-Typical threshold:
+With the calibrated defaults at $t_w = 0.75\,\mathrm{ns}$ (chapter §2.3.3
+detailed-$P_{sw}$ protocol, Device A P→AP target):
 $$
-I_{critical} \approx 80\text{–}100\,\mu A
+I_{critical}(0.75\,\mathrm{ns}) \approx 1.1\text{–}1.2\,\mathrm{mA}
+\quad (V_{th} \approx 894\,\mathrm{mV})
 $$
+This matches the same-batch experimental Sigmoid fit
+($V_{th} = 894\,\mathrm{mV}$, $\beta_s = 44.6\,\mathrm{V^{-1}}$) within $\sim 1\%$.
 
 ### 4.2 VCMA-Assisted Switching
 
-Voltage assistance reduces the required switching current.
-
-| $V_{MTJ}$ | Required $I_{SOT}$ |
-| --------- | ------------------ |
-| 0 V       | 100 μA             |
-| 1.2 V     | 60 μA              |
+Voltage assistance reduces the required switching current. With VCMA enabled
+and $V_{MTJ}$ pulses chosen to lower the barrier during the SOT pulse, the
+required $|I_{SOT}|$ drops below the no-VCMA threshold. The dedicated CLI
+cases for this regime (`vcma_assisted_switching_*`, `optimized_vgsot_switching`,
+`ser_optimized_vgsot`) were removed in 2026-05 since they had no counterpart
+in the same-batch Device A measurements. To explore VCMA-assisted protocols
+today, drive `run_piecewise_direct_excitation` from a Python loop with a
+non-zero `v_mtj_stage*` and `vnv=1`.
 
 ### 4.3 Switching Error Rate (SER)
 
-Monte-Carlo simulations evaluate switching reliability.
-
-| $I_{SOT}$ | SER       |
-| --------- | --------- |
-| −90 μA    | $10^{-2}$ |
-| −100 μA   | $10^{-4}$ |
-
+Monte-Carlo simulations evaluate switching reliability. The chapter §2.3.3
+$P_{sw}(V)$ Sigmoid corresponds to the SER curve produced by
+`ser_sot_no_vcma_thermal(..., enable_self_heating=True)` swept across the
+calibrated threshold zone; with the package defaults the 50% midpoint sits
+near $|I_{SOT}| \approx 1.15\,\mathrm{mA}$ and the slope-equivalent
+$\beta_s \approx 44\text{–}45\,\mathrm{V^{-1}}$, consistent with experiment.
 Higher current reduces stochastic switching failures.
+
+#### Chapter §2.3 SER figures (calibration story)
+
+The simulator-side figures produced by
+[`scripts/09_simulation_figures/`](../scripts/09_simulation_figures/) sit
+alongside the experiment-side §2.3.3 figures:
+
+| Single trajectory | 3D magnetisation | Monte-Carlo P_sw | Experimental Sigmoid |
+|---|---|---|---|
+| ![](../article/00_chapter_drafts/figs/Chapter02_local_08.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_09.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_10.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_13.png) |
+| `Chapter02_local_08` — `m_z, R, I_SOT` at four `I_SOT` values | `Chapter02_local_09` — `m(t)` on the unit sphere | `Chapter02_local_10` — `P_sw(\|I_SOT\|)` MC with Wilson CI | `Chapter02_local_13` — same-batch Sigmoid measurements (calibration target) |
+
+The Néel-Brown extraction from hysteresis loops (the input to the
+`calibrate_to_experiment.py` target) is
+[`Chapter02_local_12.png`](../article/00_chapter_drafts/figs/Chapter02_local_12.png),
+and the process-variability budget is
+[`Chapter02_local_15.png`](../article/00_chapter_drafts/figs/Chapter02_local_15.png).
 
 
 
@@ -856,14 +909,16 @@ For this repository, SER scaling laws are most relevant in:
 | Case                      | SER dependence                          |
 | ------------------------- | --------------------------------------- |
 | `ser_sot_no_vcma_thermal` | $SER(I_{SOT})$                          |
-| `ser_optimized_vgsot`     | $SER(t_1)$ with $t_2 = t_{total} - t_1$ |
 
 Typical observations are:
 
 1. increasing $|I_{SOT}|$ reduces SER
-2. VCMA assistance shifts the SER curve favorably
-3. optimized pulse timing can reduce SER at lower current
-4. near-threshold operation shows the strongest stochastic sensitivity
+2. near-threshold operation shows the strongest stochastic sensitivity
+3. coupled self-heating shifts the threshold and softens the sigmoid slope
+
+Pulse-shape / VCMA dependences (items 2–3 in the pre-2026-05 docs) are no
+longer regenerated by built-in cases — drive `run_piecewise_direct_excitation`
+in a Python loop if you need them.
 
 
 

@@ -13,8 +13,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+import sys
 import warnings
 warnings.filterwarnings("ignore")
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # Shared 4-parameter sigmoid + Wilson CI + analytic NB slope from vgsot-sim.
 from vgsot_sim.analysis.sigmoid_fit import sigmoid4p as sig4p, wilson
@@ -217,8 +221,8 @@ fig.suptitle(
     r"(100 reps per point, $H_x = 200$ Oe, $t_w = 0.75$ ns)",
     y=0.965,
 )
-fig.savefig(OUTDIR + "fig_13_psw_sigmoid.png", dpi=300, bbox_inches="tight")
-print(f"Saved  fig_13_psw_sigmoid.png")
+fig.savefig(OUTDIR + "Chapter02_local_13.png", dpi=300, bbox_inches="tight")
+print(f"Saved  Chapter02_local_13.png")
 
 # ── Summary ─────────────────────────────────────────────────────────────────
 print()

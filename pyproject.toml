@@ -12,6 +12,7 @@ license = {text = "MIT"}
 authors = [{name = "Jincheng Zhang"}]
 dependencies = [
   "numpy>=1.22",
+  "scipy>=1.8",
   "matplotlib>=3.6",
   "tqdm>=4.64",
 ]
