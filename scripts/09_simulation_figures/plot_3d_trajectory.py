@@ -214,7 +214,7 @@ fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=NEAR_WHITE,
             pad_inches=0.20)
 plt.close(fig)
 chapter_fig = (Path(__file__).resolve().parent.parent.parent /
-               "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_09.png")
+               "article" / "figs" / "Chapter02_local_09.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")

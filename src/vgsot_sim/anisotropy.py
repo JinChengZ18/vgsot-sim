@@ -8,14 +8,17 @@ from .demag import demag_factors
 
 def field(theta, phi, V_MTJ, n, NON, ENE, VNV, constants: PhysicalConstantsConfig,
           demag_mode: str = "ellipsoid", Ki_T: float | None = None, Ms_T: float | None = None,
-          rng=None):
+          T: float | None = None, h_th_ext=None, rng=None):
     """
     Anisotropy module
     H_eff = H_PMA + H_D + H_TH + H_EX + H_VCMA, vectorwise
 
     Optional `Ki_T` and `Ms_T` overrides allow callers (e.g. the self-heating
     loop) to inject already-temperature-corrected material parameters. When
-    omitted, the RT values from `constants` are used.
+    omitted, the RT values from `constants` are used. `T` likewise overrides the
+    lattice temperature in the FDT thermal-field amplitude (defaults to
+    `constants.T`); the self-heating loop passes the instantaneous T(t) so the
+    Brown/FDT noise variance tracks the device heating.
 
     `demag_mode` selects the demag tensor model — "ellipsoid" (default, exact
     oblate spheroid) or "thin_disk" (linearised, legacy). Both use D_elec
@@ -36,6 +39,7 @@ def field(theta, phi, V_MTJ, n, NON, ENE, VNV, constants: PhysicalConstantsConfi
 
     Ki_use = constants.Ki if Ki_T is None else Ki_T
     Ms_use = constants.Ms if Ms_T is None else Ms_T
+    T_use = constants.T if T is None else T
 
     H_PMA = 2 * Ki_use / (constants.u0 * Ms_use * constants.tf) * mz
     H_VCMA = -2 * constants.beta * V_MTJ / (constants.u0 * Ms_use * constants.tox * constants.tf) * mz
@@ -46,9 +50,14 @@ def field(theta, phi, V_MTJ, n, NON, ENE, VNV, constants: PhysicalConstantsConfi
 
     H_EX = np.array([constants.h_ex_x, constants.h_ex_y, constants.h_ex_z])
 
-    H_th_mag = sqrt(2 * constants.kb * constants.T * constants.alpha / (constants.u0 * Ms_use * constants.gamma * constants.v * constants.t_step))
-    xi = stochastic(n, rng=rng)
-    H_TH = H_th_mag * xi
+    if h_th_ext is not None:
+        # Externally-injected thermal field [A/m]. The harness owns the RNG and
+        # feeds the SAME Brown-1963 stream to this engine and to vgsot_llg.va's
+        # hx/hy/hz nodes, so the two engines can be compared under identical noise.
+        H_TH = np.asarray(h_th_ext, dtype=float)
+    else:
+        H_th_mag = sqrt(2 * constants.kb * T_use * constants.alpha / (constants.u0 * Ms_use * constants.gamma * constants.v * constants.t_step))
+        H_TH = H_th_mag * stochastic(n, rng=rng)
 
     H_eff = H_PMA + H_D + NON * H_TH + ENE * H_EX + VNV * H_VCMA
     H_eff_perpendicular = np.dot(H_PMA + VNV * H_VCMA + H_D, ez)

@@ -4,6 +4,18 @@ This file records implementation-level changes that are useful for maintainers
 and for reproducing older results. The README stays focused on installation and
 day-to-day use.
 
+## 2026-06 — verification round, BDR/demag fixes, RTN primitive, Verilog-A engine
+
+A correctness + over-claim audit drove this round. Quantitative LLG/SER results shift vs 2026-05 because of the FL-SOT fix; figures were re-run and `theta_SH` recalibrated 0.04 → 0.066 (below).
+
+- **FL-SOT `dphi/dt` sign fixed** (`dynamic_switching.py`): the `cos θ·cos φ` term had the wrong sign, so the spherical-Euler integrator disagreed with the norm-preserving Cayley stepper by up to ~25% in azimuth. They now share one RHS (`tests/test_integrator_consistency.py`). **Consequence:** the SOT switching threshold rises (the bug had lowered V_th by ~40% — the 0.066/0.04 θ_SH ratio — not the ~10% the old euler-vs-Cayley note claimed). The effective `theta_SH` was recalibrated 0.04 → **0.066** against the Cayley integrator (now the default), restoring V_th(0.75 ns)=0.895 V (50% crossing exact). **Scientifically meaningful side effect:** the corrected P_sw(V) transition is somewhat *broader* with a more pronounced over-drive back-hopping plateau — the FL-SOT bug had been cosmetically *sharpening* the switching curve. The near-threshold operating-region match to the experimental Sigmoid is preserved; the deep-over-drive plateau (a genuine LLG feature) sits below the monotonic Sigmoid, as already documented.
+- **`compute_Rp` is now the honest `R_P = RA/A1`** (`initialize.py`): the previous Brinkman-Dynes-Rowell-looking expression cancelled exactly to `RA/A1` and never depended on the barrier. A genuine barrier-dependent Simmons/BDR predictor `resistance_area_bdr` is provided separately (matches the measured RA at MgO `m* ≈ 0.3 m_e`).
+- **`k_u_eff_of_T` uses the exact oblate-ellipsoid demag** (was thin-disk, inconsistent with the LLG field path).
+- **FDT thermal-field amplitude tracks the self-heating temperature** `T(t)` via `field(T=...)`, and accepts an externally-injected field via `field(h_th_ext=...)` so the harness can drive the SAME Brown-1963 noise stream into both the Python engine and the Verilog-A engine.
+- **New RTN reservoir primitive** `vgsot_sim.rtn` — continuous-time two-state Markov hopping (⟨s⟩=tanh(ΔV/Vc0), τ(V) fading memory), the device primitive for reservoir computing; complements (does not replace) the pulse-switching LLG.
+- **New Verilog-A engine** `va/llg/vgsot_llg.va` — a full-dynamics macrospin LLG that integrates `m(t)` internally on the open-source OpenVAF/ngspice toolchain, per-formula aligned to `switching_vector`/`field`, and cross-validated against the Python engine (`va/llg/cross_validate.py`; m_z(t) agrees to ~0.006). vgsot-sim is now a dual Python/Verilog-A codebase.
+- **Backing matrix** `CLAIMS.md` maps every documented claim to its test or committed artifact. Test suite: 40 tests (`PYTHONPATH=src pytest tests/`).
+
 ## Recent corrections (2026-05)
 
 This release fixes physics bugs inherited from the upstream Python port of the
@@ -42,11 +54,11 @@ Sigmoid-slope simulations because quantitative results will shift.
   the chapter 2.3.5 Brinkman/MC budget in one call, replacing the external
   `07_process_variability` script.
 - **`theta_SH`, `TMR_0`, and `RA` jointly calibrated to experiment**
-  (2026-05-16). Defaults `theta_SH = 0.04`, `TMR = 1.0`, and
-  `RA = 16.6 ohm um^2` give `R_P ~= 5 kohm`, `R_AP ~= 10 kohm`, and
-  `V_th(0.75 ns) ~= 903 mV`, matching Device A P-to-AP detailed `P_sw` to
-  within 1 percent. Literature beta-W `theta_SH = 0.25` is accepted as an
-  override. See `docs/technical_details.md` section 2.3 and
+  (2026-05-16; `theta_SH` updated 2026-06). Defaults `theta_SH = 0.066`
+  (Cayley; was 0.04 pre-fix), `TMR = 1.0`, and `RA = 16.6 ohm um^2` give
+  `R_P ~= 5 kohm`, `R_AP ~= 10 kohm`, and `V_th(0.75 ns) = 0.895 V` (50%
+  crossing exact), matching Device A P-to-AP detailed `P_sw`. Literature
+  beta-W `theta_SH = 0.25-0.3` is accepted as an override. See `docs/technical_details.md` section 2.3 and
   `scripts/09_simulation_figures/calibrate_to_experiment.py`.
 - **New opt-in toggles** (2026-05-16): `R_series` parasitic resistance on
   `tmr()` (default `0`, byte-identical legacy behavior), full-pipeline `rng=...`

@@ -1,0 +1,14 @@
+{
+  "kind": "cross_engine_llg_va_vs_python",
+  "note": "deterministic m_z(t) agreement; two engines, one physics.",
+  "I_SOT_A": -0.003,
+  "V_MTJ": 0.0,
+  "dur_ns": 3.0,
+  "max_abs_dmz": 0.0079338724389173,
+  "equilibrium_abs_dmz": 4.120443769026552e-06,
+  "tol": 0.02,
+  "pass": true,
+  "n_va_points": 3011,
+  "openvaf": "E:\\EDA\\openvaf-reloaded-20260616-2-gc592eed6\\openvaf.EXE",
+  "ngspice": "E:\\EDA\\ngspice-46\\Spice64\\bin\\ngspice_con.EXE"
+}

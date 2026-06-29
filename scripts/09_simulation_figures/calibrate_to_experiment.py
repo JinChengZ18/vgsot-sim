@@ -92,20 +92,23 @@ def run_one_candidate(label, cc_overrides):
     except Exception:
         k_inv, beta_V_inv = float("nan"), float("nan")
     V_th_mV = I_th_uA * cc.R_W * 1e-3              # µA × Ω → mV
-    print(f"  {label:40s}: V_th(5ns) ≈ {V_th_mV:6.0f} mV  "
+    print(f"  {label:40s}: V_th(0.75ns) ≈ {V_th_mV:6.0f} mV  "
           f"(I_th = {I_th_uA:6.0f} µA),  β_s ≈ {beta_V_inv:6.1f} V⁻¹")
     print(f"     full SER:  ", "  ".join(f"{i:.0f}:{s:.2f}" for i, s in zip(I_uA, res.ser)))
     return I_th_uA, V_th_mV, beta_V_inv
 
 
+# Scan brackets the FL-SOT-corrected (Cayley) calibration point θ_SH≈0.066.
+# (The pre-fix spherical-Euler stepper required ≈0.04 for the same V_th; the
+#  default integrator is now Cayley, so this scan uses it via the stepper default.)
 CANDIDATES = [
-    ("θ_SH=0.020",                      dict(theta_SH=0.020)),
-    ("θ_SH=0.025",                      dict(theta_SH=0.025)),
-    ("θ_SH=0.030",                      dict(theta_SH=0.030)),
-    ("θ_SH=0.035",                      dict(theta_SH=0.035)),
-    ("θ_SH=0.040",                      dict(theta_SH=0.040)),
-    ("θ_SH=0.045",                      dict(theta_SH=0.045)),
+    ("θ_SH=0.040 (pre-fix value)",      dict(theta_SH=0.040)),
     ("θ_SH=0.050",                      dict(theta_SH=0.050)),
+    ("θ_SH=0.060",                      dict(theta_SH=0.060)),
+    ("θ_SH=0.063",                      dict(theta_SH=0.063)),
+    ("θ_SH=0.066 (calibrated)",         dict(theta_SH=0.066)),
+    ("θ_SH=0.069",                      dict(theta_SH=0.069)),
+    ("θ_SH=0.075",                      dict(theta_SH=0.075)),
 ]
 
 EXP_V_TH_mV  = 894.0   # Device A P→AP @ 0.75 ns (chapter §2.3.3 detailed P_sw)

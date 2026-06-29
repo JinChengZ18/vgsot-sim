@@ -76,11 +76,14 @@ class PhysicalConstantsConfig:
     # parasitic series resistance, etc.). When the deterministic threshold
     # V_th(0.75 ns) is matched to the experimental Device A P→AP detailed-
     # P_sw value of 894 mV (§2.3.3 Sigmoid fit), a calibrated effective
-    # θ_SH ≈ 0.04 is required. We use this calibrated value as the default
+    # θ_SH ≈ 0.066 is required (Cayley integrator; 0.04 was the pre-FL-SOT-fix
+    # value against the spherical-Euler stepper). We use this calibrated value as the default
     # so figures generated from vgsot-sim quantitatively reproduce the
     # detailed P_sw curve at the 0.75 ns operating point; the literature
     # β-W value 0.25 is recovered via `theta_SH=0.25` for material studies.
-    theta_SH: float = 0.04      # Spin Hall angle (calibrated to V_th @ 0.75 ns)
+    theta_SH: float = 0.066     # Spin Hall angle (effective; recalibrated to V_th @ 0.75 ns
+                                # with the FL-SOT-corrected Cayley integrator — was 0.04 against
+                                # the pre-fix spherical-Euler stepper; see docs/version_notes.md 2026-06)
     phi_bar: float = 0.4        # Barrier height for tunneling (eV)
     TMR: float = 1.0            # Tunnel magnetoresistance ratio (unitless, ≈100% matching the §2.3.3 hysteresis amplitude R_AP/R_P ≈ 2)
     RA: float = 16.6e-12        # Resistance-area product (Ω·m²) — calibrated to R_P ≈ 5 kΩ at D_elec = 65 nm

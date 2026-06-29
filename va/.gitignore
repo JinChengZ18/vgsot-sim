@@ -1,0 +1,7 @@
+# Verilog-A build / sim artifacts (regenerable)
+*.osdi
+*.exp
+*.lib
+*_out.csv
+_xval_tb.spice
+.spiceinit

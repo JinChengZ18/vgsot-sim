@@ -142,7 +142,7 @@ plt.tight_layout()
 out_path = Path(__file__).resolve().parent / "Chapter02_local_08.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
 plt.close()
-chapter_fig = Path(__file__).resolve().parent.parent.parent / "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_08.png"
+chapter_fig = Path(__file__).resolve().parent.parent.parent / "article" / "figs" / "Chapter02_local_08.png"
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved {out_path}")

@@ -87,7 +87,7 @@ def run_piecewise_terminal_voltage(
     enable_self_heating: bool = False,
     T_ambient_K: float = 300.0,
     demag_mode: str = "ellipsoid",
-    integrator: str = "euler_spherical",
+    integrator: str = "cayley",
     sigma_SH=None,
     rng=None,
 ) -> SimResult:
@@ -160,7 +160,7 @@ def run_piecewise_terminal_voltage(
                 VNV=cfg.vnv, NON=cfg.non, R_SOT_FL_DL=cfg.r_sot_fl_dl,
                 sigma_SH=sig_SH,
                 constants=constants,
-                Ki_T=Ki_T, Ms_T=Ms_T, demag_mode=demag_mode,
+                Ki_T=Ki_T, Ms_T=Ms_T, T=(T_now if enable_self_heating else None), demag_mode=demag_mode,
                 rng=rng,
             )
             mz = float(m_vec_new[2])
@@ -179,7 +179,7 @@ def run_piecewise_terminal_voltage(
                 NON=cfg.non,
                 R_SOT_FL_DL=cfg.r_sot_fl_dl,
                 constants=constants,
-                Ki_T=Ki_T, Ms_T=Ms_T, demag_mode=demag_mode,
+                Ki_T=Ki_T, Ms_T=Ms_T, T=(T_now if enable_self_heating else None), demag_mode=demag_mode,
                 rng=rng,
             )
         phi, theta = phi_tmp, theta_tmp
@@ -245,7 +245,7 @@ def run_piecewise_direct_excitation(
     enable_self_heating: bool = False,
     T_ambient_K: float = 300.0,
     demag_mode: str = "ellipsoid",
-    integrator: str = "euler_spherical",
+    integrator: str = "cayley",
     sigma_SH=None,
     rng=None,
 ) -> SimResult:
@@ -319,7 +319,7 @@ def run_piecewise_direct_excitation(
                 VNV=vnv, NON=non, R_SOT_FL_DL=r_sot_fl_dl,
                 sigma_SH=sig_SH,
                 constants=constants,
-                Ki_T=Ki_T, Ms_T=Ms_T, demag_mode=demag_mode,
+                Ki_T=Ki_T, Ms_T=Ms_T, T=(T_now if enable_self_heating else None), demag_mode=demag_mode,
                 rng=rng,
             )
             mz = float(m_vec_new[2])
@@ -338,7 +338,7 @@ def run_piecewise_direct_excitation(
                 NON=non,
                 R_SOT_FL_DL=r_sot_fl_dl,
                 constants=constants,
-                Ki_T=Ki_T, Ms_T=Ms_T, demag_mode=demag_mode,
+                Ki_T=Ki_T, Ms_T=Ms_T, T=(T_now if enable_self_heating else None), demag_mode=demag_mode,
                 rng=rng,
             )
         phi, theta = phi_tmp, theta_tmp

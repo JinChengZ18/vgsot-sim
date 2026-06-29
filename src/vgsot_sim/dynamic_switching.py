@@ -8,6 +8,7 @@ def switching(V_MTJ, I_SOT, R_MTJ, theta, phi, ESTT, ESOT, VNV=1, NON=0,
               R_SOT_FL_DL=0.83, R_STT_FL_DL=0,
               constants: PhysicalConstantsConfig | None = None,
               Ki_T: float | None = None, Ms_T: float | None = None,
+              T: float | None = None, h_th_ext=None,
               demag_mode: str = "ellipsoid",
               rng=None):
     """One-step explicit-Euler LLG update in spherical coordinates.
@@ -33,18 +34,17 @@ def switching(V_MTJ, I_SOT, R_MTJ, theta, phi, ESTT, ESOT, VNV=1, NON=0,
     - FL torque uses the "positive Gilbert" sign:
           tau_FL = +gamma * H_FL * m x sigma
 
-    Known anomaly (under audit, not fixed in this revision):
+    FL-SOT dphi/dt sign — FIXED (2026-06):
     The closed-form expansion below matches the standard Landau-Lifshitz
-    derivation exactly for the H_eff, STT, and **DL-SOT contributions to
-    both dtheta/dt and dphi/dt**, and for the **FL-SOT contribution to
-    dtheta/dt**. However, the FL-SOT contribution to dphi/dt differs in
-    sign on the `cos(theta)*cos(phi)` term (an O(1) coupling weighted by
-    `R_SOT_FL_DL ~ 0.83`). For the current device parameters (α=0.05,
-    R_SOT_FL_DL=0.83) this affects azimuthal precession but does not
-    change the dominant m_z dynamics. A clean fix requires rederiving the
-    expansion from Cartesian, or replacing this routine with a vector LLG
-    integrator that takes `sigma_SH` explicitly — see
-    `docs/IMPLEMENTATION_STATUS.md` (M1 entry).
+    derivation for the H_eff, STT, and DL-SOT contributions to both
+    dtheta/dt and dphi/dt, and for the FL-SOT contribution to dtheta/dt.
+    The FL-SOT contribution to dphi/dt previously carried the wrong sign on
+    the `cos(theta)*cos(phi)` term (an O(1) coupling weighted by
+    `R_SOT_FL_DL ~ 0.83`); it has been corrected to `+cos(theta)*cos(phi)`,
+    so this spherical-Euler stepper now shares the SAME right-hand side as
+    the Cartesian/Cayley vector stepper (`dynamic_switching_vector`). The
+    agreement is regression-tested in `tests/test_integrator_consistency.py`
+    (dm/dt match to <1e-4 as dt -> 0). The default integrator is now Cayley.
 
     Parameters
     ----------
@@ -78,7 +78,7 @@ def switching(V_MTJ, I_SOT, R_MTJ, theta, phi, ESTT, ESOT, VNV=1, NON=0,
     ENE = 1
     H_EFF, _ = field(theta, phi, V_MTJ, n, NON, ENE, VNV, constants,
                      demag_mode=demag_mode, Ki_T=Ki_T, Ms_T=Ms_T,
-                     rng=rng)
+                     T=T, h_th_ext=h_th_ext, rng=rng)
 
     # SOT/STT effective fields scale as 1/M_s; use the T-corrected value
     # when provided so that self-heating reduces the magnetisation that the
@@ -123,7 +123,7 @@ def switching(V_MTJ, I_SOT, R_MTJ, theta, phi, ESTT, ESOT, VNV=1, NON=0,
             )
             - (constants.alpha*H_DL_STT + H_FL_STT)
             - H_DL_SOT*inv_sin*(constants.alpha*cos(theta)*cos(phi)-sin(phi))
-            - H_FL_SOT*inv_sin*(constants.alpha*sin(phi)-cos(theta)*cos(phi))
+            - H_FL_SOT*inv_sin*(constants.alpha*sin(phi)+cos(theta)*cos(phi))
         )
 
     theta_1 = theta + dtheta_dt * constants.t_step

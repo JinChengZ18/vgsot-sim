@@ -1,0 +1,144 @@
+// vgsot_llg.va — full-dynamics macrospin sLLG SOT-MTJ in Verilog-A.
+// SPDX-License-Identifier: MIT
+//
+// The Verilog-A counterpart of the vgsot-sim Python macrospin solver
+// (src/vgsot_sim/{anisotropy,dynamic_switching_vector,tmr,electronic}.py). It
+// integrates the magnetisation m(t) INTERNALLY (Cartesian LL form, ddt state),
+// so Python and this .va are two engines for the SAME documented physics and
+// can be cross-validated trajectory-by-trajectory.
+//
+// Physics (per-formula aligned to switching_vector / field):
+//   H_eff = H_PMA + H_VCMA + H_demag(ellipsoid) + H_ex + H_th(harness input)
+//   dm/dt = -g (m x H) - a g (m x (m x H))
+//           + (a Hdl_SOT + Hfl_SOT) g (m x s) + (a Hfl_SOT - Hdl_SOT) g (m x (m x s))
+//           + (a Hdl_STT + Hfl_STT) g (m x p) + (a Hfl_STT - Hdl_STT) g (m x (m x p))
+//   g = gamma/(1+a^2),  s = sigma_SH (default -x),  p = sigma_STT (default +z)
+//
+// Open-source-friendly stochasticity: the FDT thermal field is NOT drawn inside
+// the module (OpenVAF/OSDI $rdist is unreliable). Instead H_th is read from the
+// input nodes (hx,hy,hz) [A/m]; the Python harness drives them with the correctly
+// scaled Brown-1963 white-noise stream (same seed -> same noise in both engines).
+// Grounding hx/hy/hz gives the deterministic limit.
+//
+// Electrical: SOT write channel is Ohmic (R_sot); the MTJ read branch is the
+// state-dependent tunnel resistance R(m_z) = Rp (1+TMR)/(1+TMR (1+m_z)/2).
+//
+// State nodes mx,my,mz are terminals so the testbench can set .ic and probe v().
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module vgsot_llg(sot_p, sot_n, mtj_p, mx, my, mz, hx, hy, hz);
+   inout sot_p, sot_n, mtj_p, mx, my, mz, hx, hy, hz;
+   electrical sot_p, sot_n, mtj_p, mx, my, mz, hx, hy, hz;
+
+   // ---- elementary constants (CODATA-ish, match configs.py) ----
+   parameter real u0    = 1.25663706e-6;
+   parameter real qe    = 1.60217663e-19;
+   parameter real h_bar = 1.05457182e-34;
+   parameter real uB    = 9.27401008e-24;
+
+   // ---- magnetic / material ----
+   parameter real Ms    = 0.625e6  from (0:inf);   // A/m
+   parameter real Ki    = 0.32e-3;                 // J/m^2
+   parameter real beta  = 60e-15;                  // VCMA coeff J/(V.m)
+   parameter real tf    = 1.1e-9   from (0:inf);   // free-layer thickness
+   parameter real tox   = 1.4e-9   from (0:inf);   // barrier thickness
+   parameter real alpha = 0.05     from (0:inf);   // Gilbert damping
+
+   // ---- demag tensor (exact oblate ellipsoid defaults; Nx+Ny+Nz=1) ----
+   parameter real Nx = 0.01301;
+   parameter real Ny = 0.01301;
+   parameter real Nz = 0.97398;
+
+   // ---- in-plane bias field [A/m] (-50 Oe along -y, perp. to sigma_SH) ----
+   parameter real hex_x = 0.0;
+   parameter real hex_y = -3978.8736;
+   parameter real hex_z = 0.0;
+
+   // ---- spin torque ----
+   parameter real theta_SH  = 0.066;   // effective, recalibrated to V_th(0.75ns)~0.896V (matches configs.py)
+   parameter real Pol       = 0.58;    // STT spin polarisation
+   parameter real Rfldl_sot = 0.83;    // FL/DL ratio (SOT)
+   parameter real Rfldl_stt = 0.0;     // FL/DL ratio (STT)
+   // spin-Hall and STT polarisation unit vectors
+   parameter real sgx = -1.0;
+   parameter real sgy =  0.0;
+   parameter real sgz =  0.0;
+   parameter real spx =  0.0;
+   parameter real spy =  0.0;
+   parameter real spz =  1.0;
+
+   // ---- electrical / geometry ----
+   parameter real A1   = 3.31831e-15 from (0:inf);  // MTJ area pi D_elec^2/4
+   parameter real A2   = 8.6e-16     from (0:inf);  // SOT cross-section w*d
+   parameter real Rsot = 776.0       from (0:inf);  // SOT channel resistance
+   parameter real Rp   = 5002.6      from (0:inf);  // R_P = RA/A1
+   parameter real TMR  = 1.0         from (0:inf);  // R_AP = Rp(1+TMR)
+
+   real Mx, My, Mz;
+   real Vmtj, Isot, Imtj, Rmtj;
+   real Hx, Hy, Hz, Hpma, Hvcma;
+   real Jsot, Jstt, HdlSOT, HflSOT, HdlSTT, HflSTT, gamma, g;
+   real cH_x, cH_y, cH_z, ccH_x, ccH_y, ccH_z;
+   real cs_x, cs_y, cs_z, ccs_x, ccs_y, ccs_z;
+   real cp_x, cp_y, cp_z, ccp_x, ccp_y, ccp_z;
+   real rhs_x, rhs_y, rhs_z;
+
+   analog begin
+      Mx = V(mx);  My = V(my);  Mz = V(mz);
+
+      // ---- electrical excitation ----
+      Isot = V(sot_p, sot_n)/Rsot;                 // SOT current (A)
+      Vmtj = V(mtj_p, sot_n);                       // MTJ bias (V)
+      Rmtj = Rp*(1.0 + TMR)/(1.0 + TMR*(1.0 + Mz)/2.0);   // m_z=+1->Rp, -1->Rp(1+TMR)
+      Imtj = Vmtj/Rmtj;
+
+      // ---- effective field [A/m] ----
+      Hpma  = 2.0*Ki/(u0*Ms*tf)*Mz;
+      Hvcma = -2.0*beta*Vmtj/(u0*Ms*tox*tf)*Mz;
+      Hx = -Ms*Nx*Mx + hex_x + V(hx);
+      Hy = -Ms*Ny*My + hex_y + V(hy);
+      Hz = Hpma + Hvcma - Ms*Nz*Mz + hex_z + V(hz);
+
+      // ---- torque amplitudes [A/m] ----
+      gamma  = 2.0*u0*uB/h_bar;                     // ~2.21e5 m/(A.s)
+      g      = gamma/(1.0 + alpha*alpha);
+      Jsot   = Isot/A2;
+      Jstt   = Imtj/A1;
+      HdlSOT = theta_SH*h_bar*Jsot/(2.0*qe*u0*Ms*tf);
+      HflSOT = Rfldl_sot*HdlSOT;
+      HdlSTT = Pol*h_bar*Jstt/(2.0*qe*u0*Ms*tf);
+      HflSTT = Rfldl_stt*HdlSTT;
+
+      // ---- cross products ----
+      cH_x = My*Hz - Mz*Hy;  cH_y = Mz*Hx - Mx*Hz;  cH_z = Mx*Hy - My*Hx;
+      ccH_x = My*cH_z - Mz*cH_y;  ccH_y = Mz*cH_x - Mx*cH_z;  ccH_z = Mx*cH_y - My*cH_x;
+
+      cs_x = My*sgz - Mz*sgy;  cs_y = Mz*sgx - Mx*sgz;  cs_z = Mx*sgy - My*sgx;
+      ccs_x = My*cs_z - Mz*cs_y;  ccs_y = Mz*cs_x - Mx*cs_z;  ccs_z = Mx*cs_y - My*cs_x;
+
+      cp_x = My*spz - Mz*spy;  cp_y = Mz*spx - Mx*spz;  cp_z = Mx*spy - My*spx;
+      ccp_x = My*cp_z - Mz*cp_y;  ccp_y = Mz*cp_x - Mx*cp_z;  ccp_z = Mx*cp_y - My*cp_x;
+
+      // ---- dm/dt (Cartesian LL, matches switching_vector) ----
+      rhs_x = -g*cH_x - alpha*g*ccH_x
+              + (alpha*HdlSOT + HflSOT)*g*cs_x + (alpha*HflSOT - HdlSOT)*g*ccs_x
+              + (alpha*HdlSTT + HflSTT)*g*cp_x + (alpha*HflSTT - HdlSTT)*g*ccp_x;
+      rhs_y = -g*cH_y - alpha*g*ccH_y
+              + (alpha*HdlSOT + HflSOT)*g*cs_y + (alpha*HflSOT - HdlSOT)*g*ccs_y
+              + (alpha*HdlSTT + HflSTT)*g*cp_y + (alpha*HflSTT - HdlSTT)*g*ccp_y;
+      rhs_z = -g*cH_z - alpha*g*ccH_z
+              + (alpha*HdlSOT + HflSOT)*g*cs_z + (alpha*HflSOT - HdlSOT)*g*ccs_z
+              + (alpha*HdlSTT + HflSTT)*g*cp_z + (alpha*HflSTT - HdlSTT)*g*ccp_z;
+
+      // ---- integrate m via internal-node ddt (KCL: ddt(V)=rhs) ----
+      I(mx) <+ ddt(V(mx)) - rhs_x;
+      I(my) <+ ddt(V(my)) - rhs_y;
+      I(mz) <+ ddt(V(mz)) - rhs_z;
+
+      // ---- electrical stamps ----
+      I(sot_p, sot_n) <+ V(sot_p, sot_n)/Rsot;     // Ohmic SOT channel
+      I(mtj_p, sot_n) <+ Imtj;                      // state-dependent MTJ read
+   end
+endmodule

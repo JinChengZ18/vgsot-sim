@@ -78,14 +78,15 @@ def k_u_eff_of_T(T: float, constants: PhysicalConstantsConfig,
     The first term is the interface contribution per unit free-layer
     thickness; the second is the shape-anisotropy penalty. Returns J/m^3.
 
-    If `Nz_minus_Nx` is None, it is computed via the thin-disk approximation
-    N_x = π t_f / (4 D_elec); call sites that have already evaluated the
-    exact oblate-ellipsoid factors should pass them in to avoid double work.
+    If `Nz_minus_Nx` is None, it is computed from the **exact oblate-ellipsoid**
+    demag factors (the package default, consistent with the field that drives the
+    LLG dynamics in `anisotropy.field`); call sites that have already evaluated
+    them can pass them in to avoid double work.
     """
-    from math import pi
     if Nz_minus_Nx is None:
-        Nx = pi * constants.tf / (4 * constants.D_elec)
-        Nz_minus_Nx = 1 - 3 * Nx
+        from .demag import demag_factors
+        Nx, _, Nz = demag_factors(constants, mode="ellipsoid")
+        Nz_minus_Nx = Nz - Nx
     Ki_T = ki_of_T(T, constants)
     Ms_T = ms_of_T(T, constants)
     return Ki_T / constants.tf - 0.5 * constants.u0 * Ms_T ** 2 * Nz_minus_Nx

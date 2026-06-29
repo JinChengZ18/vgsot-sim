@@ -140,6 +140,8 @@ def switching_vector(m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, *,
                      constants: PhysicalConstantsConfig | None = None,
                      Ki_T: float | None = None,
                      Ms_T: float | None = None,
+                     T: float | None = None,
+                     h_th_ext=None,
                      demag_mode: str = "ellipsoid",
                      rng=None):
     """One Cayley-transform sLLG step in Cartesian form.
@@ -151,7 +153,8 @@ def switching_vector(m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, *,
 
     Compared to the spherical-Euler stepper in
     `dynamic_switching.switching()`:
-      * `|m|=1` is preserved to ~1e-16 (no manual renormalisation needed)
+      * `|m|=1` is preserved to ~1e-16 by the closed-form Cayley step; a
+        defensive renormalisation at the end removes the residual O(eps) drift
       * the σ̂_SH direction is a runtime parameter rather than implicit
         in the closed-form expansion
       * no 1/sin(θ) pole near the easy axis
@@ -177,7 +180,7 @@ def switching_vector(m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, *,
 
     H_eff, _ = field(theta, phi, V_MTJ, n=1, NON=NON, ENE=1, VNV=VNV,
                      constants=constants, demag_mode=demag_mode,
-                     Ki_T=Ki_T, Ms_T=Ms_T, rng=rng)
+                     Ki_T=Ki_T, Ms_T=Ms_T, T=T, h_th_ext=h_th_ext, rng=rng)
     H_eff = np.asarray(H_eff, dtype=float)
 
     # T-corrected M_s flows into the SOT/STT prefactor (matches the

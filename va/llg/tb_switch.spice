@@ -1,0 +1,21 @@
+* vgsot_llg deterministic SOT switching sanity test
+.model vgsot_llg vgsot_llg
+N1 sot_p sot_n mtj_p mx my mz hx hy hz vgsot_llg
+
+* SOT drive: I_SOT = V(sot_p,sot_n)/Rsot ; -3 mA -> V = -3m*776 = -2.328 V (super-threshold)
+Vsot sot_p 0 dc -2.328
+Vsn  sot_n 0 dc 0
+Vmtj mtj_p 0 dc 0
+Vhx  hx 0 dc 0
+Vhy  hy 0 dc 0
+Vhz  hz 0 dc 0
+
+* start near +z (P state), small tilt
+.ic v(mx)=0.141 v(my)=0 v(mz)=0.99
+
+.control
+  tran 1p 3n uic
+  wrdata vgsot_llg_out.csv v(mx) v(my) v(mz)
+  quit
+.endc
+.end

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 __version__ = "0.1.1"
 
-from . import anisotropy, constants, dynamic_switching, electronic, initialize, stochastic, tmr
+from . import anisotropy, constants, dynamic_switching, electronic, initialize, rtn, stochastic, tmr
 from .configs import (
     PhysicalConstantsConfig,
     SerSotNoVcmaThermalConfig,
@@ -39,6 +39,7 @@ __all__ = [
     "__version__",
     # Physics modules
     "constants", "stochastic", "initialize", "electronic", "anisotropy", "dynamic_switching", "tmr",
+    "rtn",
     # Config dataclasses (one per case + the shared physics constants)
     "PhysicalConstantsConfig",
     "TerminalVoltageControlConfig",

@@ -1,0 +1,55 @@
+# CLAIMS — backing matrix
+
+Every substantive physics/engineering claim in the docs/code is mapped here to the test or committed artifact that backs it. Goal: **no unbacked assertion**. `backed` = a passing test or committed numeric artifact reproduces it; `gap` = asserted but not yet pinned by a dedicated check; `pending` = blocked on an open project item.
+
+Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (37 tests).
+
+## Physics kernels (Python)
+
+| Claim | Backing | Status |
+|---|---|---|
+| FDT thermal-field amplitude is Brown-1963 `sqrt(2 α kB T /(μ0 Ms γ V dt))`, scales as √T | `tests/test_fdt_temperature.py::test_fdt_amplitude_scales_with_sqrt_T` | backed |
+| FDT noise temperature defaults to `constants.T`, tracks self-heating T(t) when supplied | `tests/test_fdt_temperature.py::test_fdt_default_T_is_constants_T` + threading in `time_series_cases.py` | backed |
+| Spherical-Euler and Cayley integrators reduce to the SAME dm/dt (FL-SOT sign fixed) | `tests/test_integrator_consistency.py` (2) | backed |
+| Cayley step preserves \|m\|=1 to ~1e-16 | `tests/test_toggles.py::test_integrator_toggle_runs`, `::test_terminal_voltage_integrator_runs` | backed |
+| `k_u_eff_of_T` default demag is the exact oblate ellipsoid (not thin-disk) | `tests/test_kueff_demag.py` (2) | backed |
+| `R_P = RA / A1` (honest; was a cancelling BDR expression) | `tests/test_bdr_resistance.py::test_compute_Rp_is_RA_over_A1`, `::test_compute_Rp_independent_of_barrier` | backed |
+| Simmons/BDR predictor `resistance_area_bdr` genuinely depends on φ_ox, t_ox; matches measured RA at MgO m*≈0.3 | `tests/test_bdr_resistance.py::test_bdr_predictor_depends_on_barrier`, `::..._matches_measured_RA...` | backed |
+| TMR(V) PDK 3-parameter (default) and Lorentzian forms; `R_series` additive | `tests/test_tmr_voltage.py` (4) + `tests/test_toggles.py::test_r_series_*` | backed |
+| Self-heating RC couples M_s(T)/K_i(T) into the field each step | `IMPLEMENTATION_STATUS.md` states "verified to 0.01 K"; **no committed pytest** | gap (low) |
+| Process-variability CV(Δ) budget partitions total variance; macrospin sample reproducible | `tests/test_variability.py` (2) | backed |
+| End-to-end `rng=` byte-reproducibility (euler + cayley); `rng_mode` switch; Psw=1−SER alias | `tests/test_toggles.py` (rng/mode/psw tests) | backed |
+
+## RTN reservoir primitive (new, `vgsot_sim.rtn`)
+
+| Claim | Backing | Status |
+|---|---|---|
+| ⟨s⟩_inf = tanh(Δ V/Vc0) = (r↑−r↓)/(r↑+r↓) | `tests/test_rtn_telegraph.py::test_stationary_mean_equals_tanh_and_rate_ratio` | backed |
+| τ(V)=1/(r↑+r↓) peaks at V=0 = τ0·exp(Δ)/2 | `::test_tau_peaks_at_zero_bias`, `::test_relaxation_time_is_inverse_total_rate` | backed |
+| Exact 2-state propagator recovers the stationary mean; binary, seed-reproducible | `::test_exact_propagator_recovers_stationary_mean`, `::test_states_are_binary_and_seed_reproducible` | backed |
+| `TelegraphParams.from_nb_fit` wires vgsot's own NB inversion (ns units) | `::test_from_nb_fit_copies_delta_vc0`, `::test_simulate_trace_shape_and_values` | backed |
+
+## Verilog-A engine (`va/llg/vgsot_llg.va`)
+
+| Claim | Backing | Status |
+|---|---|---|
+| Full-LLG `.va` compiles (OpenVAF) and integrates m(t) in ngspice with \|m\|≈1 | `va/llg/tb_switch.spice` run (\|m\| drift ~1e-4) | backed (manual) |
+| `.va` m_z(t) matches the Python `switching_vector` engine | demonstrated: max \|Δm_z\|≈0.006 over 0–3 ns, exact at equilibrium | partial (`pending`: committed regression + pytest = project #15) |
+| Stochastic MC via harness-driven `h_th` (same seed → Python==VA) | injection path present; seeded-equivalence harness | pending (#15) |
+
+## Consuming project (`smtj_pbnn_sim/eda/`) — cross-references
+
+| Claim | Backing | Status |
+|---|---|---|
+| `smtj_sot.va` OSDI↔numpy regression R²=1.0, max\|err\|=3.5e-4 (tool self-consistency) | `eda/testbenches/regression_summary.json` (actually executed) | backed |
+| Behavioural sigmoid vs measured Device-A P→AP R²=0.992 | `eda/testbenches/golden_summary.json` | backed |
+| `.va` params ↔ device formulas ↔ committed golden stay consistent | `tests/test_golden_pins_device_source.py` (2) | backed |
+| LLG ↔ behavioural threshold cross-validation (0.25 mV) | `eda/testbenches/llg_validate_summary.json` | **pending**: STALE after the FL-SOT fix; will not reproduce until θ_SH recalibration (#12) |
+| `θ_SH=0.04` gives V_th(0.75 ns)≈894 mV (~1%) | was reproduced by the **buggy** euler; **invalidated** by the FL-SOT fix → needs recal (#12) | pending |
+
+## Clarifications (residual doc reconciles)
+
+- **γ folds μ0.** Code `gamma = 2 u0 uB / ħ ≈ 2.21e5 m/(A·s)` (= μ0·g·μB/ħ, g=2). Doc formulas for `H_SOT`/FDT that omit an explicit μ0 use fields in A/m where γ absorbs μ0 — dimensionally self-consistent, not a discrepancy.
+- **H_ex default.** `h_ex_y = −50·1000/(4π) ≈ −3979 A/m` = −50 Oe along −y, **perpendicular** to σ_SH=−x̂ (required for deterministic SOT switching). The chapter "200 Oe along the current" maps to `h_ex_y`; the 50-vs-200 Oe magnitude is a documented simulator-tuned value (`configs.py` §5). Sign/units are internally consistent.
+- **Two resistance forms.** `initialize.py` sets the starting resistance via a fixed-TMR R(θ); `tmr.tmr()` uses the bias-dependent TMR_eff(V). Both coexist (documented caveat #1) and cancel within a single simulation; unifying on `tmr.tmr()` is a low-priority cleanup.
+- **`compute_Rp` BDR.** Corrected: it is now the honest `RA/A1`; the genuine barrier-physics predictor is `resistance_area_bdr` (see initialize.py). The old "~10% Cayley-vs-euler threshold" doc note is **wrong** (the bug-vs-correct gap is ~43%) and will be removed when #12 recalibrates.
