@@ -305,7 +305,7 @@ $$
 \mathbf{H}_{\mathrm{EX}} = H_{\mathrm{EX}}\,\hat{y}
 $$
 
-该偏置场打破了SOT翻转中$$\pm z$$方向的等效对称性，使驱动电流的极性与翻转方向之间形成确定性的一一对应关系。
+该偏置场打破了SOT翻转中$$\pm z$$方向的等效对称性，使驱动电流的极性与翻转方向之间形成确定性的一一对应关系[^note-dev-hex]。
 
 **热噪声场。** 在有限温度下，自由层磁矩与晶格声子系统之间的热涨落通过涨落-耗散定理 (fluctuation-dissipation theorem) 耦合进入LLG方程[^ref-callen-welton]。Brown于1963年在单畴粒子框架下严格证明，与Gilbert阻尼$$\alpha$$共轭的热随机场$$\mathbf{H}_{\mathrm{TH}}$$必须满足白噪声统计，其二阶相关函数为[^ref-brown-thermal]
 $$
@@ -692,7 +692,7 @@ $$
 
 #### 2.2.3.2 保模长的隐式中点法与Cayley变换
 
-为避免频繁归一化带来的误差，一种直观的替代方案是将$$\mathbf{m}$$转换至球坐标系$$(\theta,\phi)$$下求解。然而，由于PMA器件的稳定态位于$$m_z \approx \pm 1$$ (即极点$$\theta = 0,\pi$$附近)，球坐标系下的运动方程包含$$1/\sin\theta$$的坐标奇点，在极点附近引发数值发散，因此球坐标更新法不适用于PMA-MRAM的可靠性仿真。
+为避免频繁归一化带来的误差，一种直观的替代方案是将$$\mathbf{m}$$转换至球坐标系$$(\theta,\phi)$$下求解。然而，由于PMA器件的稳定态位于$$m_z \approx \pm 1$$ (即极点$$\theta = 0,\pi$$附近)，球坐标系下的运动方程包含$$1/\sin\theta$$的坐标奇点，在极点附近引发数值发散，因此球坐标更新法不适用于PMA-MRAM的可靠性仿真[^note-dev-cayley]。
 
 更为严谨的方案是在笛卡尔坐标系下采用保结构的几何积分器[^ref-weinan-wang]。对上述广义旋转动力学形式，在时间区间$$[t_n, t_{n+1}]$$内以中点处的状态近似旋转矢量：
 
@@ -813,7 +813,7 @@ $$
 
 为使仿真结果能够直接服务于不同写入机制的对比分析，平台预置四类标准化的仿真场景：纯SOT基线场景关闭VCMA调制 ($$V_{\mathrm{MTJ}}=0$$)，其翻转概率仅由SOT电流密度与脉冲宽度决定，是建立基准曲线的出发点；VCMA辅助场景在SOT电流基础上施加MTJ偏置电压，通过$$\Delta(V)=\Delta_0-\beta_{\mathrm{VCMA}}V$$动态调低有效能垒以降低写入电流；优化双脉冲场景按2.1.3节的SOT-VCMA联合驱动模型设计两段脉冲序列，先以VCMA脉冲降低能垒、再以SOT脉冲完成翻转，用于量化能效优化收益；SER蒙特卡罗场景对每个驱动参数工作点执行$$N$$次独立轨迹并统计写错误率$$\mathrm{SER}=1-\frac{1}{N}\sum_i s_i$$或等价的翻转概率$$P_{\mathrm{sw}}=1-\mathrm{SER}$$。$$N$$的默认值随目标置信度自适应调整 (参见2.2.3.2节)。
 
-由于行为级紧凑模型的设计目标是端口级输出与实测对齐而非保留全部材料原生常数，平台对若干参数按实测特征量进行标定。具体地，TMR$$_0$$、电阻面积积R·A与有效自旋霍尔角$$\theta_{\mathrm{SH}}$$三者联合调整为$$(1.00,\,16.6\,\Omega\!\cdot\!\mu\mathrm{m}^2,\,0.04)$$，使仿真给出的$$R_P\!\approx\!5\,\mathrm{k}\Omega$$、$$R_{AP}\!\approx\!10\,\mathrm{k}\Omega$$与$$V_{\mathrm{th}}(0.75\,\mathrm{ns})\!\approx\!903\,\mathrm{mV}$$，与2.3.2节同批次实验$$R_P,R_{AP},V_{\mathrm{th}}=(4.9\,\mathrm{k}\Omega,10\,\mathrm{k}\Omega,894\,\mathrm{mV})$$相互吻合至1%以内。需要强调的是，标定后的$$\theta_{\mathrm{SH}}\!\approx\!0.04$$是lump掉若干本模型未显式建模的耗散通道 (Néel–Edelstein界面项、自旋记忆损失、寄生串联电阻、电流方向与$$\hat{\sigma}$$轴局部偏离等) 的端口级有效值。
+由于行为级紧凑模型的设计目标是端口级输出与实测对齐而非保留全部材料原生常数，平台对若干参数按实测特征量进行标定。具体地，TMR$$_0$$、电阻面积积R·A与有效自旋霍尔角$$\theta_{\mathrm{SH}}$$三者联合调整为$$(1.00,\,16.6\,\Omega\!\cdot\!\mu\mathrm{m}^2,\,0.04)$$，使仿真给出的$$R_P\!\approx\!5\,\mathrm{k}\Omega$$、$$R_{AP}\!\approx\!10\,\mathrm{k}\Omega$$与$$V_{\mathrm{th}}(0.75\,\mathrm{ns})\!\approx\!903\,\mathrm{mV}$$，与2.3.2节同批次实验$$R_P,R_{AP},V_{\mathrm{th}}=(4.9\,\mathrm{k}\Omega,10\,\mathrm{k}\Omega,894\,\mathrm{mV})$$相互吻合至1%以内。需要强调的是，标定后的$$\theta_{\mathrm{SH}}\!\approx\!0.04$$是lump掉若干本模型未显式建模的耗散通道 (Néel–Edelstein界面项、自旋记忆损失、寄生串联电阻、电流方向与$$\hat{\sigma}$$轴局部偏离等) 的端口级有效值[^note-dev-thetacalib]。
 
 ---
 
@@ -1257,6 +1257,10 @@ $$
 [^note-nb-slope]: 线性势垒近似下$$\beta_s^{\mathrm{NB}} = 2\Delta\ln 2/V_{c0}$$只取决于$$\Delta$$与$$V_{c0}$$，与$$t_w$$无关。
 [^note-eta-fit]: 5.34为Monte Carlo数值拟合所得Device A、P→AP方向值；以表2.8解析参数代入$$\beta_s^{\mathrm{meas}}/\beta_s^{\mathrm{NB,\,analytic}} = 44.6/7.94 = 5.62$$，两者差异源于MC实现对NB拟合的轻度有限$$N$$偏差，不影响下游分析结论。
 [^note-variance-sum]: 该合成值小于诸单源CV代数和12.3%，原因在于独立随机变量按方差而非标准差线性叠加：$$\sqrt{\mathrm{Var}(X+Y)} = \sqrt{\mathrm{Var}(X)+\mathrm{Var}(Y)}\leq\sqrt{\mathrm{Var}(X)}+\sqrt{\mathrm{Var}(Y)}$$。
+
+[^note-dev-thetacalib]: 该有效值由一次自下而上的标定试错确定，并非直接取自文献。以文献β-W体系的$$\theta_{\mathrm{SH}}\approx0.25$$起步时，仿真给出的SER 50%阈值仅约$$140\,\mu\mathrm{A}$$ ($$V_{\mathrm{SOT}}\approx109\,\mathrm{mV}$$)，较同批次Device A P→AP实测的$$I_{\mathrm{th}}\approx1.09\,\mathrm{mA}$$ ($$V_{\mathrm{th}}(0.75\,\mathrm{ns})\approx844\,\mathrm{mV}$$) 低约$$4.7$$倍。依2.1.3节临界电流标度$$I_{c0}^{\mathrm{SOT}}\propto1/\theta_{\mathrm{SH}}$$，在$$\theta_{\mathrm{SH}}$$、$$K_i$$、$$M_s$$、$$\alpha$$、$$R_W$$五个候选旋钮按灵敏度分级、每点数十条轨迹的短Monte Carlo试扫中，$$\theta_{\mathrm{SH}}$$被选为主调参 ($$\alpha=0.05$$已达CoFeB典型上限不宜再增)。先调至$$0.07$$使$$t_w=5\,\mathrm{ns}$$点的$$V_{\mathrm{th}}^{\mathrm{sim}}\approx508\,\mathrm{mV}$$与实测$$511\,\mathrm{mV}$$吻合，再细调至$$0.04$$以同时命中$$0.75\,\mathrm{ns}/894\,\mathrm{mV}$$靶点；该终值随后在配套文档中统一替换了若干残留的$$0.07$$旧值。标定流程见`scripts/09_simulation_figures/calibrate_to_experiment.py`。
+[^note-dev-cayley]: 此结论源于实现过程中的实测教训而非先验取舍。仿真器最初的积分核 (`dynamic_switching.switching`) 即为球坐标$$(\theta,\phi)$$下的显式Euler步，在PMA稳态$$m_z\approx\pm1$$ (即$$\theta\to0,\pi$$) 附近因运动方程的$$1/\sin\theta$$项触发数值发散；显式切线步还须逐步手动重归一化，反过来扰动了热噪声场的Stratonovich统计权重、使等效仿真温度偏离设定值。为此将内核改写为笛卡尔形式并引入下文的保模长Cayley步 (`dynamic_switching_vector`，`integrator="cayley"`)，并顺带把自旋霍尔极化方向$$\hat{\sigma}_{\mathrm{SH}}$$由原先硬编码的$$-\hat{x}$$改为显式三矢量传入，以支持任意偏置构型。
+[^note-dev-hex]: 该垂直关系在标定中被确认为模型的一处方向敏感点：交换偏置场一旦偏离与$$\hat{\sigma}_{\mathrm{SH}}$$ (本仿真器默认$$-\hat{x}$$) 垂直的设置，仿真SER即塌缩为约$$0.5$$的随机比特平台，器件退化为不再受驱动电流极性确定性偏置的无偏硬币 (与上述对称性破缺机制互为印证)。故实现中将$$\mathbf{H}_{\mathrm{EX}}$$严格约束为垂直于$$\hat{\sigma}_{\mathrm{SH}}$$，默认取沿$$-\hat{y}$$的$$-50\,\mathrm{Oe}$$。
 
 [^ref-akerman-tmr]: J. J. Akerman, J. M. Slaughter, R. W. Dave, and I. K. Schuller, "Tunneling criteria for magnetic-insulator-magnetic structures," *Applied Physics Letters*, vol. 79, pp. 3104-3106, 2001. DOI: [10.1063/1.1415412](https://doi.org/10.1063/1.1415412).
 [^ref-ascher-petzold]: U. M. Ascher and L. R. Petzold, *Computer Methods for Ordinary Differential Equations and Differential-Algebraic Equations*. SIAM, 1998. DOI: [10.1137/1.9781611971392](https://doi.org/10.1137/1.9781611971392).
