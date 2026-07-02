@@ -44,6 +44,7 @@ LETTER_DX, LETTER_DY = 0.05, 0.02       # panel letter sits inside each panel's 
 DECKS = {
     "Chapter02_local.pptx": [
         {"stem": "ch02_19", "panels": "abc", "out": "Chapter02_local_19"},
+        {"stem": "ch02_20", "panels": "abc", "out": "Chapter02_local_20"},
     ],
 }
 
