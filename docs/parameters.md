@@ -9,7 +9,7 @@
 > what runs when you simply execute `vgsot-sim <case_name>` (the CLI just
 > instantiates the matching `*Config()` with no overrides).
 >
-> **Sweep ranges are calibrated to `theta_SH = 0.04`** (chapter §2.3.4 default).
+> **Sweep ranges are calibrated to `theta_SH = 0.066`** (chapter §2.3.4 default).
 > The threshold sits around `|I_SOT| ≈ 1.1 mA`, so default sweeps span the
 > millisecond range. Override `constants=PhysicalConstantsConfig(theta_SH=0.25)`
 > if you need the literature β-W regime (~140 µA threshold).
@@ -118,7 +118,7 @@ A measurements (2026-05-16). The notable changes from older versions:
 
 | Parameter | Default | Note |
 |---|---|---|
-| `theta_SH` | **`0.04`** | Calibrated to Device A P→AP V_th(0.75 ns) = 894 mV (was `0.25` from textbook β-W). For bare-material studies override explicitly. |
+| `theta_SH` | **`0.066`** | Calibrated to Device A P→AP V_th(0.75 ns) = 894 mV (was `0.04` pre-FL-SOT-fix; `0.25` textbook β-W). For bare-material studies override explicitly. |
 | `TMR` | **`1.0`** | ≈100 % to match the §2.3.3 hysteresis amplitude R_AP/R_P ≈ 2 (was `1.19`). |
 | `RA` | **`16.6e-12`** Ω·m² | Calibrated to R_P ≈ 5 kΩ at D_elec = 65 nm (was `36e-12`). |
 | `D_elec` | `65e-9` m | Electrical effective MTJ diameter (new; D_phys remains `80e-9`). |
@@ -131,7 +131,7 @@ A measurements (2026-05-16). The notable changes from older versions:
 | `tmr_model` | `"pdk"` | Bias-dependent TMR(V) model selector (was implicit Lorentzian). Set to `"lorentzian"` for the legacy single-parameter form. |
 | `k_tmr, a_tmr, b_tmr, c_tmr` | `1.2346, 0.1729, 0.1315, 0.4475` | Three-parameter PDK TMR(V) coefficients (new). |
 
-See [`technical_details.md`](technical_details.md) §2.3 for the calibration story behind `theta_SH = 0.04` and the
+See [`technical_details.md`](technical_details.md) §2.3 for the calibration story behind `theta_SH = 0.066` and the
 diagnostic `09_simulation_figures/calibrate_to_experiment.py` script.
 
 ### Derived quantities

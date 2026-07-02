@@ -28,6 +28,6 @@ ngspice_con -b tb_switch.spice                   # .spiceinit loads the OSDI mod
 
 - **Deterministic dynamics: validated.** `|m|=1` conserved to ~1e-4 with no manual renormalisation; m_z(t) matches the Python `switching_vector` trajectory to **max ~0.006 over 0–3 ns** (exact agreement at the current-on equilibrium; the small transient difference is fixed-step Cayley vs ngspice adaptive `ddt`).
 - **Stochastic via harness:** the `h_th` injection path is in place; the seeded Python↔VA Monte-Carlo equivalence harness and its committed regression are pending (see project `#15`).
-- **`theta_SH` default** is the calibrated `0.04`; note a recalibration is pending after the `dynamic_switching.py` FL-SOT fix (project `#12`). The `.va` exposes `theta_SH` as a parameter, so the calibrated value can be set without editing the model.
+- **`theta_SH` default** is the recalibrated `0.066` (Cayley, post-FL-SOT-fix; `0.04` was the pre-fix value). The `.va` exposes `theta_SH` as a parameter, so the calibrated value can be set without editing the model.
 
 The compact behavioural Verilog-A (operating-point sigmoid + telegraph observables) lives separately in the consuming project at `eda/models/smtj_sot.va`; it is a fast circuit surrogate, not a replacement for this first-principles LLG engine.

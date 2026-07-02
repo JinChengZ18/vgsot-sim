@@ -53,6 +53,9 @@ result/*
 pics/*
 !pics/Chapter02_local_*.png
 
+# Script-side benchmark outputs (results data, not source)
+scripts/**/*_results.json
+
 # Historical or local-only folders
 old/
 notebooks/version/

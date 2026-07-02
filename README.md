@@ -161,7 +161,7 @@ vgsot-sim ser_sot_no_vcma_thermal
 > [process-variability sweep](#5-process-variability-sweep-built-in-analysis-api)
 > remains available as a Python-only API via `vgsot_sim.ser_cases.variability_sweep`.
 
-> **Calibration note (2026-05).** Default `theta_SH = 0.04` (chapter §2.3.4
+> **Calibration note (2026-05).** Default `theta_SH = 0.066` (chapter §2.3.4
 > calibration to Device A P→AP, V_th @ 0.75 ns ≈ 894 mV). With this default the
 > deterministic switching threshold sits around `|I_SOT| ≈ 1.1 mA`, so the
 > default `i_sot_list` brackets `0.7 – 1.5 mA` — not the µA range used by
@@ -204,7 +204,7 @@ in the chapter.
 | `plot_single_trajectory.py` | `Chapter02_local_08.png` | Single-trajectory `(m_z, R_MTJ, I_SOT)` for sub-/just-above/super-threshold I_SOT, **self-heating ON**, with `M_s(T)` / `K_i(T)` feedback |
 | `plot_3d_trajectory.py` | `Chapter02_local_09.png` | Magnetisation vector `m(t)` traced on the unit sphere + time-encoded colour, plus `m_x, m_y, m_z` time series |
 | `plot_ser_mc.py` | `Chapter02_local_10.png` | Monte-Carlo P_sw vs `|I_SOT|` sweep at 0.75 ns with Wilson 95% CI, self-heating OFF/ON comparison, and a threshold-zoom inset around the experimental I_th ≈ 1152 µA |
-| `calibrate_to_experiment.py` | (stdout) | θ_SH calibration scan against Device A V_th(0.75 ns) = 894 mV — produces the table that selected the `theta_SH = 0.04` default |
+| `calibrate_to_experiment.py` | (stdout) | θ_SH calibration scan against Device A V_th(0.75 ns) = 894 mV — produces the table that selected the `theta_SH = 0.066` default |
 
 `plot_ser_mc.py` accepts CLI toggles that exercise the new physics options:
 
@@ -217,7 +217,7 @@ python plot_ser_mc.py --integrator=cayley   # norm-preserving Cartesian stepper 
 
 Each driver writes to its own folder *and* mirrors the figure into
 `article/00_chapter_drafts/figs/`, so the manuscript and the code stay in
-lock-step. For the physics defaults these figures rely on (`theta_SH=0.04`,
+lock-step. For the physics defaults these figures rely on (`theta_SH=0.066`,
 `TMR=1.0`, `RA=16.6e-12 Ω·m²`, etc.) see [docs/technical_details.md §2.3](docs/technical_details.md).
 
 Preview of the latest 09 outputs (full size + ON/OFF + Wilson CI inset are in
@@ -324,7 +324,7 @@ from vgsot_sim import (
 
 cfg = SerSotNoVcmaThermalConfig(
     trials=500,
-    # Default theta_SH=0.04 puts the threshold near ~1.1 mA; pick the sweep range accordingly.
+    # Default theta_SH=0.066 puts the threshold near ~1.1 mA; pick the sweep range accordingly.
     i_sot_list=[-1500e-6, -1200e-6, -1100e-6, -1000e-6, -800e-6],
 )
 
@@ -372,10 +372,12 @@ res = ser_sot_no_vcma_thermal(
 ```
 
 The Cayley vector stepper preserves `|m|=1` to machine precision and takes
-`σ̂_SH` as an explicit 3-vector argument (default `[-1, 0, 0]`). It reports a
-threshold ~10 % higher than the spherical-Euler default at 0.75 ns; the
-chapter calibration was performed against the latter, so `"euler_spherical"`
-remains the default.
+`σ̂_SH` as an explicit 3-vector argument (default `[-1, 0, 0]`). After the
+FL-SOT `dφ/dt` sign fix it shares the same right-hand side as the
+spherical-Euler stepper (they agree to <1e-4; `tests/test_integrator_consistency.py`)
+and is now the library stepper default; the effective `theta_SH` was
+recalibrated to `0.066` against it. (The old euler-vs-Cayley note claimed only
+~10 %; the true FL-SOT bug effect on V_th was ~40 %, the 0.066/0.04 ratio.)
 
 ------
 
@@ -402,7 +404,7 @@ res = run_piecewise_direct_excitation(
     pap=1,
 
     v_mtj_stage1=0.0, v_mtj_stage2=0.0, v_mtj_stage3=0.0,
-    i_sot_stage1=-2000e-6,  # super-threshold pulse for the calibrated theta_SH=0.04
+    i_sot_stage1=-2000e-6,  # super-threshold pulse for the calibrated theta_SH=0.066
     i_sot_stage2=0.0,
     i_sot_stage3=0.0,
 

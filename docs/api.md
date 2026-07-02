@@ -202,7 +202,7 @@ res = sot_only_constant_current(cfg)
 | `sim_mid1_step` | `2000` | End of pulse stage. |
 | `sim_end_step` | `5000` | Final simulation index. |
 | `pap` | `1` | Initial state selector. |
-| `i_sot_stage1` | `-400e-6` | SOT current during stage 1 (~3× sub-threshold for the calibrated `theta_SH=0.04`). |
+| `i_sot_stage1` | `-400e-6` | SOT current during stage 1 (~3× sub-threshold for the calibrated `theta_SH=0.066`). |
 | `i_sot_stage2` | `0.0` | SOT current during stage 2 and stage 3. |
 | `v_mtj_stage1` | `0.0` | MTJ voltage during stage 1. |
 | `v_mtj_stage2` | `0.0` | MTJ voltage during stage 2 and stage 3. |
@@ -229,7 +229,7 @@ print(res.mz_curves.keys())
 
 | Field | Default | Meaning |
 |---|---:|---|
-| `i_sot_list` | `(-800e-6, -700e-6, -750e-6, -600e-6, -500e-6, -400e-6, -300e-6, -200e-6)` | SOT currents to sweep. Bracket the calibrated `theta_SH = 0.04` threshold near 1.1 mA. |
+| `i_sot_list` | `(-800e-6, -700e-6, -750e-6, -600e-6, -500e-6, -400e-6, -300e-6, -200e-6)` | SOT currents to sweep. Bracket the calibrated `theta_SH = 0.066` threshold near 1.1 mA. |
 | `sim_start_step` | `1` | Simulation start index. |
 | `sim_mid1_step` | `5000` | End of pulse stage (5 ns at `t_step = 1 ps`). |
 | `sim_end_step` | `10000` | Final simulation index. |
@@ -265,7 +265,7 @@ res = ser_sot_no_vcma_thermal(cfg)
 
 | Field | Default | Meaning |
 |---|---:|---|
-| `i_sot_list` | `(-800e-6, -700e-6, -750e-6, -600e-6, -500e-6, -400e-6, -300e-6, -200e-6)` | Currents to sweep — bracket the calibrated `theta_SH = 0.04` threshold near `\|I_SOT\| ≈ 1.1 mA`. |
+| `i_sot_list` | `(-800e-6, -700e-6, -750e-6, -600e-6, -500e-6, -400e-6, -300e-6, -200e-6)` | Currents to sweep — bracket the calibrated `theta_SH = 0.066` threshold near `\|I_SOT\| ≈ 1.1 mA`. |
 | `trials` | `200` | Monte-Carlo trials per point. |
 | `sim_start_step` | `1` | Simulation start index. |
 | `sim_mid1_step` | `5000` | End of active pulse (5 ns at `t_step = 1 ps`). |

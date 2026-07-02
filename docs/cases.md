@@ -107,7 +107,7 @@ A **control experiment** answering:
 
 ### Default sweep window
 
-With the calibrated `theta_SH=0.04` the deterministic threshold sits around
+With the calibrated `theta_SH=0.066` the deterministic threshold sits around
 `|I_SOT| ≈ 1.1 mA`. The default `i_sot_list` therefore spans `−800 µA` to
 `−200 µA` — both sides of threshold. Older configs targeting a literature
 `theta_SH = 0.25` (threshold ~140 µA) will silently no-switch under the new

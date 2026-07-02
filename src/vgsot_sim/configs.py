@@ -228,7 +228,7 @@ class TerminalVoltageControlConfig:
 #   - relaxation tail 3.25 ns      → sim_end_step  = 4000
 #   - V_MTJ = 0  (no VCMA in this protocol)
 #   - I_SOT swept across the calibrated threshold |I_th| ≈ 1.1 mA
-#     (theta_SH = 0.04 calibration; see configs.PhysicalConstantsConfig
+#     (theta_SH = 0.066 calibration; see configs.PhysicalConstantsConfig
 #     and docs/technical_details.md §2.3)
 # Override fields explicitly when running a different protocol.
 # ─────────────────────────────────────────────────────────────────────────

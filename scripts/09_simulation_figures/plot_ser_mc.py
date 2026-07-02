@@ -26,8 +26,10 @@ parser.add_argument("--rng-mode", choices=("legacy", "generator"), default="lega
                          "different bit-stream but identical statistics in the limit)")
 parser.add_argument("--integrator", choices=("euler_spherical", "cayley"),
                     default="euler_spherical",
-                    help="LLG step type: 'euler_spherical' (default, matches the θ_SH=0.04 "
-                         "experimental calibration) or 'cayley' (norm-preserving vector form, "
+                    help="LLG step type: 'euler_spherical' (default; fig 2.11 was generated "
+                         "with it. NB fig 2.10/plot_single_trajectory.py instead uses the "
+                         "driver default 'cayley' — this fig 2.10-Cayley / fig 2.11-Euler "
+                         "asymmetry is intentional) or 'cayley' (norm-preserving vector form, "
                          "for precision studies; threshold ~10%% higher than Euler)")
 ARGS, _ = parser.parse_known_args()
 METRIC    = ARGS.metric          # "psw" or "ser"

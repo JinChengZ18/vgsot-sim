@@ -72,9 +72,10 @@ T_AMBIENT = 300.0
 sim_end = int(round((PULSE_NS + RELAX_NS) * 1e-9 / cc.t_step))
 mid1 = int(round(PULSE_NS * 1e-9 / cc.t_step))
 
-# Four I_SOT spanning sub-/marginal/just-above/super-threshold (after the
-# 0.75-ns calibration of θ_SH=0.04 the SOT threshold sits ~1100–1300 µA,
-# matching the experimental V_th = 894 mV / R_W ≈ 1152 µA).
+# Four I_SOT spanning sub-/marginal/just-above/super-threshold. At the runtime
+# θ_SH=0.066, integrated with the Cayley scheme (run_piecewise_direct_excitation's
+# default — this script does not override integrator=), the pilot ensemble gives
+# I_50 ≈ 1281 µA, consistent with the experimental V_th = 894 mV / R_W ≈ 1152 µA.
 I_LIST_UA = [-600, -1100, -1300, -2000]
 COLOURS   = [THU_PALE, THU_SOFT, THU_MID, THU_DEEP]
 LABELS    = [rf"$I_{{\mathrm{{SOT}}}} = {i}\,\mu\mathrm{{A}}$" for i in I_LIST_UA]

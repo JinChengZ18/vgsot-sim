@@ -205,7 +205,7 @@ The simulated device is a 80 nm circular MTJ on top of a β-W heavy-metal channe
 | Free layer thickness  | $t_f$    | 1.1   | nm   | Magnetic layer thickness |
 | Barrier thickness     | $t_{ox}$ | 1.4   | nm   | Tunnel barrier thickness |
 
-> **Note on electrical vs physical diameter.** The thesis (Section 2.2.2.4 / 2.3.1) distinguishes the physical diameter $D_{phys}$ from the electrical effective diameter $D_{elec} \approx D_{phys} - 2\delta_{edge} \approx 65$ nm; the latter is what reconciles the wafer-measured $R_P=10.89\ \text{k}\Omega$ with $RA = 36\ \Omega\cdot\mu\text{m}^2$. The current `configs.py` uses a single `D` parameter without this separation — see `docs/IMPLEMENTATION_STATUS.md`.
+> **Note on electrical vs physical diameter.** The thesis (Section 2.2.2.4 / 2.3.1) distinguishes the physical diameter $D_{phys}$ from the electrical effective diameter $D_{elec} \approx D_{phys} - 2\delta_{edge} \approx 65$ nm; the latter is what reconciles the wafer-measured $R_P=10.89\ \text{k}\Omega$ with $RA = 36\ \Omega\cdot\mu\text{m}^2$. The current `configs.py` separates the two — `D` = $D_{phys}$ = 80 nm and `D_elec` ≈ 65 nm — and builds the MTJ area $A_1$ from $D_{elec}$.
 
 Derived areas and volumes:
 
@@ -229,11 +229,11 @@ $$
 | Interfacial anisotropy   | $K_i$         | $0.32\times10^{-3}$ | J/m² | Perpendicular anisotropy           |
 | Saturation magnetization | $M_s$         | $6.25\times10^5$    | A/m  | Free-layer magnetization           |
 | Gilbert damping          | $\alpha$      | 0.05                | –    | Damping constant                   |
-| Spin Hall angle          | $\theta_{SH}$ | **0.04** (calibrated, was 0.25) | –    | Effective SOT efficiency — see note below |
+| Spin Hall angle          | $\theta_{SH}$ | **0.066** (calibrated; 0.04 pre-fix, 0.25 textbook) | –    | Effective SOT efficiency — see note below |
 | Spin polarization        | $P$           | 0.58                | –    | Tunnel current spin polarization   |
 | Temperature              | $T$           | 300                 | K    | Operating temperature              |
 
-> **Note on calibrated $\theta_{SH}$.** The literature β-W value $\theta_{SH}\!\approx\!0.25$ leaves the simulator's deterministic threshold at $|I_{SOT}|\!\approx\!140\,\mu\mathrm{A}$ ($V_{SOT}\!\approx\!109\,\mathrm{mV}$ for $R_W\!\approx\!776\,\Omega$), about $8\times$ lower than the same-batch Device A P→AP detailed-$P_{sw}$ value $V_{th}(0.75\,\mathrm{ns})\!\approx\!894\,\mathrm{mV}$ ($I_{th}\!\approx\!1152\,\mu\mathrm{A}$) extracted in Section 2.3.3 (Sigmoid fit, $\beta_s = 44.6\,\mathrm{V^{-1}}$). A scan over $\theta_{SH}$ combinations (see `09_simulation_figures/calibrate_to_experiment.py`) converges on $\theta_{SH}\!\approx\!0.04$ as the calibration that — jointly with $TMR = 1.0$ and $RA = 16.6\times 10^{-12}\,\Omega\cdot\mathrm{m}^2$ — reproduces the same-batch $V_{th}(0.75\,\mathrm{ns})$ within $\sim 1\%$. This is the calibrated value used as the package default. The deviation from the textbook β-W value absorbs additional loss channels not in this simplified model: Néel–Edelstein contributions, interfacial spin-memory loss, top-electrode parasitic series resistance, and (over the pulse window) any partial misalignment between charge-current and the assumed σ̂ axis. For material-level studies of the bare spin Hall effect, override with `theta_SH=0.25` (or any literature value).
+> **Note on calibrated $\theta_{SH}$.** The literature β-W value $\theta_{SH}\!\approx\!0.25$ leaves the simulator's deterministic threshold at $|I_{SOT}|\!\approx\!140\,\mu\mathrm{A}$ ($V_{SOT}\!\approx\!109\,\mathrm{mV}$ for $R_W\!\approx\!776\,\Omega$), about $8\times$ lower than the same-batch Device A P→AP detailed-$P_{sw}$ value $V_{th}(0.75\,\mathrm{ns})\!\approx\!894\,\mathrm{mV}$ ($I_{th}\!\approx\!1152\,\mu\mathrm{A}$) extracted in Section 2.3.3 (Sigmoid fit, $\beta_s = 44.6\,\mathrm{V^{-1}}$). A scan over $\theta_{SH}$ combinations (see `09_simulation_figures/calibrate_to_experiment.py`) converges on $\theta_{SH}\!\approx\!0.066$ as the calibration that — jointly with $TMR = 1.0$ and $RA = 16.6\times 10^{-12}\,\Omega\cdot\mathrm{m}^2$ — reproduces the same-batch $V_{th}(0.75\,\mathrm{ns})$ within $\sim 1\%$. This is the calibrated value used as the package default. The deviation from the textbook β-W value absorbs additional loss channels not in this simplified model: Néel–Edelstein contributions, interfacial spin-memory loss, top-electrode parasitic series resistance, and (over the pulse window) any partial misalignment between charge-current and the assumed σ̂ axis. For material-level studies of the bare spin Hall effect, override with `theta_SH=0.25` (or any literature value).
 
 Effective anisotropy field:
 $$
@@ -332,7 +332,7 @@ Spin-orbit torque strength depends on material and geometry:
 
 | Parameter            | Symbol        | Value    | Unit | Description                                          |
 | -------------------- | ------------- | -------- | ---- | ---------------------------------------------------- |
-| Spin Hall angle      | $\theta_{SH}$ | 0.04     | –    | Effective SOT efficiency (calibrated; see §2.3 note) |
+| Spin Hall angle      | $\theta_{SH}$ | 0.066    | –    | Effective SOT efficiency (calibrated; see §2.3 note) |
 | SOT current          | $I_{SOT}$     | variable | A    | Applied current                                      |
 | Free-layer thickness | $t_f$         | 1.1      | nm   | Magnetic thickness                                   |
 
@@ -407,10 +407,10 @@ This approach enables **lower current switching while maintaining reliability**.
 
 ## 4. Benchmark Results
 
-> **Calibrated baseline.** All numbers below use the 2026-05 package defaults
-> ($\theta_{SH} = 0.04$, $TMR = 1.0$, $RA = 16.6\times 10^{-12}\,\Omega\cdot\mathrm{m}^2$,
+> **Calibrated baseline.** All numbers below use the package defaults
+> ($\theta_{SH} = 0.066$, $TMR = 1.0$, $RA = 16.6\times 10^{-12}\,\Omega\cdot\mathrm{m}^2$,
 > $D_{elec} = 65\,\mathrm{nm}$). With the literature $\theta_{SH} = 0.25$ all
-> threshold currents drop by roughly the $0.25/0.04 \approx 6.25$ ratio.
+> threshold currents drop by roughly the $0.25/0.066 \approx 3.8$ ratio.
 
 ### 4.1 Switching Current Threshold
 
