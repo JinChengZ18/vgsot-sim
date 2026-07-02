@@ -43,9 +43,9 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (67 tests).
 |---|---|---|
 | `ki_for_delta` keeps the well perpendicular (K_u^eff>0 incl. demag); PMA-only Ki goes in-plane | `tests/test_rtn_bridge.py::test_ki_delta_roundtrip`, `::test_low_barrier_is_perpendicular_not_in_plane` | backed |
 | `bias→V` tilt slope = μ0·Ms·v/(kB·T); free-run / dwell / PSD helpers run | `::test_tilt_per_field_value`, `::test_free_run_shape_and_range`, `::test_dwell_times_*`, `::test_psd_lorentzian_runs_on_synthetic` | backed |
-| Low-Δ free-running sLLG → exponential dwell (CV≈0.99), τ0≈15–27 ns (≠1 ns), tanh-shape ⟨m_z⟩ amplitude-compressed A≈0.7 | `scripts/10_rtn_reservoir/bridge_results.json` (committed run) | backed (artifact) |
+| Low-Δ free-running sLLG → exponential dwell (CV≈0.99), τ0≈15–27 ns (≠1 ns), tanh-shape ⟨m_z⟩ amplitude-compressed A≈0.7 | numbers quoted in `scripts/10_rtn_reservoir/README.md`; regenerate deterministically (fixed seeds) via `validate_bridge.py` (`*_results.json` is gitignored as reproducible output) | backed (script + README) |
 | Heterogeneous W_in reservoir MC≈8 ≫ broadcast-identical baseline MC≈0.6 (ridge readout recovers a linear map) | `tests/test_rtn_reservoir.py::test_heterogeneous_beats_broadcast_baseline`, `::test_ridge_recovers_linear_map`, `::test_memory_capacity_decays_with_delay` | backed |
-| NARMA-10 NRMSE≈0.55; stochastic single-device MC≈0.36 (needs replica-averaging) | `scripts/10_rtn_reservoir/reservoir_results.json` (committed run) | backed (artifact) |
+| NARMA-10 NRMSE≈0.55; stochastic single-device MC≈0.36 (needs replica-averaging) | numbers quoted in `scripts/10_rtn_reservoir/README.md`; regenerate deterministically (fixed seeds) via `benchmark_reservoir.py` (`*_results.json` is gitignored as reproducible output) | backed (script + README) |
 
 ## Verilog-A engine (`va/llg/vgsot_llg.va`)
 
