@@ -1,17 +1,20 @@
 """
 图 2.1.1 — 三端SOT-sMTJ器件结构与T型等效电路网络。
 
-左侧子图：物理堆叠示意。HM沟道（重金属）为底层水平条带；其上为MTJ柱
-（参考层 / MgO势垒 / 自由层），自由层与参考层均以PMA箭头标出。MTJ顶电极
-为 T1，HM沟道两端为 T2、T3。写电流 I_SOT 经 T2→T3 沿沟道流过产生
-横向自旋积累 (σ̂)；读路径仅在 T1 与沟道接地端之间施加小偏压。
+左侧子图：物理堆叠示意。HM沟道（重金属）为底层水平条带；其上为MTJ柱，
+自下而上为 自由层 / MgO势垒 / 参考层——自由层必须与HM沟道相邻，SOT力矩
+才作用于它（2026-07 勘误：初版曾把参考层画在柱底、自由层在顶，已交换）。
+MTJ顶电极为 T1，HM沟道两端为 T2、T3。写电流 I_SOT 经 T2→T3 沿沟道流过，
+在HM/自由层界面产生自旋积累，其极化方向 σ̂ 垂直于电流（本侧视图中为出面
+方向，画作 ⊙）；读路径仅在 T1 与沟道接地端之间施加小偏压。
 
 右侧子图：T型等效电阻网络。R_MTJ 为隧穿电阻（用可变电阻符号表示），
 HM沟道沿长度方向均分为两段 R_SOT/2，三段电阻在中间节点 N 处汇合。
 读出操作在 T1—N 之间获取 V_MTJ；写入操作在 T2—T3 之间施加 V_2 − V_3
 驱动 I_SOT = (V_2 − V_3) / R_SOT。
 
-输出：Chapter02_local_01.png（本目录 + 同步到 ../article/00_chapter_drafts/figs/）
+输出：Chapter02_local_01.png（本目录 + 同步到 ../article/ppt/ 原始面板目录；
+面板 (a)(b) 标注按图表规范由 PPT 装配时添加，再导出到 article/figs/）。
 """
 from pathlib import Path
 import shutil
@@ -58,29 +61,11 @@ ax_l.text(5.0, (HM_Y0 + HM_Y1) / 2.0, "Heavy Metal (HM) channel",
 ax_l.text(HM_X0 - 0.10, HM_Y0 - 0.30, r"$L_{\rm SOT}$, $W_{\rm SOT}$, $T_{\rm SOT}$",
           ha="left", va="top", fontsize=9.5, color=CHARCOAL, style="italic")
 
-# MTJ pillar (centred on HM)
+# MTJ pillar (centred on HM). Stack order (bottom -> top): Free / MgO / Reference —
+# the free layer MUST sit on the HM channel so the SOT acts on it.
 MTJ_CX, MTJ_HW = 5.0, 0.75
-# Reference layer (bottom of pillar, on top of HM)
-RL_Y0, RL_Y1 = HM_Y1, HM_Y1 + 0.55
-ax_l.add_patch(Rectangle((MTJ_CX - MTJ_HW, RL_Y0), 2 * MTJ_HW, RL_Y1 - RL_Y0,
-                          facecolor=FM_BLUE, edgecolor=CHARCOAL, lw=1.0))
-ax_l.text(MTJ_CX + MTJ_HW + 0.15, (RL_Y0 + RL_Y1) / 2.0, "Reference  (PMA, fixed)",
-          ha="left", va="center", fontsize=10, color=CHARCOAL)
-# PMA arrow (reference layer, fixed up)
-ax_l.annotate("", xy=(MTJ_CX - 0.30, RL_Y1 - 0.08),
-              xytext=(MTJ_CX - 0.30, RL_Y0 + 0.08),
-              arrowprops=dict(arrowstyle="-|>", color=NEAR_WHITE, lw=1.6))
-
-# MgO barrier
-MGO_Y0, MGO_Y1 = RL_Y1, RL_Y1 + 0.25
-ax_l.add_patch(Rectangle((MTJ_CX - MTJ_HW, MGO_Y0), 2 * MTJ_HW, MGO_Y1 - MGO_Y0,
-                          facecolor=MGO_TAN, edgecolor=CHARCOAL, lw=1.0))
-ax_l.text(MTJ_CX + MTJ_HW + 0.15, (MGO_Y0 + MGO_Y1) / 2.0,
-          r"MgO  ($t_{\rm ox}$)",
-          ha="left", va="center", fontsize=10, color=CHARCOAL)
-
-# Free layer (top of pillar)
-FL_Y0, FL_Y1 = MGO_Y1, MGO_Y1 + 0.55
+# Free layer (bottom of pillar, on top of HM — receives the SOT)
+FL_Y0, FL_Y1 = HM_Y1, HM_Y1 + 0.55
 ax_l.add_patch(Rectangle((MTJ_CX - MTJ_HW, FL_Y0), 2 * MTJ_HW, FL_Y1 - FL_Y0,
                           facecolor=FM_BLUE, edgecolor=CHARCOAL, lw=1.0))
 ax_l.text(MTJ_CX + MTJ_HW + 0.15, (FL_Y0 + FL_Y1) / 2.0,
@@ -93,8 +78,27 @@ ax_l.annotate("", xy=(MTJ_CX - 0.30, FL_Y1 - 0.08),
 ax_l.text(MTJ_CX + 0.10, (FL_Y0 + FL_Y1) / 2.0, r"$\mathbf{m}$",
           ha="left", va="center", fontsize=11, color=NEAR_WHITE, fontweight="bold")
 
+# MgO barrier
+MGO_Y0, MGO_Y1 = FL_Y1, FL_Y1 + 0.25
+ax_l.add_patch(Rectangle((MTJ_CX - MTJ_HW, MGO_Y0), 2 * MTJ_HW, MGO_Y1 - MGO_Y0,
+                          facecolor=MGO_TAN, edgecolor=CHARCOAL, lw=1.0))
+ax_l.text(MTJ_CX + MTJ_HW + 0.15, (MGO_Y0 + MGO_Y1) / 2.0,
+          r"MgO  ($t_{\rm ox}$)",
+          ha="left", va="center", fontsize=10, color=CHARCOAL)
+
+# Reference layer (top of pillar, fixed)
+RL_Y0, RL_Y1 = MGO_Y1, MGO_Y1 + 0.55
+ax_l.add_patch(Rectangle((MTJ_CX - MTJ_HW, RL_Y0), 2 * MTJ_HW, RL_Y1 - RL_Y0,
+                          facecolor=FM_BLUE, edgecolor=CHARCOAL, lw=1.0))
+ax_l.text(MTJ_CX + MTJ_HW + 0.15, (RL_Y0 + RL_Y1) / 2.0, "Reference  (PMA, fixed)",
+          ha="left", va="center", fontsize=10, color=CHARCOAL)
+# PMA arrow (reference layer, fixed up)
+ax_l.annotate("", xy=(MTJ_CX - 0.30, RL_Y1 - 0.08),
+              xytext=(MTJ_CX - 0.30, RL_Y0 + 0.08),
+              arrowprops=dict(arrowstyle="-|>", color=NEAR_WHITE, lw=1.6))
+
 # Top electrode (T1)
-TOP_Y0, TOP_Y1 = FL_Y1, FL_Y1 + 0.25
+TOP_Y0, TOP_Y1 = RL_Y1, RL_Y1 + 0.25
 ax_l.add_patch(Rectangle((MTJ_CX - MTJ_HW, TOP_Y0), 2 * MTJ_HW, TOP_Y1 - TOP_Y0,
                           facecolor=CHARCOAL, edgecolor=CHARCOAL, lw=1.0))
 
@@ -131,18 +135,20 @@ ax_l.annotate("", xy=(7.6, HM_Y1 - 0.20),
 ax_l.text(5.0, HM_Y0 - 0.30, r"$I_{\rm SOT}$ (write)",
           ha="center", va="top", fontsize=10, color=CHARCOAL, fontweight="bold")
 
-# Spin-accumulation arrow under the free layer (perpendicular to current)
-ax_l.annotate("", xy=(MTJ_CX + 0.05, HM_Y1 + 0.55),
-              xytext=(MTJ_CX - 0.05, HM_Y1 + 0.55),
-              arrowprops=dict(arrowstyle="-|>", color=THU_DEEP, lw=1.4))
-ax_l.text(MTJ_CX - 1.50, HM_Y1 + 0.65, r"$\hat{\sigma}$",
+# Spin accumulation at the HM/free-layer interface. For J along +x the spin-Hall
+# polarisation is PERPENDICULAR to the current — out of the page in this side
+# view — so draw the circle-dot symbol, not an in-plane arrow.
+SIG_X, SIG_Y = MTJ_CX - MTJ_HW - 0.45, HM_Y1 + 0.12
+ax_l.plot(SIG_X, SIG_Y, "o", ms=11, mec=THU_DEEP, mfc="none", mew=1.6, zorder=3)
+ax_l.plot(SIG_X, SIG_Y, ".", ms=4, color=THU_DEEP, zorder=3)
+ax_l.text(SIG_X - 0.30, SIG_Y + 0.12, r"$\hat{\sigma}$",
           ha="right", va="bottom", fontsize=11, color=THU_DEEP, fontweight="bold")
 
 # I_MTJ small arrow (read path, downward through MTJ)
-ax_l.annotate("", xy=(MTJ_CX + 0.55, FL_Y0 - 0.10),
+ax_l.annotate("", xy=(MTJ_CX + 0.55, RL_Y0 - 0.10),
               xytext=(MTJ_CX + 0.55, T1_Y - 0.50),
               arrowprops=dict(arrowstyle="-|>", color=CRIMSON, lw=1.2))
-ax_l.text(MTJ_CX + 0.95, (FL_Y0 + T1_Y - 0.5) / 2, r"$I_{\rm MTJ}$ (read)",
+ax_l.text(MTJ_CX + 0.95, (RL_Y0 + T1_Y - 0.5) / 2, r"$I_{\rm MTJ}$ (read)",
           ha="left", va="center", fontsize=9.5, color=CRIMSON)
 
 # Sub-title without panel tag
@@ -282,8 +288,11 @@ out_path = Path(__file__).resolve().parent / "Chapter02_local_01.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white",
             pad_inches=0.15)
 plt.close()
+# Sync the clean panel to the raw-panel dir used for PPT assembly. Per the figure
+# conventions the (a)/(b) tags are added in the PPT and exported to article/figs/;
+# this script never writes into the final-figure dir.
 chapter_fig = (Path(__file__).resolve().parent.parent /
-               "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_01.png")
+               "article" / "ppt" / "Chapter02_local_01.png")
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)
 print(f"Saved  {out_path}")
