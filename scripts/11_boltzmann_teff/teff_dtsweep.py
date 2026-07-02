@@ -325,7 +325,7 @@ def block_bootstrap_teff(per_traj_u, per_traj_mz, Delta, n_boot, rng,
 # ─────────────────────────────────────────────────────────────────────────
 # Main sweep
 # ─────────────────────────────────────────────────────────────────────────
-def run_sweep(cfg):
+def run_sweep(cfg, checkpoint_path=None):
     # Zero the −50 Oe in-plane exchange bias so the well is PURELY uniaxial and
     # the analytic Boltzmann p(m_z) ∝ exp(-Δ(1-m_z²)) is exact.  The Cayley path
     # uses ENE=0 anyway, but the legacy spherical-Euler `switching()` hardcodes
@@ -424,6 +424,11 @@ def run_sweep(cfg):
                   f"T_eff/T(mom)={mom['point']:.4f}±{mom['sigma']:.4f}  "
                   f"T_eff/T(slope)={slo['point']:.4f}±{slo['sigma']:.4f}",
                   flush=True)
+            if checkpoint_path is not None:
+                # crash/reboot resilience: persist every finished cell so a
+                # killed run loses at most one (integrator, dt) cell
+                with open(checkpoint_path, "w", encoding="utf-8") as f:
+                    json.dump(results, f, indent=2)
 
     results["stationarity"] = stationarity
 
@@ -598,10 +603,19 @@ FULL_CFG = dict(
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--full", action="store_true", help="run the full overnight sweep")
+    ap.add_argument("--integrators", type=str, default=None,
+                    help="comma-separated subset of integrators to run "
+                         "(e.g. after a partial/killed run: "
+                         "euler_spherical,cayley_true_midpoint)")
+    ap.add_argument("--tag", type=str, default=None,
+                    help="output-filename tag override (avoids clobbering a "
+                         "previous partial run's outputs)")
     args = ap.parse_args()
 
-    cfg = FULL_CFG if args.full else PILOT_CFG
-    tag = "full" if args.full else "pilot"
+    cfg = dict(FULL_CFG if args.full else PILOT_CFG)
+    tag = args.tag or ("full" if args.full else "pilot")
+    if args.integrators:
+        cfg["integrators"] = args.integrators.split(",")
 
     out_dir = os.path.join("result", "sec_2_2_3_2", "B")
     os.makedirs(out_dir, exist_ok=True)
@@ -609,7 +623,8 @@ def main():
     print(f"=== Experiment B — Boltzmann T_eff ({tag}) ===", flush=True)
     print(f"config: {cfg}", flush=True)
 
-    results = run_sweep(cfg)
+    results = run_sweep(cfg, checkpoint_path=os.path.join(
+        out_dir, f"teff_dtsweep_{tag}_checkpoint.json"))
 
     json_path = os.path.join(out_dir, f"teff_dtsweep_{tag}.json")
     with open(json_path, "w", encoding="utf-8") as f:
