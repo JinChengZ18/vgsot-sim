@@ -34,6 +34,7 @@ from .reservoir import (
     parity_task,
     ridge_fit,
     ridge_predict,
+    ring_reservoir,
 )
 
 __all__ = [
@@ -56,4 +57,5 @@ __all__ = [
     "narma10_task",
     "parity_task",
     "information_processing_capacity",
+    "ring_reservoir",
 ]

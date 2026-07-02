@@ -9,6 +9,8 @@ from dataclasses import replace
 
 import numpy as np
 
+import pytest
+
 from vgsot_sim.rtn.reservoir import (
     DelayReservoir,
     Reservoir,
@@ -19,6 +21,7 @@ from vgsot_sim.rtn.reservoir import (
     parity_task,
     ridge_fit,
     ridge_predict,
+    ring_reservoir,
 )
 
 
@@ -101,3 +104,33 @@ def test_delay_reservoir_runs_and_has_memory():
     assert np.all(np.abs(X) <= 1.0 + 1e-9)
     mc = memory_capacity(dr, max_delay=20, n_samples=900, seed=7)
     assert mc.mc_total > 1.5                            # feedback gives nontrivial memory
+
+
+def test_ring_reservoir_beats_filter_bank_mc():
+    """The tuned simple-cycle delay line must clearly exceed the filter-bank MC."""
+    ring = ring_reservoir(40, seed=3)
+    mc_ring = memory_capacity(ring, max_delay=50, n_samples=1500, washout=150, seed=3)
+    fb = Reservoir(ReservoirConfig(n_nodes=40), seed=3)
+    mc_fb = memory_capacity(fb, max_delay=50, n_samples=1500, washout=150, seed=3)
+    assert mc_ring.mc_total > 1.5 * mc_fb.mc_total
+
+
+def test_coupling_validation_and_stochastic_guard():
+    with pytest.raises(ValueError):
+        Reservoir(ReservoirConfig(n_nodes=8, coupling_radius=0.5,
+                                  coupling_topology="hexagon"), seed=0)
+    with pytest.raises(ValueError):
+        Reservoir(ReservoirConfig(n_nodes=8, input_mode="everywhere"), seed=0)
+    r = ring_reservoir(8, seed=0)
+    u = np.random.default_rng(0).uniform(-1, 1, size=50)
+    with pytest.raises(NotImplementedError):
+        r.run(u, mode="stochastic", seed=0)
+
+
+def test_random_coupling_runs_and_is_bounded():
+    r = Reservoir(ReservoirConfig(n_nodes=16, coupling_radius=0.6,
+                                  coupling_topology="random"), seed=1)
+    u = np.random.default_rng(1).uniform(-1, 1, size=200)
+    X = r.run(u, washout=40)
+    assert X.shape == (160, 16)
+    assert np.all(np.abs(X) <= 1.0 + 1e-9)

@@ -174,6 +174,31 @@ bounding bias paths, not a calibrated figure.
 - **Usable window**: `Δ ≈ 1–3` (τ_max 1.4–10 ns, tanh graded over `|V| ≲ 0.6–1.8 V`),
   `|V| < Vc0`. Higher Δ buys longer memory but a narrower bias window.
 
+### Coupled networks: topology decides (D1)
+
+Adding inter-node coupling to the mean-field reservoir (`ReservoirConfig
+coupling_*`, `input_mode`) and scanning:
+
+- **Random sparse Gaussian coupling HURTS.** Every (spectral radius 0.3–1.1 ×
+  bias scale 0.3–0.8) tested lowers MC from 7.9 to 5.5–6.7 — recurrence through
+  the saturating tanh trades linear memory away, same lesson as the Appeltant
+  delay loop.
+- **A simple-cycle "ring delay-line" WINS**: homogeneous low-Δ nodes
+  (`Δ=1.0`) on a unidirectional ring, input injected into node 0 only
+  (`ring_reservoir()` helper; cf. Rodan & Tiño's simple cycle reservoir). With
+  the per-hop small-signal gain `g = hop_gain·Δ/Vc0` just below 1 the chain
+  propagates the input almost losslessly: **MC = 19/25/33/37 at n=25/50/100/200**
+  — ~4× past the filter-bank ceiling, and still growing with n. Instability
+  (MC collapse) sets in as `g` crosses ~1, e.g. Δ=1.5 dies between hop products
+  0.55 and 0.62 — the tuning rule is physical and sharp.
+- **The price is total loss of nonlinearity**: the tuned ring has IPC deg-2 =
+  0.00 and parity-2/3/4 at chance (0.53/0.49/0.48) — it maximises linear memory
+  precisely by never engaging the tanh. The three constructions populate a
+  memory↔nonlinearity frontier (filter bank 7.9/1.6, delay loop 5.6/3.1, ring
+  32.6/0.0 as MC/IPC-deg2), mirroring at network level the single-node bias
+  trade-off — total capacity is conserved (Dambre), the topology chooses the
+  allocation.
+
 ### Next steps (for thesis write-up, recommended with author review)
 
 - **Thesis write-back** — a §2.4.5 bridge subsection (τ0 ≈ tens of ns; the

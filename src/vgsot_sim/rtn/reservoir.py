@@ -50,6 +50,25 @@ class ReservoirConfig:
     bias_spread: float = 0.25  # per-node offset b_j ~ U(-spread, spread) [V]
     w_binary: bool = True      # input weights in {-1,+1} (else N(0,1))
     dt: float = 1.0            # input time step [ns] (best linear-MC operating point)
+    # ── optional inter-node coupling (mean-field mode only) ─────────────
+    # Each node's bias gains a recurrent term (W_res @ x)_j, ESN-style
+    # (0 = no coupling, the independent filter bank). Hardware reading: node
+    # j's drive includes weighted read-outs of other nodes' states — a
+    # routing/drive overhead a physical design must pay.
+    # Topologies (measured, see scripts/10_rtn_reservoir/README.md):
+    #   "random": sparse Gaussian rescaled to spectral radius `coupling_radius`.
+    #             HURTS linear MC at every (radius, scale) tested.
+    #   "ring":   simple cycle i -> i+1 with weight `coupling_radius`; combine
+    #             with input_mode="single" and homogeneous low Delta. BEATS the
+    #             filter-bank MC ceiling ~4x (MC~32 at n=100) and MC grows
+    #             with n. Best when the per-hop small-signal gain
+    #             g = coupling_radius*coupling_scale_v*Delta/Vc0 sits just
+    #             below 1 (lossless-ish propagation without saturation).
+    coupling_radius: float = 0.0
+    coupling_topology: str = "random"   # "random" | "ring"
+    coupling_density: float = 0.1       # (random topology only)
+    coupling_scale_v: float = 0.5   # volts of bias per unit recurrent activation
+    input_mode: str = "all"             # "all" | "single" (input enters node 0 only)
 
 
 class Reservoir:
@@ -69,9 +88,32 @@ class Reservoir:
             self.W_in = rng.choice(np.array([-1.0, 1.0]), size=n)
         else:
             self.W_in = rng.standard_normal(n)
+        if self.cfg.input_mode == "single":       # input enters node 0 only
+            self.W_in = np.zeros(n)
+            self.W_in[0] = 1.0
+        elif self.cfg.input_mode != "all":
+            raise ValueError(f"unknown input_mode={self.cfg.input_mode!r}")
         self.bias = rng.uniform(-self.cfg.bias_spread, self.cfg.bias_spread, size=n)
         self.a_in = float(self.cfg.a_in)
         self.n = n
+        # optional recurrent coupling matrix
+        self.W_res = None
+        if self.cfg.coupling_radius > 0.0:
+            if self.cfg.coupling_topology == "ring":
+                W = np.zeros((n, n))
+                for i in range(n):
+                    W[(i + 1) % n, i] = self.cfg.coupling_radius
+                self.W_res = W
+            elif self.cfg.coupling_topology == "random":
+                W = rng.standard_normal((n, n))
+                W *= (rng.random((n, n)) < self.cfg.coupling_density)
+                np.fill_diagonal(W, 0.0)
+                rho = float(np.max(np.abs(np.linalg.eigvals(W))))
+                if rho > 0:
+                    self.W_res = W * (self.cfg.coupling_radius / rho)
+            else:
+                raise ValueError(
+                    f"unknown coupling_topology={self.cfg.coupling_topology!r}")
 
     def _bias_of(self, u_t: float) -> np.ndarray:
         """Per-node bias V_j for scalar input u_t, clipped to the physical domain."""
@@ -91,14 +133,21 @@ class Reservoir:
         X = np.empty((T, self.n), dtype=float)
         if mode == "meanfield":
             x = np.zeros(self.n)
+            lim = 0.98 * self.Vc0
             for t in range(T):
                 V = self._bias_of(u[t])
+                if self.W_res is not None:
+                    V = np.clip(V + self.cfg.coupling_scale_v * (self.W_res @ x),
+                                -lim, lim)
                 s_inf = stationary_mean(V, Delta=self.Delta, Vc0=self.Vc0)
                 tau = relaxation_time(V, tau0=self.tau0, Delta=self.Delta, Vc0=self.Vc0)
                 decay = np.exp(-self.dt / tau)
                 x = s_inf + (x - s_inf) * decay
                 X[t] = x
         elif mode == "stochastic":
+            if self.W_res is not None:
+                raise NotImplementedError(
+                    "inter-node coupling is implemented for the mean-field mode only")
             R = max(1, int(n_replicas))
             Delta_t = np.tile(self.Delta, R)
             Vc0_t = np.tile(self.Vc0, R)
@@ -116,6 +165,23 @@ class Reservoir:
 # ---------------------------------------------------------------------------
 # Ridge readout
 # ---------------------------------------------------------------------------
+def ring_reservoir(n_nodes: int = 100, *, delta: float = 1.0, hop_gain: float = 0.87,
+                   w: float = 0.9, seed: Optional[int] = None) -> Reservoir:
+    """Tuned simple-cycle (delay-line) reservoir — the measured way past the
+    filter-bank MC ceiling (see scripts/10_rtn_reservoir/README.md).
+
+    Homogeneous low-``delta`` nodes on a unidirectional ring, input injected into
+    node 0 only. ``hop_gain`` is the ring-weight x bias-scale product; the per-hop
+    small-signal gain ``hop_gain*delta/Vc0`` should sit just below 1 (stable,
+    near-lossless propagation). Defaults give MC ~ 32 at n=100 (seed=3).
+    """
+    cfg = ReservoirConfig(n_nodes=n_nodes, delta_range=(delta, delta),
+                          bias_spread=0.0, coupling_radius=w,
+                          coupling_topology="ring", coupling_scale_v=hop_gain / w,
+                          input_mode="single")
+    return Reservoir(cfg, seed=seed)
+
+
 def ridge_fit(X: np.ndarray, Y: np.ndarray, alpha: float = 1e-6) -> np.ndarray:
     """Closed-form ridge weights ``W`` for ``Y ≈ [X, 1] @ W`` (bias column appended)."""
     Xb = np.hstack([X, np.ones((X.shape[0], 1))])

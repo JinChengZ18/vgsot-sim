@@ -23,7 +23,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from vgsot_sim.rtn.reservoir import Reservoir, ReservoirConfig, memory_capacity
+from vgsot_sim.rtn.reservoir import Reservoir, ReservoirConfig, memory_capacity, ring_reservoir
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
@@ -64,6 +64,11 @@ r_sto = Reservoir(replace(cfg, n_nodes=100), seed=5)
 mc_sto = {R: memory_capacity(r_sto, max_delay=40, n_samples=2500, mode="stochastic",
                              n_replicas=R, seed=5).mc_total for R in (1, 4, 16, 64)}
 
+# tuned ring delay-line MC vs n (seed=3; homogeneous Delta=1, single-node input)
+mc_ring = {n: memory_capacity(ring_reservoir(n, seed=3),
+                              max_delay=min(180, n + 40), n_samples=5000,
+                              seed=3).mc_total for n in (25, 50, 100, 200)}
+
 # consistency asserts vs the committed benchmark JSON (same seeds -> identical)
 if ref is not None:
     assert abs(mc_base.mc_total - ref["baseline_broadcast_identical"]["mc_total"]) < 1e-9
@@ -90,22 +95,32 @@ ax.set_title("Per-delay memory capacity", fontsize=11.5, pad=10)
 fig.savefig(PANELS / "ch02_21_a.png", bbox_inches="tight", facecolor="white")
 plt.close(fig)
 
-# ── (b) MC vs n ──────────────────────────────────────────────────────────
+# ── (b) MC vs n: filter bank saturates, ring delay-line grows ────────────
 fig, ax = plt.subplots(figsize=(4.6, 3.4))
 ns = sorted(mc_by_n)
 totals = [mc_by_n[n].mc_total for n in ns]
+rns = sorted(mc_ring)
+rtot = [mc_ring[n] for n in rns]
+ax.plot(rns, rtot, "-^", ms=6, color=TEAL, lw=1.6)
 ax.plot(ns, totals, "-o", ms=6, color=NAVY, lw=1.6)
+for n, v in zip(rns, rtot):
+    ax.annotate(f"{v:.0f}", xy=(n, v), xytext=(0, 7), textcoords="offset points",
+                ha="center", fontsize=9, color=TEAL)
 for n, v in zip(ns, totals):
-    ax.annotate(f"{v:.1f}", xy=(n, v), xytext=(0, 7), textcoords="offset points",
+    ax.annotate(f"{v:.1f}", xy=(n, v), xytext=(0, -13), textcoords="offset points",
                 ha="center", fontsize=9, color=NAVY)
 ax.axhline(mc_base.mc_total, color=GREY, lw=1.2, ls="--")
-ax.text(198, mc_base.mc_total + 0.25, "broadcast baseline", color=GREY,
+ax.text(205, mc_base.mc_total + 0.7, "broadcast baseline", color=GREY,
+        fontsize=9.5, ha="right")
+ax.text(205, 21.0, r"ring delay-line ($\Delta=1$, single input)", color=TEAL,
+        fontsize=9.5, ha="right")
+ax.text(205, 11.0, r"filter bank (heterogeneous $W_{\rm in}$)", color=NAVY,
         fontsize=9.5, ha="right")
 ax.set_xlim(0, 215)
-ax.set_ylim(0, 10)
+ax.set_ylim(0, 42)
 ax.set_xlabel(r"number of nodes $n$")
 ax.set_ylabel("total MC")
-ax.set_title("Capacity vs node count (filter-bank limit)", fontsize=11.5, pad=10)
+ax.set_title("Capacity vs node count", fontsize=11.5, pad=10)
 fig.savefig(PANELS / "ch02_21_b.png", bbox_inches="tight", facecolor="white")
 plt.close(fig)
 
