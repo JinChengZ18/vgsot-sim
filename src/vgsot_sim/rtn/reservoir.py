@@ -355,6 +355,60 @@ def information_processing_capacity(reservoir: Reservoir, *, max_delay: int = 15
     return IPCResult(float(deg1 + deg2), float(deg1), float(deg2))
 
 
+def kernel_quality(reservoir, *, n_streams: int = 40, t_len: int = 60,
+                   washout: int = 150, sv_threshold: float = 1e-4,
+                   generalization: bool = False, seed: int = 0) -> int:
+    """Kernel rank (separation) or generalization rank of the reservoir.
+
+    Drives ``n_streams`` input sequences and returns the effective rank
+    (singular values above ``sv_threshold`` x the largest) of the matrix of final
+    states. ``generalization=False``: fully independent random streams — higher
+    rank = richer separation (bounded by min(n_streams, n_nodes)).
+    ``generalization=True``: streams share the last ``t_len//4`` inputs and differ
+    only in the distant past — LOWER rank = better generalization (the reservoir
+    should forget the irrelevant far past). Legenstein & Maass's kernel /
+    generalization pair.
+    """
+    rng = np.random.default_rng(seed)
+    common_tail = rng.uniform(-1.0, 1.0, size=t_len // 4)
+    finals = np.empty((n_streams, reservoir.n))
+    for k in range(n_streams):
+        u = rng.uniform(-1.0, 1.0, size=washout + t_len)
+        if generalization:
+            u[-len(common_tail):] = common_tail
+        X = reservoir.run(u, washout=washout)
+        finals[k] = X[-1]
+    sv = np.linalg.svd(finals - finals.mean(axis=0), compute_uv=False)
+    if sv[0] <= 0:
+        return 0
+    return int(np.sum(sv > sv_threshold * sv[0]))
+
+
+def esp_convergence(reservoir, *, t_len: int = 400, seed: int = 0) -> float:
+    """Echo-state-property check: distance between two state trajectories started
+    from different initial conditions under the SAME input, at the final step.
+    Values ~0 mean the initial condition is forgotten (ESP holds).
+
+    Mean-field mode only (deterministic given the input)."""
+    rng = np.random.default_rng(seed)
+    u = rng.uniform(-1.0, 1.0, size=t_len)
+    lim = 0.98 * reservoir.Vc0
+    xs = []
+    for x0 in (np.full(reservoir.n, -0.9), np.full(reservoir.n, +0.9)):
+        x = x0.copy()
+        for t in range(t_len):
+            V = reservoir._bias_of(u[t])
+            if reservoir.W_res is not None:
+                V = np.clip(V + reservoir.cfg.coupling_scale_v * (reservoir.W_res @ x),
+                            -lim, lim)
+            s_inf = stationary_mean(V, Delta=reservoir.Delta, Vc0=reservoir.Vc0)
+            tau = relaxation_time(V, tau0=reservoir.tau0, Delta=reservoir.Delta,
+                                  Vc0=reservoir.Vc0)
+            x = s_inf + (x - s_inf) * np.exp(-reservoir.dt / tau)
+        xs.append(x)
+    return float(np.linalg.norm(xs[0] - xs[1]) / np.sqrt(reservoir.n))
+
+
 class DelayReservoir:
     """Single-node time-delay reservoir (Appeltant 2011) built on one RTN node.
 

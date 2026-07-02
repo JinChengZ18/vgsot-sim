@@ -199,6 +199,27 @@ coupling_*`, `input_mode`) and scanning:
   trade-off — total capacity is conserved (Dambre), the topology chooses the
   allocation.
 
+### Reservoir-quality metrics (D2) and the device-budget allocation (D3)
+
+**Kernel / generalization rank + ESP** (`kernel_quality`, `esp_convergence`;
+n=100, fixed seeds): filter bank — kernel rank 18, generalization rank 14, ESP
+distance 2.6e-16 (leaky nodes forget the initial condition to machine
+precision); ring delay-line — kernel rank 36 (richer separation, consistent
+with its MC), generalization rank 31 (it deliberately remembers the far past),
+ESP distance 1.1e-2 after 400 steps (convergence is slow because the memory is
+~n hops deep — the flip side of its long memory).
+
+**Budget allocation** (`budget_allocation.py` + json): with a total budget of
+`B = n x R` physical devices (n logical nodes, R binary devices averaged per
+node, stochastic mode), the optimum at EVERY tested budget is few-nodes ×
+deep-averaging — n=8 wins at B=64/256/1024 with best MC = 0.47/0.76/1.21.
+Noise reduction (~1/sqrt(R)) beats added dimensionality throughout, and the
+best MC grows only ~B^(1/3) over the tested range: approaching the mean-field
+limit (7.9) by brute replication would take tens of thousands of devices per
+reservoir. Design implication: single-shot binary readout is the wrong regime —
+use longer per-step time-averaging (R can equivalently be realised in time) or
+readouts robust to binary states.
+
 ### Next steps (for thesis write-up, recommended with author review)
 
 - **Thesis write-back** — a §2.4.5 bridge subsection (τ0 ≈ tens of ns; the

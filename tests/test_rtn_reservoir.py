@@ -134,3 +134,14 @@ def test_random_coupling_runs_and_is_bounded():
     X = r.run(u, washout=40)
     assert X.shape == (160, 16)
     assert np.all(np.abs(X) <= 1.0 + 1e-9)
+
+
+def test_kernel_quality_and_esp():
+    from vgsot_sim.rtn.reservoir import esp_convergence, kernel_quality
+    fb = Reservoir(ReservoirConfig(n_nodes=24), seed=3)
+    kr = kernel_quality(fb, n_streams=16, t_len=40, washout=80, seed=1)
+    gr = kernel_quality(fb, n_streams=16, t_len=40, washout=80,
+                        generalization=True, seed=1)
+    assert 1 <= kr <= 16 and 1 <= gr <= 16
+    assert gr <= kr                                   # shared tails collapse rank
+    assert esp_convergence(fb, t_len=300, seed=2) < 1e-8   # leaky nodes forget init
