@@ -39,6 +39,19 @@ vgsot_sim/
         variability.py           # Brinkman-decomposed PDK variability budget + D2D MC
         sampling.py              # Wilson interval, exact binomial coverage, MC sampling-size sensitivity
 
+    # ── RTN node sub-package (new in 2026-06) ───────────────────────────────
+    rtn/
+        __init__.py              # re-exports the telegraph node API
+        telegraph.py             # free-running 2-state RTN node: tanh(ΔV/Vc0) mean, τ(V) fading memory,
+                                 #   exact propagator, from_nb_fit factory. A single CANDIDATE reservoir
+                                 #   *node* primitive (not a reservoir; see scripts/10_rtn_reservoir/)
+        bridge.py                # sLLG↔RTN bridge: drives the macrospin engine free-running at low Δ
+                                 #   (ki_for_delta incl. demag), extracts dwell/PSD/⟨m_z⟩, calibrates τ0
+                                 #   and bias→V. Validation script: scripts/10_rtn_reservoir/
+        reservoir.py             # the reservoir layer: W_in input projection + heterogeneous
+                                 #   fading-memory nodes + ridge readout; memory_capacity / NARMA-10
+                                 #   benchmarks. Mean-field (fast) + stochastic device modes.
+
     # ── User interface / output ─────────────────────────────────────────────
     cli.py                       # CLI dispatcher (`vgsot-sim <case>`)
     result_io.py                 # ensure_result_dir, build_stem, CSV export, single/two/three-panel plot helpers

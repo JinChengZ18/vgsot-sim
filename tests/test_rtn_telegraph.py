@@ -2,17 +2,19 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from vgsot_sim.rtn import (
     TelegraphArray,
     TelegraphParams,
+    neel_brown_rate,
     relaxation_time,
     simulate_trace,
     stationary_mean,
     tau_max,
     up_down_rates,
 )
-from vgsot_sim.analysis.nb_fit import NBFitResult
+from vgsot_sim.analysis.nb_fit import NBFitResult, psw_nb
 
 
 def test_stationary_mean_equals_tanh_and_rate_ratio():
@@ -76,3 +78,38 @@ def test_simulate_trace_shape_and_values():
     out = simulate_trace(V_t, dt=5.0, n=8, seed=1)
     assert out.shape == (100, 8)
     assert set(np.unique(out)).issubset({-1.0, 1.0})
+
+
+def test_rate_clipped_at_attempt_frequency():
+    """Rate never exceeds the attempt frequency 1/tau0 (fixes the |V|>Vc0 blow-up)."""
+    tau0, Delta, Vc0 = 1.0, 5.15, 0.884
+    V = np.linspace(-1.5, 1.5, 121)
+    r = neel_brown_rate(V, tau0=tau0, Delta=Delta, Vc0=Vc0)
+    assert np.all(r <= 1.0 / tau0 + 1e-12)                       # capped at attempt freq
+    # inside the physical domain |V|<Vc0 the clip is inactive -> matches the raw law
+    inside = np.abs(V) < Vc0
+    raw = (1.0 / tau0) * np.exp(-Delta * (1.0 - V[inside] / Vc0))
+    assert np.allclose(r[inside], raw)
+    # exactly the floored exponent everywhere
+    expected = (1.0 / tau0) * np.exp(-np.maximum(Delta * (1.0 - V / Vc0), 0.0))
+    assert np.allclose(r, expected)
+
+
+def test_rate_matches_psw_nb_instantaneous():
+    """neel_brown_rate equals the instantaneous rate implied by nb_fit.psw_nb."""
+    tau0, Delta, Vc0 = 1.0, 5.15, 0.884
+    V = np.linspace(-1.2, 1.2, 49)
+    t = 1e-4                                                     # any t: relation is exact
+    implied = -np.log1p(-psw_nb(V, t, Delta, Vc0, tau0=tau0)) / t
+    assert np.allclose(implied, neel_brown_rate(V, tau0=tau0, Delta=Delta, Vc0=Vc0))
+
+
+def test_step_warns_outside_domain():
+    """step() flags |V|>Vc0 as outside the two-state model's physical domain."""
+    arr = TelegraphArray(16, TelegraphParams(Vc0=0.884), seed=0)
+    with pytest.warns(RuntimeWarning):
+        arr.step(1.2, dt=1.0)
+    import warnings as _w
+    with _w.catch_warnings():
+        _w.simplefilter("error")                                # no warning inside domain
+        arr.step(0.3, dt=1.0)

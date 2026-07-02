@@ -1232,18 +1232,18 @@ $$
 
 ## 2.4 低势垒sMTJ的随机电报噪声与储备池节点模型
 
-前三节建立的写入概率模型刻画的是脉冲驱动下的"一次性"翻转：给定宽度$$t_w$$的写入脉冲，器件以概率$$P_{\mathrm{sw}}(V,t_w)$$完成一次$$\pm z$$跃迁，是无记忆的Bernoulli采样接口。然而当自由层能垒被进一步压低 (即2.3.4节所述$$\Delta$$处于个位数量级、保持时间$$\tau_{\mathrm{ret}}$$降至百纳秒乃至更短) 时，器件无需外加写入脉冲即可在热涨落驱动下于两态间自发、连续地往复跳变，形成随机电报噪声 (random telegraph noise, RTN)。该连续时间随机过程具有由偏置电压调控的非线性与衰落记忆，正是储备池计算 (reservoir computing) 处理时序任务所需的物理基元[^ref-camsari-pbits]。本节从2.3.3节同一Néel-Brown速率律出发推导该储备池节点的器件级模型，其数值实现见配套代码`vgsot_sim.rtn`，与脉冲写入模型共享$$(\Delta,V_{c0},\tau_0)$$参数集，对应同一器件在"概率写"与"自由演化"两种模式下的端口级抽象。
+前三节建立的写入概率模型刻画的是脉冲驱动下的"一次性"翻转：给定宽度$$t_w$$的写入脉冲，器件以概率$$P_{\mathrm{sw}}(V,t_w)$$完成一次$$\pm z$$跃迁，是无记忆的Bernoulli采样接口。然而当自由层能垒被进一步压低 (即2.3.4节所述$$\Delta$$处于个位数量级、保持时间$$\tau_{\mathrm{ret}}$$降至百纳秒乃至更短) 时，器件无需外加写入脉冲即可在热涨落驱动下于两态间自发、连续地往复跳变，形成随机电报噪声 (random telegraph noise, RTN)。本节把这一连续时间随机过程抽象为一个具$$\tanh$$型非线性与电压可调衰落记忆的单器件随机节点，作为储备池计算 (reservoir computing) 处理时序任务的候选器件基元[^ref-jaeger-haas][^ref-grollier-neuromorphic]；同族方案中，自旋力矩纳米振荡器已完成首个自旋电子储备池演示[^ref-torrejon-rc]，电压调控的超顺磁系综亦被用于低功耗储备池计算[^ref-welbourne-rc]。推导沿用2.3.3节的Néel-Brown速率形式，数值实现见配套代码`vgsot_sim.rtn`。本节只刻画单个节点的器件级动力学，多节点输入投影、线性读出训练与基准任务的储备池构建留待后续展开；式中偏置$$V$$是调制双阱倾斜的唯象有效量，2.4.5节给出其经纵向倾斜场的最简标定与模型的sLLG验证，到$$V_{\mathrm{MTJ}}$$、$$I_{\mathrm{SOT}}$$端口变量的完整映射属后续工作。
 
 ### 2.4.1 两态Markov过程与偏置依赖跃迁速率
 
-将自由层磁化沿易轴的投影离散为二值态$$s\in\{-1,+1\}$$ (分别对应$$m_z\approx\mp1$$的双势阱极小)。在偏置电压$$V$$ (经2.1.3节映射为有效SOT/STT驱动) 作用下双势阱被倾斜，一侧势垒抬高、另一侧压低，对应两个方向相反的热激活逃逸速率
+将自由层磁化沿易轴的投影离散为二值态$$s\in\{-1,+1\}$$ (分别对应$$m_z\approx\mp1$$的双势阱极小)。设偏置$$V$$为调制双阱倾斜的唯象有效量，小偏置下双阱被线性倾斜，一侧势垒抬高、另一侧压低，对应两个方向相反的热激活逃逸速率
 
 $$
 r_{\uparrow}(V) = \frac{1}{\tau_0}\exp\!\big[-\Delta(1 - V/V_{c0})\big],\qquad
 r_{\downarrow}(V) = \frac{1}{\tau_0}\exp\!\big[-\Delta(1 + V/V_{c0})\big],
 $$
 
-其中$$r_{\uparrow}$$驱动$$-1\!\to\!+1$$、$$r_{\downarrow}$$驱动$$+1\!\to\!-1$$，$$\Delta$$、$$V_{c0}$$沿用2.3.3节由实测反推的热稳定因子与零温临界电压，$$\tau_0$$为attempt time。$$r_{\uparrow}$$即2.3.3节的Néel-Brown速率，$$r_{\downarrow}$$为其在$$V\!\to\!-V$$下的镜像，二者共同刻画偏置对两态占据的细致平衡调制。
+其中$$r_{\uparrow}$$驱动$$-1\!\to\!+1$$、$$r_{\downarrow}$$驱动$$+1\!\to\!-1$$，$$\Delta$$、$$V_{c0}$$沿用2.3.3节由实测反推的热稳定因子与零温临界电压，$$\tau_0$$为attempt time。$$r_{\uparrow}$$即2.3.3节的Néel-Brown速率，$$r_{\downarrow}$$为其在$$V\!\to\!-V$$下的镜像，二者共同刻画偏置对两态占据的细致平衡调制。线性反对称形仅在$$|V|\ll V_{c0}$$下成立；速率指数取$$\max[\Delta(1\mp V/V_{c0}),\,0]$$下截 (与2.3.3节$$P_{\mathrm{sw}}$$同一约定)，使逃逸速率不超过尝试频率$$1/\tau_0$$。$$|V|=V_{c0}$$处一侧势垒消失，越过后双阱图像失效、器件确定性钉扎于单态，故$$|V|<V_{c0}$$为本模型的物理有效域[^note-rtn-clip]。
 
 ### 2.4.2 稳态平均：输入—状态非线性
 
@@ -1255,7 +1255,7 @@ $$
 = \tanh\!\Big(\frac{\Delta V}{V_{c0}}\Big).
 $$
 
-代入速率表达式后公共因子$$\tau_0^{-1}\exp(-\Delta)$$相消，分子、分母分别约化为$$\exp(\Delta V/V_{c0})\mp\exp(-\Delta V/V_{c0})$$，即得双曲正切。该$$\tanh$$型转移函数把输入电压平滑映射到时域均值$$[-1,1]$$，零偏置斜率$$\mathrm{d}\langle s\rangle/\mathrm{d}V|_{0}=\Delta/V_{c0}$$，是储备池节点的输入—状态**非线性**来源。
+代入速率表达式后公共因子$$\tau_0^{-1}\exp(-\Delta)$$相消，分子、分母分别约化为$$\exp(\Delta V/V_{c0})\mp\exp(-\Delta V/V_{c0})$$，即得双曲正切。该$$\tanh$$型转移函数把输入电压平滑映射到时域均值$$[-1,1]$$，零偏置斜率$$\mathrm{d}\langle s\rangle/\mathrm{d}V|_{0}=\Delta/V_{c0}$$，是储备池节点的输入—状态**非线性**来源，与概率比特 (p-bit) 的可调随机响应同构[^ref-camsari-pbits]。
 
 ### 2.4.3 关联时间：衰落记忆
 
@@ -1269,14 +1269,22 @@ $$
 
 ### 2.4.4 记忆—非线性权衡与精确传播子
 
-偏置电压同时调制非线性强度与记忆深度，二者构成此消彼长的权衡：小$$|V|$$下$$\tau$$长 (记忆强)、$$\langle s\rangle$$近线性 (非线性弱)；大$$|V|$$下$$\tanh$$饱和 (非线性强)、$$\tau\to\tau_0$$ (记忆弱)。储备池计算正是通过为各节点配置不同的$$(\Delta,V_{c0})$$与工作偏置，在节点群上同时获得丰富非线性与多时间尺度记忆，从而以线性读出完成时序任务；此处该权衡被显式锚定到器件物理量$$(\Delta,V_{c0},\tau_0)$$而非经验设定。在数值实现上，给定步长$$\mathrm{d}t$$ (无需小于$$\tau$$)，节点状态可由两态过程的**精确传播子**逐步推进：
+偏置同时调制非线性强度与记忆深度，二者构成此消彼长的权衡[^ref-dambre-ipc]：小$$|V|$$下$$\tau$$长 (记忆强)、$$\langle s\rangle$$近线性 (非线性弱)；大$$|V|$$下$$\tanh$$饱和 (非线性强)、$$\tau\to\tau_0$$ (记忆弱)。该权衡直接锚定于器件物理量$$(\Delta,V_{c0},\tau_0)$$：在默认$$\Delta=5.15$$下$$\tanh$$于$$|V|\approx0.3\,\mathrm{V}$$即趋饱和，可用的非线性—记忆窗口较窄，储备池工作点宜取更低$$\Delta$$ (如$$\Delta\approx3.8$$对应$$\tau_{\max}\approx22\,\mathrm{ns}$$)。把单节点的该权衡用于时序任务，还需为各节点施加相异的输入投影并训练线性读出，使节点群张成高维状态空间，单个物理节点亦可经掩码输入与延迟反馈时间复用为虚拟节点群[^ref-appeltant-delay]——这一储备池层的构建是后续工作的重点。在数值实现上，给定步长$$\mathrm{d}t$$，节点状态可由两态过程的**传播子**逐步推进：
 
 $$
 P\big(s_{t+\mathrm{d}t}=+1\,\big|\,s_t\big)
 = p_{\uparrow}^{\infty} + \big(\mathbb{1}[s_t=+1]-p_{\uparrow}^{\infty}\big)\,\exp(-\mathrm{d}t/\tau),
 $$
 
-即下一步处于$$+1$$态的概率由稳态值$$p_{\uparrow}^{\infty}$$与当前态按$$\exp(-\mathrm{d}t/\tau)$$的指数弛豫线性插值得到。该传播子对任意$$\mathrm{d}t$$严格成立，使大规模节点群的Monte Carlo演化可在常规平台上高效并行。综上，低势垒sMTJ被封装为一个由偏置驱动、具可调非线性与衰落记忆的连续时间随机节点，为后续章节将sMTJ用于时序信息处理提供器件级物理入口。
+即下一步处于$$+1$$态的概率由稳态值$$p_{\uparrow}^{\infty}$$与当前态按$$\exp(-\mathrm{d}t/\tau)$$的指数弛豫线性插值得到。该传播子在步内$$V$$恒定 (分段常数输入) 时对任意$$\mathrm{d}t$$严格成立 ($$\mathrm{d}t$$无需小于$$\tau$$)，对步内时变输入则退化为绝热近似，需$$\mathrm{d}t$$相对输入变化时标足够小；其分段常数形式使大规模节点群的Monte Carlo演化可在常规平台上高效并行。综上，低势垒sMTJ被封装为一个由偏置驱动、具可调非线性与衰落记忆的连续时间随机节点，为后续构建sMTJ储备池、处理时序信息提供器件级物理入口。
+
+### 2.4.5 sLLG自由演化验证与参数标定
+
+前四小节的两态模型是对连续磁化动力学的约化抽象，本节以2.2节的sLLG宏自旋引擎在低势垒自由演化下检验其统计签名，并标定不能由Néel-Brown先验直接沿用的参数。目标势垒由$$K_U^{\mathrm{eff}} = K_i/t_f - \tfrac{1}{2}\mu_0 M_s^2 (N_z - N_x)$$反解$$K_i$$设定：本器件几何下形状各向异性项折合约$$208\,k_BT$$，不可忽略，$$\Delta=2$$对应$$K_i\approx2.62\times10^{-4}\,\mathrm{J/m^2}$$，仅比默认标定值$$3.20\times10^{-4}\,\mathrm{J/m^2}$$ (对应$$\Delta\approx48.5$$) 低约18%[^note-rtn-bridge-pitfall]。器件在$$I_{\mathrm{SOT}}=0$$、仅热涨落驱动下自由演化，双阱倾斜以纵向场$$h_z$$注入；两态极限下$$h_z$$对应的无量纲倾斜量为$$\mu_0 M_s V_{\mathrm{mag}} h_z/(k_BT)$$ (本器件参数下每$$\mathrm{A/m}$$约$$6.9\times10^{-4}$$)，与2.4.2节$$\tanh$$宗量$$\Delta V/V_{c0}$$同构，构成实际偏置到模型变量$$V$$的最简线性标定。驻留时间以滞回阈值$$|m_z|>0.5$$提取以排除赤道抖动，积分步长取4 ps，经与1 ps对照确认逃逸统计一致。
+
+指数驻留这一签名得到定量复现：$$\Delta=2$$下$$8\,\mu\mathrm{s}$$自由演化产生68次翻转，驻留时间分布的变异系数为0.99，与两态Markov过程要求的指数分布 (变异系数恒为1) 吻合，等价地印证了状态自关联的Lorentzian谱结构。时间尺度则须重新标定：由$$\tau_0=\bar\tau_{\mathrm{dwell}}/\exp(\Delta)$$在$$\Delta=1.5$$、2.0、2.5三个势垒下反推，宏自旋引擎给出的有效attempt time为15–27 ns，比2.3.3节沿用的文献先验$$\tau_0=1\,\mathrm{ns}$$大一个数量级以上；两态模型的全部时标 ($$\tau_{\max}$$、$$\tau_{\mathrm{ret}}$$以及储备池节点的记忆窗) 均线性正比于$$\tau_0$$，换算到器件时应以引擎实测或RTN谱实测的$$\tau_0$$为准。
+
+转移函数则形状复现而幅度压缩：$$\langle m_z\rangle(h_z)$$为过原点的单调S形，与$$\tanh$$形状一致，但饱和幅度压缩至约0.6–0.7。其原因是热涨落使磁化在阱内仅以$$|m_z|\approx0.85$$的平均投影进动，且约30%的时间处于$$|m_z|<0.5$$的过渡锥内，故sLLG实际实现的转移函数为$$A\tanh(g\,\cdot)$$ ($$A\approx0.7$$)，读出摆幅按$$A$$折减。综合本节结果，指数驻留与$$\tanh$$形状两项签名均在全动力学中复现，两态抽象作为器件级模型成立；但$$(\tau_0, A)$$须经上述流程标定后代入，这是2.4节模型接入实际器件评估的使用前提。
 
 ## 2.5 本章小结
 
@@ -1305,6 +1313,8 @@ $$
 [^note-nb-slope]: 线性势垒近似下$$\beta_s^{\mathrm{NB}} = 2\Delta\ln 2/V_{c0}$$只取决于$$\Delta$$与$$V_{c0}$$，与$$t_w$$无关。
 [^note-eta-fit]: 5.34为Monte Carlo数值拟合所得Device A、P→AP方向值；以表2.8解析参数代入$$\beta_s^{\mathrm{meas}}/\beta_s^{\mathrm{NB,\,analytic}} = 44.6/7.94 = 5.62$$，两者差异源于MC实现对NB拟合的轻度有限$$N$$偏差，不影响下游分析结论。
 [^note-variance-sum]: 该合成值小于诸单源CV代数和12.3%，原因在于独立随机变量按方差而非标准差线性叠加：$$\sqrt{\mathrm{Var}(X+Y)} = \sqrt{\mathrm{Var}(X)+\mathrm{Var}(Y)}\leq\sqrt{\mathrm{Var}(X)}+\sqrt{\mathrm{Var}(Y)}$$。
+[^note-rtn-clip]: 2.4节RTN模型的数值实现初版未对速率指数下截，在$$|V|>V_{c0}$$处给出超过尝试频率$$1/\tau_0$$的非物理逃逸速率 ($$\tau_0=1\,\mathrm{ns}$$、$$\Delta=5.15$$时$$V=1.2\,\mathrm{V}$$处$$r_{\uparrow}\approx6.3/\tau_0$$)。经与2.3.3节$$P_{\mathrm{sw}}$$统一采用$$\max[\cdot,0]$$下截后修正：越过$$V_{c0}$$即封顶于$$1/\tau_0$$并按单态确定性钉扎处理，回归测试见`tests/test_rtn_telegraph.py`。
+[^note-rtn-bridge-pitfall]: 该反解关系本身来自一次实现教训。桥接验证初版按"纯PMA"图像直接把$$K_i$$压低两个数量级以求低$$\Delta$$，忽略形状项后$$K_U^{\mathrm{eff}}$$变负、易轴翻至面内，$$m_z(t)$$表现为赤道扩散而非双态电报；且若以$$\mathrm{sign}(m_z)$$的原始翻转计数驻留，赤道抖动会被误计为越垒、给出非物理的亚纳秒$$\tau_0$$。改为含去磁项反解$$K_i$$并采用滞回阈值后方得到2.4.5节的统计。
 
 [^note-dev-thetacalib]: 该有效值由一次自下而上的标定试错确定，并非直接取自文献。以文献β-W体系的$$\theta_{\mathrm{SH}}\approx0.25$$起步时，仿真给出的SER 50%阈值仅约$$140\,\mu\mathrm{A}$$ ($$V_{\mathrm{SOT}}\approx109\,\mathrm{mV}$$)，较同批次Device A P→AP实测的$$I_{\mathrm{th}}\approx1.09\,\mathrm{mA}$$ ($$V_{\mathrm{th}}(0.75\,\mathrm{ns})\approx844\,\mathrm{mV}$$) 低约$$4.7$$倍。依2.1.3节临界电流标度$$I_{c0}^{\mathrm{SOT}}\propto1/\theta_{\mathrm{SH}}$$，在$$\theta_{\mathrm{SH}}$$、$$K_i$$、$$M_s$$、$$\alpha$$、$$R_W$$五个候选旋钮按灵敏度分级、每点数十条轨迹的短Monte Carlo试扫中，$$\theta_{\mathrm{SH}}$$被选为主调参 ($$\alpha=0.05$$已达CoFeB典型上限不宜再增)。先调至$$0.07$$使$$t_w=5\,\mathrm{ns}$$点的$$V_{\mathrm{th}}^{\mathrm{sim}}\approx508\,\mathrm{mV}$$与实测$$511\,\mathrm{mV}$$吻合，再细调至$$0.04$$以同时命中$$0.75\,\mathrm{ns}/894\,\mathrm{mV}$$靶点。标定流程见`scripts/09_simulation_figures/calibrate_to_experiment.py`。**其后修订**：2.2.3.2节积分核的场样SOT力矩符号勘误 (详见下文关于Cayley积分核的脚注) 使翻转阈值整体上移约40%，依同一$$1/\theta_{\mathrm{SH}}$$标度以保模长Cayley积分器重新标定后，$$\theta_{\mathrm{SH}}$$终值由$$0.04$$调整为$$0.066$$，$$V_{\mathrm{th}}(0.75\,\mathrm{ns})$$恢复至$$895\,\mathrm{mV}$$；该值仍较正文引用的文献β-W本征$$\theta_{\mathrm{SH}}\approx0.3$$低约4.5倍，差额对应集总模型未显式建模的自旋力矩损耗通道。
 [^note-dev-cayley]: 此结论源于实现过程中的实测教训而非先验取舍。仿真器最初的积分核 (`dynamic_switching.switching`) 即为球坐标$$(\theta,\phi)$$下的显式Euler步，在PMA稳态$$m_z\approx\pm1$$ (即$$\theta\to0,\pi$$) 附近因运动方程的$$1/\sin\theta$$项触发数值发散；显式切线步还须逐步手动重归一化，反过来扰动了热噪声场的Stratonovich统计权重、使等效仿真温度偏离设定值。为此将内核改写为笛卡尔形式并引入下文的保模长Cayley步 (`dynamic_switching_vector`，`integrator="cayley"`)，并顺带把自旋霍尔极化方向$$\hat{\sigma}_{\mathrm{SH}}$$由原先硬编码的$$-\hat{x}$$改为显式三矢量传入，以支持任意偏置构型。**进一步勘误**：在保留球坐标核作为交叉校验路径的复核中，发现其场样 (field-like) SOT项对$$\mathrm{d}\phi/\mathrm{d}t$$的$$\cos\theta\cos\phi$$分量存在一处符号错误，使该核与笛卡尔Cayley核的右端项在方位方向最大相差约25% (经符号代数逐项重推与回归测试`tests/test_integrator_consistency.py`确认)。改正后两套积分器在右端项层面完全一致，本文遂将默认积分器统一为Cayley。值得指出的是，该符号误差此前在数值上"人为锐化"了$$P_{\mathrm{sw}}(V)$$过渡曲线：改正后的翻转概率在阈值工作区附近仍与实验Sigmoid相符，但过驱区的back-hopping回切平台更为显著、整体过渡略宽——这是更忠实于sLLG动力学的物理结果，也提示以单宏自旋模型外推深过驱区写概率时须保留该平台修正而非简单沿用单调Sigmoid。
@@ -1312,6 +1322,7 @@ $$
 [^note-dev-bdr]: 将$$F=\dfrac{t_{\mathrm{ox}}}{\mathrm{R\!\cdot\!A}\,\sqrt{\phi_{\mathrm{ox}}}}\exp\!\big(2t_{\mathrm{ox}}\sqrt{2m_e e\phi_{\mathrm{ox}}}/\hbar\big)$$代回正文$$R_P$$表达式，两处$$\exp$$因子、$$t_{\mathrm{ox}}$$与$$\sqrt{\phi_{\mathrm{ox}}}$$逐项相消，得$$R_P=\mathrm{R\!\cdot\!A}/A_{\mathrm{MTJ}}$$，与$$\phi_{\mathrm{ox}}$$、$$t_{\mathrm{ox}}$$均无关。代码核查中发现早期`compute_Rp`实现即等价于此恒等式 (其WKB指数结构在数值上不起作用，属"装饰性"参数化)；为在保留实测R·A定标的同时仍能以势垒参数正向预测R·A，配套实现另提供真实的Simmons/BDR预测函数`resistance_area_bdr` (`src/vgsot_sim/initialize.py`)，其在MgO有效质量$$m^*\approx0.3\,m_e$$、$$\phi_{\mathrm{ox}}=0.4\,\mathrm{eV}$$下给出与实测同量级的R·A，势垒参数在其中真实进入。
 
 [^ref-akerman-tmr]: J. J. Akerman, J. M. Slaughter, R. W. Dave, and I. K. Schuller, "Tunneling criteria for magnetic-insulator-magnetic structures," *Applied Physics Letters*, vol. 79, pp. 3104-3106, 2001. DOI: [10.1063/1.1415412](https://doi.org/10.1063/1.1415412).
+[^ref-appeltant-delay]: L. Appeltant et al., "Information processing using a single dynamical node as complex system," *Nature Communications*, vol. 2, Art. no. 468, 2011. DOI: [10.1038/ncomms1476](https://doi.org/10.1038/ncomms1476).
 [^ref-ascher-petzold]: U. M. Ascher and L. R. Petzold, *Computer Methods for Ordinary Differential Equations and Differential-Algebraic Equations*. SIAM, 1998. DOI: [10.1137/1.9781611971392](https://doi.org/10.1137/1.9781611971392).
 [^ref-berger-stt]: L. Berger, "Emission of spin waves by a magnetic multilayer traversed by a current," *Physical Review B*, vol. 54, pp. 9353-9358, 1996. DOI: [10.1103/PhysRevB.54.9353](https://doi.org/10.1103/PhysRevB.54.9353).
 [^ref-bloch-law]: F. Bloch, "Zur Theorie des Ferromagnetismus," *Zeitschrift fur Physik*, vol. 61, pp. 206-219, 1930. DOI: [10.1007/BF01339661](https://doi.org/10.1007/BF01339661).
@@ -1321,13 +1332,16 @@ $$
 [^ref-callen-callen]: H. B. Callen and E. Callen, "The present status of the temperature dependence of magnetocrystalline anisotropy, and the l(l+1)/2 power law," *Journal of Physics and Chemistry of Solids*, vol. 27, pp. 1271-1285, 1966. DOI: [10.1016/0022-3697(66)90012-1](https://doi.org/10.1016/0022-3697(66)90012-1).
 [^ref-callen-welton]: H. B. Callen and T. A. Welton, "Irreversibility and generalized noise," *Physical Review*, vol. 83, pp. 34-40, 1951. DOI: [10.1103/PhysRev.83.34](https://doi.org/10.1103/PhysRev.83.34).
 [^ref-camsari-pbits]: K. Y. Camsari, R. Faria, B. M. Sutton, and S. Datta, "Stochastic p-bits for invertible logic," *Physical Review X*, vol. 7, 031014, 2017. DOI: [10.1103/PhysRevX.7.031014](https://doi.org/10.1103/PhysRevX.7.031014).
+[^ref-dambre-ipc]: J. Dambre, D. Verstraeten, B. Schrauwen, and S. Massar, "Information Processing Capacity of Dynamical Systems," *Scientific Reports*, vol. 2, Art. no. 514, 2012. DOI: [10.1038/srep00514](https://doi.org/10.1038/srep00514).
 [^ref-daquino-midpoint]: M. d'Aquino, C. Serpico, and G. Coppola, "Midpoint numerical technique for stochastic Landau-Lifshitz-Gilbert dynamics," *Journal of Applied Physics*, vol. 99, 08B905, 2006. DOI: [10.1063/1.2169472](https://doi.org/10.1063/1.2169472).
 [^ref-dieny-pma-review]: B. Dieny and M. Chshiev, "Perpendicular magnetic anisotropy at transition metal/oxide interfaces and applications," *Reviews of Modern Physics*, vol. 89, 025008, 2017. DOI: [10.1103/RevModPhys.89.025008](https://doi.org/10.1103/RevModPhys.89.025008).
 [^ref-garcia-palacios-sllg]: J. L. Garcia-Palacios and F. J. Lazaro, "Langevin-dynamics study of the dynamical properties of small magnetic particles," *Physical Review B*, vol. 58, pp. 14937-14958, 1998. DOI: [10.1103/PhysRevB.58.14937](https://doi.org/10.1103/PhysRevB.58.14937).
 [^ref-gilbert-damping]: T. L. Gilbert, "A phenomenological theory of damping in ferromagnetic materials," *IEEE Transactions on Magnetics*, vol. 40, pp. 3443-3449, 2004. DOI: [10.1109/TMAG.2004.836740](https://doi.org/10.1109/TMAG.2004.836740).
 [^ref-grimaldi-sot-mtj]: E. Grimaldi et al., "Single-shot dynamics of spin-orbit torque and spin transfer torque switching in three-terminal magnetic tunnel junctions," *Nature Nanotechnology*, vol. 15, pp. 111-117, 2020. DOI: [10.1038/s41565-019-0607-7](https://doi.org/10.1038/s41565-019-0607-7).
+[^ref-grollier-neuromorphic]: J. Grollier, D. Querlioz, K. Y. Camsari, K. Everschor-Sitte, S. Fukami, and M. D. Stiles, "Neuromorphic spintronics," *Nature Electronics*, vol. 3, pp. 360-370, 2020. DOI: [10.1038/s41928-019-0360-9](https://doi.org/10.1038/s41928-019-0360-9).
 [^ref-ikeda-pma]: S. Ikeda et al., "A perpendicular-anisotropy CoFeB-MgO magnetic tunnel junction," *Nature Materials*, vol. 9, pp. 721-724, 2010. DOI: [10.1038/nmat2804](https://doi.org/10.1038/nmat2804).
 [^ref-iserles-lie-group]: A. Iserles, H. Z. Munthe-Kaas, S. P. Norsett, and A. Zanna, "Lie-group methods," *Acta Numerica*, vol. 9, pp. 215-365, 2000. DOI: [10.1017/S0962492900002154](https://doi.org/10.1017/S0962492900002154).
+[^ref-jaeger-haas]: H. Jaeger and H. Haas, "Harnessing Nonlinearity: Predicting Chaotic Systems and Saving Energy in Wireless Communication," *Science*, vol. 304, pp. 78-80, 2004. DOI: [10.1126/science.1091277](https://doi.org/10.1126/science.1091277).
 [^ref-julliere-tmr]: M. Julliere, "Tunneling between ferromagnetic films," *Physics Letters A*, vol. 54, pp. 225-226, 1975. DOI: [10.1016/0375-9601(75)90174-7](https://doi.org/10.1016/0375-9601(75)90174-7).
 [^ref-kim-mtj-spice]: J. Kim et al., "A technology-agnostic MTJ SPICE model with user-defined dimensions for STT-MRAM scalability studies," *IEEE Custom Integrated Circuits Conference*, pp. 1-4, 2015. DOI: [10.1109/CICC.2015.7338407](https://doi.org/10.1109/CICC.2015.7338407).
 [^ref-kittel-domain]: C. Kittel, "Physical theory of ferromagnetic domains," *Reviews of Modern Physics*, vol. 21, pp. 541-583, 1949. DOI: [10.1103/RevModPhys.21.541](https://doi.org/10.1103/RevModPhys.21.541).
@@ -1346,7 +1360,9 @@ $$
 [^ref-nozaki-vcma-feb]: T. Nozaki et al., "Voltage-induced magnetic anisotropy changes in an ultrathin FeB layer sandwiched between two MgO layers," *Applied Physics Express*, vol. 6, 073005, 2013. DOI: [10.7567/APEX.6.073005](https://doi.org/10.7567/APEX.6.073005).
 [^ref-slonczewski-stt]: J. C. Slonczewski, "Current-driven excitation of magnetic multilayers," *Journal of Magnetism and Magnetic Materials*, vol. 159, pp. L1-L7, 1996. DOI: [10.1016/0304-8853(96)00062-5](https://doi.org/10.1016/0304-8853(96)00062-5).
 [^ref-stoner-wohlfarth]: E. C. Stoner and E. P. Wohlfarth, "A mechanism of magnetic hysteresis in heterogeneous alloys," *Philosophical Transactions of the Royal Society A*, vol. 240, pp. 599-642, 1948. DOI: [10.1098/rsta.1948.0007](https://doi.org/10.1098/rsta.1948.0007).
+[^ref-torrejon-rc]: J. Torrejon et al., "Neuromorphic computing with nanoscale spintronic oscillators," *Nature*, vol. 547, pp. 428-431, 2017. DOI: [10.1038/nature23011](https://doi.org/10.1038/nature23011).
 [^ref-weinan-wang]: W. E and X.-P. Wang, "Numerical methods for the Landau-Lifshitz equation," *SIAM Journal on Numerical Analysis*, vol. 38, pp. 1647-1665, 2000. DOI: [10.1137/S0036142999352199](https://doi.org/10.1137/S0036142999352199).
+[^ref-welbourne-rc]: A. Welbourne et al., "Voltage-controlled superparamagnetic ensembles for low-power reservoir computing," *Applied Physics Letters*, vol. 118, 202402, 2021. DOI: [10.1063/5.0048911](https://doi.org/10.1063/5.0048911).
 [^ref-yang-300mm]: W. Yang, E. Liu, *et al.* (S. He), "Achieving High Yield of Perpendicular SOT-MTJ Manufactured on 300 mm Wafers," *IEEE Transactions on Electron Devices*, vol. 71, p. 2095, 2024. DOI: [10.1109/TED.2024.3360664](https://doi.org/10.1109/TED.2024.3360664).
 [^ref-zhang-vgsot]: K. Zhang, D. Zhang, C. Wang, L. Zeng, Y. Wang, and W. Zhao, "Compact modeling and analysis of voltage-gated spin-orbit torque magnetic tunnel junction," *IEEE Access*, vol. 8, pp. 50792-50800, 2020. DOI: [10.1109/ACCESS.2020.2980073](https://doi.org/10.1109/ACCESS.2020.2980073).
 

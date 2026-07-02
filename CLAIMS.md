@@ -2,7 +2,7 @@
 
 Every substantive physics/engineering claim in the docs/code is mapped here to the test or committed artifact that backs it. Goal: **no unbacked assertion**. `backed` = a passing test or committed numeric artifact reproduces it; `gap` = asserted but not yet pinned by a dedicated check; `pending` = blocked on an open project item.
 
-Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (37 tests).
+Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (67 tests).
 
 ## Physics kernels (Python)
 
@@ -20,14 +20,32 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (37 tests).
 | Process-variability CV(Δ) budget partitions total variance; macrospin sample reproducible | `tests/test_variability.py` (2) | backed |
 | End-to-end `rng=` byte-reproducibility (euler + cayley); `rng_mode` switch; Psw=1−SER alias | `tests/test_toggles.py` (rng/mode/psw tests) | backed |
 
-## RTN reservoir primitive (new, `vgsot_sim.rtn`)
+## RTN node primitive (candidate reservoir node, `vgsot_sim.rtn`)
+
+> Scope: a SINGLE free-running 2-state node, not a reservoir (no input weights, node
+> coupling, or trained readout). `V` is a phenomenological tilt valid for `|V|<Vc0`,
+> not literally `V_MTJ`. Building an actual reservoir + calibrating `V` to a device
+> drive are in [`scripts/10_rtn_reservoir/`](scripts/10_rtn_reservoir/).
 
 | Claim | Backing | Status |
 |---|---|---|
-| ⟨s⟩_inf = tanh(Δ V/Vc0) = (r↑−r↓)/(r↑+r↓) | `tests/test_rtn_telegraph.py::test_stationary_mean_equals_tanh_and_rate_ratio` | backed |
+| ⟨s⟩_inf = tanh(Δ V/Vc0) = (r↑−r↓)/(r↑+r↓) on \|V\|<Vc0 | `tests/test_rtn_telegraph.py::test_stationary_mean_equals_tanh_and_rate_ratio` | backed |
 | τ(V)=1/(r↑+r↓) peaks at V=0 = τ0·exp(Δ)/2 | `::test_tau_peaks_at_zero_bias`, `::test_relaxation_time_is_inverse_total_rate` | backed |
 | Exact 2-state propagator recovers the stationary mean; binary, seed-reproducible | `::test_exact_propagator_recovers_stationary_mean`, `::test_states_are_binary_and_seed_reproducible` | backed |
 | `TelegraphParams.from_nb_fit` wires vgsot's own NB inversion (ns units) | `::test_from_nb_fit_copies_delta_vc0`, `::test_simulate_trace_shape_and_values` | backed |
+| Escape rate floored at attempt freq 1/τ0; equals `nb_fit.psw_nb` implied rate; `step()` warns for \|V\|>Vc0 (physical domain `\|V\|<Vc0`) | `::test_rate_clipped_at_attempt_frequency`, `::test_rate_matches_psw_nb_instantaneous`, `::test_step_warns_outside_domain` | backed |
+
+## RTN bridge + reservoir (stages 2–3, `vgsot_sim.rtn.bridge` / `reservoir`)
+
+> Quantitative validation results in [`scripts/10_rtn_reservoir/README.md`](scripts/10_rtn_reservoir/) (+ committed `*_results.json`).
+
+| Claim | Backing | Status |
+|---|---|---|
+| `ki_for_delta` keeps the well perpendicular (K_u^eff>0 incl. demag); PMA-only Ki goes in-plane | `tests/test_rtn_bridge.py::test_ki_delta_roundtrip`, `::test_low_barrier_is_perpendicular_not_in_plane` | backed |
+| `bias→V` tilt slope = μ0·Ms·v/(kB·T); free-run / dwell / PSD helpers run | `::test_tilt_per_field_value`, `::test_free_run_shape_and_range`, `::test_dwell_times_*`, `::test_psd_lorentzian_runs_on_synthetic` | backed |
+| Low-Δ free-running sLLG → exponential dwell (CV≈0.99), τ0≈15–27 ns (≠1 ns), tanh-shape ⟨m_z⟩ amplitude-compressed A≈0.7 | `scripts/10_rtn_reservoir/bridge_results.json` (committed run) | backed (artifact) |
+| Heterogeneous W_in reservoir MC≈8 ≫ broadcast-identical baseline MC≈0.6 (ridge readout recovers a linear map) | `tests/test_rtn_reservoir.py::test_heterogeneous_beats_broadcast_baseline`, `::test_ridge_recovers_linear_map`, `::test_memory_capacity_decays_with_delay` | backed |
+| NARMA-10 NRMSE≈0.55; stochastic single-device MC≈0.36 (needs replica-averaging) | `scripts/10_rtn_reservoir/reservoir_results.json` (committed run) | backed (artifact) |
 
 ## Verilog-A engine (`va/llg/vgsot_llg.va`)
 
