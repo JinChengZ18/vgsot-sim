@@ -57,6 +57,7 @@ R_P = \frac{t_{ox}}{F \cdot A_{MTJ} \cdot \phi_{ox}}\exp\!\left(\frac{2 t_{ox}}{
 $$
 
 其中$$t_{ox}$$与$$\phi_{ox}$$分别为隧穿势垒层厚度与势垒高度，$$F$$为根据电阻—面积乘积$$RA$$标定的拟合因子，$$A_{MTJ}$$为MTJ截面积，$$e$$为元电荷，$$m_e$$为电子质量，$$\hbar$$为约化普朗克常数。指数因子主导了真实$$R_P$$对势垒厚度的强敏感性，$$t_{ox}$$每变化$$0.1\,\mathrm{nm}$$量级即可使$$R_P$$变化数倍，构成MTJ阻值工艺难以精细控制的根本来源之一 (就本行为级实现而言，拟合因子$$F$$经R·A约束后$$R_P$$解析地退化为$$\mathrm{R\!\cdot\!A}/A_{MTJ}$$、由实测R·A直接定标，详见2.2.2.3节及[^note-dev-bdr])。
+[^note-dev-bdr]: 将$$F=\dfrac{t_{\mathrm{ox}}}{\mathrm{R\!\cdot\!A}\,\sqrt{\phi_{\mathrm{ox}}}}\exp\!\big(2t_{\mathrm{ox}}\sqrt{2m_e e\phi_{\mathrm{ox}}}/\hbar\big)$$代回正文$$R_P$$表达式，两处$$\exp$$因子、$$t_{\mathrm{ox}}$$与$$\sqrt{\phi_{\mathrm{ox}}}$$逐项相消，得$$R_P=\mathrm{R\!\cdot\!A}/A_{\mathrm{MTJ}}$$，与$$\phi_{\mathrm{ox}}$$、$$t_{\mathrm{ox}}$$均无关。这一等效说明正文公式在行为级模型中承担R·A定标与灵敏度解释作用；若需以势垒参数为自变量正向预测R·A，应使用未将R·A吸收进$$F$$的Simmons/BDR形式。
 
 反平行态电阻$$R_{AP}$$由TMR比定义。在Jullière二流模型下，理论TMR可由两侧铁磁电极的有效自旋极化率$$P$$给出
 
@@ -304,6 +305,7 @@ $$
 $$
 
 该偏置场打破了SOT翻转中$$\pm z$$方向的等效对称性，使驱动电流的极性与翻转方向之间形成确定性的一一对应关系[^note-dev-hex]。
+[^note-dev-hex]: 该垂直关系在标定中被确认为模型的一处方向敏感点：交换偏置场一旦偏离与$$\hat{\sigma}_{\mathrm{SH}}$$ (本仿真器默认$$-\hat{x}$$) 垂直的设置，仿真SER即塌缩为约$$0.5$$的随机比特平台，器件退化为不再受驱动电流极性确定性偏置的无偏硬币 (与上述对称性破缺机制互为印证)。故实现中将$$\mathbf{H}_{\mathrm{EX}}$$严格约束为垂直于$$\hat{\sigma}_{\mathrm{SH}}$$，默认取沿$$-\hat{y}$$的$$-50\,\mathrm{Oe}$$。
 
 **热噪声场。** 在有限温度下，自由层磁矩与晶格声子系统之间的热涨落通过涨落-耗散定理 (fluctuation-dissipation theorem) 耦合进入LLG方程[^ref-callen-welton]。Brown于1963年在单畴粒子框架下严格证明，与Gilbert阻尼$$\alpha$$共轭的热随机场$$\mathbf{H}_{\mathrm{TH}}$$必须满足白噪声统计，其二阶相关函数为[^ref-brown-thermal]
 $$
@@ -323,7 +325,7 @@ $$
 
 其中$$\boldsymbol{\xi} = (\xi_x, \xi_y, \xi_z)^{\mathrm{T}}$$，各分量为相互独立的标准正态随机变量，即$$\xi_i \sim \mathcal{N}(0,1)$$。离散采样形式等价于以时间步$$\Delta t$$对原始相关函数中的$$\delta(t-t')$$进行积分后得到的离散版本，García-Palacios和Lázaro于1998年对此给出了详细推导，并验证了该采样方式在Stratonovich随机积分意义下的自洽性[^ref-garcia-palacios-sllg]。
 
-值得指出的是，在前期一些公开的VGSOT-MTJ紧凑模型的Python移植实现[^ref-zhang-vgsot]中，存在一个对统计学结论影响显著的实现细节差异：$$\boldsymbol{\xi}$$被生成为三维高斯样本后再显式归一化为单位向量$$\boldsymbol{\xi}\leftarrow\boldsymbol{\xi}/|\boldsymbol{\xi}|$$，相当于将$$|\mathbf{H}_{\mathrm{TH}}|^2$$从$$\chi^2_3$$分布锁定为常数，违反了FDT对各分量方差的硬性约束 (正确实现下$$\mathbb{E}[|\mathbf{H}_{\mathrm{TH}}|^2]=3\sigma_{\mathrm{th}}^2$$，而归一化后$$|\mathbf{H}_{\mathrm{TH}}|^2\equiv\sigma_{\mathrm{th}}^2$$)，等效将注入噪声功率压缩了三倍。其物理后果是临界电压附近的$$P_{\mathrm{sw}}(V)$$曲线在仿真中显著陡于实测，从而严重低估Sigmoid斜率的D2D展宽因子$$\eta_c$$。本工作配套仿真器采用三分量独立$$\mathcal{N}(0,1)$$采样以确保与FDT严格自洽，2.3.5节中给出的$$\eta_c$$与$$\mathcal{F}(\mathrm{CV})$$标定数值即基于修正后的实现。需要注意的是，上述采样式中的温度$$T$$在引入自热效应后将成为随时间步演化的动态状态变量，而非固定常数，具体耦合更新机制在2.2.2节与2.2.3节给出。
+前期一些公开的VGSOT-MTJ紧凑模型Python移植实现[^ref-zhang-vgsot]中，存在一个对统计学结论影响显著的实现细节差异：$$\boldsymbol{\xi}$$被生成为三维高斯样本后再显式归一化为单位向量$$\boldsymbol{\xi}\leftarrow\boldsymbol{\xi}/|\boldsymbol{\xi}|$$，相当于将$$|\mathbf{H}_{\mathrm{TH}}|^2$$从$$\chi^2_3$$分布锁定为常数，违反了FDT对各分量方差的硬性约束 (正确实现下$$\mathbb{E}[|\mathbf{H}_{\mathrm{TH}}|^2]=3\sigma_{\mathrm{th}}^2$$，而归一化后$$|\mathbf{H}_{\mathrm{TH}}|^2\equiv\sigma_{\mathrm{th}}^2$$)，等效将注入噪声功率压缩了三倍。其物理后果是临界电压附近的$$P_{\mathrm{sw}}(V)$$曲线在仿真中显著陡于实测，从而严重低估Sigmoid斜率的D2D展宽因子$$\eta_c$$。本工作配套仿真器采用三分量独立$$\mathcal{N}(0,1)$$采样以确保与FDT严格自洽，2.3.5节中给出的$$\eta_c$$与$$\mathcal{F}(\mathrm{CV})$$标定数值即基于修正后的实现。引入自热效应后，上述采样式中的温度$$T$$将随时间步演化，而非保持为固定常数；具体耦合更新机制在2.2.2节与2.2.3节给出。
 
 至此，上述各有效场分量与热噪声采样表达式共同构成了驱动LLS方程的完整有效场模型。各分量的物理参数取值依据2.2.2节各小节末尾列出的器件参数表 (2.2.2.1节末表2.2、2.2.2.2节末表2.3、2.2.2.3节末表2.4)，而离散热噪声采样中温度$$T$$与材料参数$$M_s(T)$$、$$K_i(T)$$之间的耦合反馈关系，则是2.2.2节温度效应建模的核心内容。
 
@@ -567,7 +569,7 @@ R_P
 \right)
 $$
 
-其中$$t_{\mathrm{ox}}$$为势垒厚度，$$\phi_{\mathrm{ox}}$$为MgO有效势垒高度，$$A_{\mathrm{MTJ}}$$为电学有效面积 (按2.2.2.4节取$$D_{\mathrm{elec}}$$对应面积)，$$m_e$$为电子质量，$$e$$为元电荷，$$\hbar$$为约化普朗克常数，$$F$$为由R·A乘积一致性约束所定标的常数 (其量纲为$$1/(\Omega\!\cdot\!\mathrm{m}\!\cdot\!\sqrt{\mathrm{eV}})$$，并非无量纲量；数值上保证了$$R_P\cdot A_{\mathrm{MTJ}}$$回归到实验测得的R·A值)。BDR模型严格成立于$$eV\ll\phi_{\mathrm{ox}}$$的弱偏压极限；在较大偏压下，该模型作为势垒参数到阻值的定性映射仍具工程适用性，但应理解为等效参数化而非严格推导。上式在物理上揭示了真实器件$$R_P$$对$$t_{\mathrm{ox}}$$与$$\phi_{\mathrm{ox}}$$的指数敏感性，工艺中的势垒厚度涨落被指数放大为阻值分布。然而需明确实现层面的一处等效：由于$$F$$被约束为复现实测R·A，上式中的WKB指数因子在解析上恰与$$t_{\mathrm{ox}}$$、$$\sqrt{\phi_{\mathrm{ox}}}$$逐项相消，本行为级模型的$$R_P$$实际退化为$$R_P=\mathrm{R\!\cdot\!A}/A_{\mathrm{MTJ}}$$，即由实测R·A直接定标、而非在运行时由势垒参数推算[^note-dev-bdr]。因此势垒涨落对阵列$$R_P/R_{AP}$$离散性的影响，在本模型中经由实测R·A的分布 (作为输入变异源) 进入，而非经由式中$$\phi_{\mathrm{ox}}$$的显式扰动；若需以势垒参数为自变量正向预测R·A，应改用配套实现保留的真实Simmons/BDR预测函数`resistance_area_bdr`。该映射经由前述$$R_{\mathrm{MTJ}}(m_z)$$关系最终影响整个阵列的$$R_P/R_{AP}$$离散性。
+其中$$t_{\mathrm{ox}}$$为势垒厚度，$$\phi_{\mathrm{ox}}$$为MgO有效势垒高度，$$A_{\mathrm{MTJ}}$$为电学有效面积 (按2.2.2.4节取$$D_{\mathrm{elec}}$$对应面积)，$$m_e$$为电子质量，$$e$$为元电荷，$$\hbar$$为约化普朗克常数，$$F$$为由R·A乘积一致性约束所定标的常数 (其量纲为$$1/(\Omega\!\cdot\!\mathrm{m}\!\cdot\!\sqrt{\mathrm{eV}})$$，并非无量纲量；数值上保证了$$R_P\cdot A_{\mathrm{MTJ}}$$回归到实验测得的R·A值)。BDR模型严格成立于$$eV\ll\phi_{\mathrm{ox}}$$的弱偏压极限；在较大偏压下，该模型作为势垒参数到阻值的定性映射仍具工程适用性，但应理解为等效参数化而非严格推导。上式在物理上揭示了真实器件$$R_P$$对$$t_{\mathrm{ox}}$$与$$\phi_{\mathrm{ox}}$$的指数敏感性，工艺中的势垒厚度涨落被指数放大为阻值分布。然而需明确实现层面的一处等效：由于$$F$$被约束为复现实测R·A，上式中的WKB指数因子在解析上恰与$$t_{\mathrm{ox}}$$、$$\sqrt{\phi_{\mathrm{ox}}}$$逐项相消，本行为级模型的$$R_P$$实际退化为$$R_P=\mathrm{R\!\cdot\!A}/A_{\mathrm{MTJ}}$$，即由实测R·A直接定标、而非在运行时由势垒参数推算[^note-dev-bdr]。因此势垒涨落对阵列$$R_P/R_{AP}$$离散性的影响，在本模型中经由实测R·A的分布 (作为输入变异源) 进入，而非经由式中$$\phi_{\mathrm{ox}}$$的显式扰动；若需以势垒参数为自变量正向预测R·A，应改用未将R·A吸收进拟合因子的Simmons/BDR预测形式。该映射经由前述$$R_{\mathrm{MTJ}}(m_z)$$关系最终影响整个阵列的$$R_P/R_{AP}$$离散性。
 
 在概率计算场景下，TMR与电输运非线性的影响体现在以下几个层面。读出端的电阻窗口会随偏压与温度实时变化，从而影响读出参考电压与感放裕量。由于写入过程中自热升温，写后立刻读取与热平衡后读取对应不同的瞬时TMR，导致动态读出误差。在阵列级环境中，阻值分布非线性会在多次统计采样中引入额外的均值偏置。因此，行为级模型中有必要将$$R_{\mathrm{MTJ}}(m_z,T,V)$$而非固定的$$R_P$$/$$R_{AP}$$作为读出接口变量。
 
@@ -690,7 +692,8 @@ $$
 
 #### 2.2.3.2 保模长的隐式中点法与Cayley变换
 
-为避免频繁归一化带来的误差，一种直观的替代方案是将$$\mathbf{m}$$转换至球坐标系$$(\theta,\phi)$$下求解。然而，由于PMA器件的稳定态位于$$m_z \approx \pm 1$$ (即极点$$\theta = 0,\pi$$附近)，球坐标系下的运动方程包含$$1/\sin\theta$$的坐标奇点，在极点附近引发数值发散，因此球坐标更新法不适用于PMA-MRAM的可靠性仿真[^note-dev-cayley]。
+一种直观替代方案是将$$\mathbf{m}$$转换至球坐标系$$(\theta,\phi)$$下求解，以减少逐步归一化带来的误差。然而，PMA器件的稳定态位于$$m_z \approx \pm 1$$ (即极点$$\theta = 0,\pi$$附近)，球坐标系下的运动方程包含$$1/\sin\theta$$坐标奇点，在极点附近容易触发数值发散，因此球坐标更新法不适用于PMA-MRAM的可靠性仿真[^note-dev-cayley]。
+[^note-dev-cayley]: 此结论源于实现过程中的实测教训而非先验取舍。仿真器早期采用球坐标$$(\theta,\phi)$$下的显式Euler步，在PMA稳态$$m_z\approx\pm1$$ (即$$\theta\to0,\pi$$) 附近因运动方程的$$1/\sin\theta$$项触发数值发散；显式切线步还须逐步手动重归一化，反过来扰动热噪声场的Stratonovich统计权重，使等效仿真温度偏离设定值。后续实现改为笛卡尔形式的保模长Cayley步，并将自旋霍尔极化方向$$\hat{\sigma}_{\mathrm{SH}}$$作为显式三矢量输入，以支持任意偏置构型。进一步交叉校验发现，球坐标核的场样 (field-like) SOT项对$$\mathrm{d}\phi/\mathrm{d}t$$的$$\cos\theta\cos\phi$$分量存在一处符号错误，使其与笛卡尔Cayley核的右端项在方位方向最大相差约25%。改正后两套积分器在右端项层面一致，本文遂将默认积分器统一为Cayley。该符号误差此前在数值上"人为锐化"了$$P_{\mathrm{sw}}(V)$$过渡曲线；改正后的翻转概率在阈值工作区附近仍与实验Sigmoid相符，但过驱区的back-hopping回切平台更为显著、整体过渡略宽，提示以单宏自旋模型外推深过驱区写概率时须保留该平台修正而非简单沿用单调Sigmoid。
 
 更为严谨的方案是在笛卡尔坐标系下采用保结构的几何积分器[^ref-weinan-wang]。对上述广义旋转动力学形式，在时间区间$$[t_n, t_{n+1}]$$内以中点处的状态近似旋转矢量：
 
@@ -812,6 +815,7 @@ $$
 为使仿真结果能够直接服务于不同写入机制的对比分析，平台预置四类标准化的仿真场景：纯SOT基线场景关闭VCMA调制 ($$V_{\mathrm{MTJ}}=0$$)，其翻转概率仅由SOT电流密度与脉冲宽度决定，是建立基准曲线的出发点；VCMA辅助场景在SOT电流基础上施加MTJ偏置电压，通过$$\Delta(V)=\Delta_0-\beta_{\mathrm{VCMA}}V$$动态调低有效能垒以降低写入电流；优化双脉冲场景按2.1.3节的SOT-VCMA联合驱动模型设计两段脉冲序列，先以VCMA脉冲降低能垒、再以SOT脉冲完成翻转，用于量化能效优化收益；SER蒙特卡罗场景对每个驱动参数工作点执行$$N$$次独立轨迹并统计写错误率$$\mathrm{SER}=1-\frac{1}{N}\sum_i s_i$$或等价的翻转概率$$P_{\mathrm{sw}}=1-\mathrm{SER}$$。$$N$$的默认值随目标置信度自适应调整 (参见2.2.3.2节)。
 
 行为级紧凑模型追求的是端口级输出与同批次实测对齐，平台因此以$$R_P$$、$$R_{AP}$$和0.75 ns写入阈值为共同标定靶点，得到端口级有效自旋霍尔角$$\theta_{\mathrm{SH}}\!\approx\!0.066$$[^note-dev-thetacalib]。该值应理解为集总后的等效力矩效率，吸收了界面自旋损失、寄生电阻与电流方向偏离等未显式建模通道；公开文献中的β-W/CoFeB材料参数[^ref-liu-chl][^ref-yang-300mm]只用于约束量级，本文的标定对象始终是2.3.2节同批次Device A的实测阈值、电阻幅度与Sigmoid响应。
+[^note-dev-thetacalib]: 该有效值由一次自下而上的标定试错确定，并非直接取自文献。以文献β-W体系的$$\theta_{\mathrm{SH}}\approx0.25$$起步时，仿真给出的SER 50%阈值仅约$$140\,\mu\mathrm{A}$$ ($$V_{\mathrm{SOT}}\approx109\,\mathrm{mV}$$)，较同批次Device A P→AP实测的$$I_{\mathrm{th}}\approx1.09\,\mathrm{mA}$$ ($$V_{\mathrm{th}}(0.75\,\mathrm{ns})\approx844\,\mathrm{mV}$$) 低约$$4.7$$倍。依2.1.3节临界电流标度$$I_{c0}^{\mathrm{SOT}}\propto1/\theta_{\mathrm{SH}}$$，在$$\theta_{\mathrm{SH}}$$、$$K_i$$、$$M_s$$、$$\alpha$$、$$R_W$$五个候选调参量按灵敏度分级、每点数十条轨迹的短Monte Carlo试扫中，$$\theta_{\mathrm{SH}}$$被选为主调参量 ($$\alpha=0.05$$已达CoFeB典型上限不宜再增)。先调至$$0.07$$使$$t_w=5\,\mathrm{ns}$$点的$$V_{\mathrm{th}}^{\mathrm{sim}}\approx508\,\mathrm{mV}$$与实测$$511\,\mathrm{mV}$$吻合，再细调至$$0.04$$以同时命中$$0.75\,\mathrm{ns}/894\,\mathrm{mV}$$靶点。其后，2.2.3.2节积分核的场样SOT力矩符号勘误使翻转阈值整体上移约40%，依同一$$1/\theta_{\mathrm{SH}}$$标度以保模长Cayley积分器重新标定后，$$\theta_{\mathrm{SH}}$$终值由$$0.04$$调整为$$0.066$$，$$V_{\mathrm{th}}(0.75\,\mathrm{ns})$$恢复至$$895\,\mathrm{mV}$$；该值仍较正文引用的文献β-W本征$$\theta_{\mathrm{SH}}\approx0.3$$低约4.5倍，差额对应集总模型未显式建模的自旋力矩损耗通道。
 
 ---
 
@@ -839,14 +843,6 @@ $$
 
 ## 2.3 sMTJ器件实验验证与联合写入概率模型
 
-本节把前文模型拉回真实器件。仿真链路能够解释随机翻转的物理来源，但只有同批次实测才能回答三个决定性问题：器件是否真的给出可拟合的$$P_{\mathrm{sw}}(V,t)$$；Néel-Brown模型能否从脉宽依赖外推到概率曲线；工艺失配是否会破坏阵列级Bernoulli接口的一致性[^ref-borders-factorization]。本节围绕这三个问题组织实验与数据，不把单器件表征写成孤立的参数罗列。
-
----
-
-![SOT-MTJ器件实验表征综合图](figs/Chapter02_local_11.png)
-
-**图2.11** SOT-MTJ器件实验平台与统计表征综合视图。(a)高速测试系统原理框图：超快电压脉冲经功率分配器分为两路 (上路可选$$-6\,\mathrm{dB}$$衰减)，射频偏置器合并高频脉冲与10 mV直流偏置后施加于器件顶层或底层电极，定向耦合器监测信号状态，SMU在顶层电极处采集电流响应。(b)实物照片：芯片样品、器件阵列光学显微镜照片及探针台测试系统。
-
 ### 2.3.1高速测试系统架构与器件信息
 
 实验器件来自驰拓(HIKSTOR) 300 mm三端SOT-MTJ工艺平台，采用top-pinned MTJ堆叠与$$\beta$$-W SOT通道；几何、隧穿和输运标称参数已在2.1与2.2的模型参数表中给出。这里保留与概率标定直接相关的信息：高速脉冲测试平台能够在亚纳秒至数纳秒窗口内施加写入脉冲、读出MTJ状态，并通过链路校正恢复器件端有效电压；外加面内磁场用于破缺SOT写入的手性对称性[^ref-grimaldi-sot-mtj]。图2.11展示测试链路，表2.5给出阵列均值。
@@ -859,6 +855,10 @@ $$
 | 偏置场$$\mu_0 H_{\mathrm{offset}}$$ | 0.36 mT |
 | MTJ平行态电阻$$R_P$$ | 10.89 kΩ |
 | SOT沟道电阻$$R_{\mathrm{SOT}}$$ | 776 Ω |
+
+![SOT-MTJ器件实验表征综合图](figs/Chapter02_local_11.png)
+
+**图2.11** SOT-MTJ器件实验平台与统计表征综合视图。(a)高速测试系统原理框图：超快电压脉冲经功率分配器分为两路 (上路可选$$-6\,\mathrm{dB}$$衰减)，射频偏置器合并高频脉冲与10 mV直流偏置后施加于器件顶层或底层电极，定向耦合器监测信号状态，SMU在顶层电极处采集电流响应。(b)实物照片：芯片样品、器件阵列光学显微镜照片及探针台测试系统。
 
 表2.5中的$$R_P$$还提供了一个重要的工艺校准锚点：按物理直径直接换算的Brinkman电阻低于实测值，说明参与隧穿的电学有效面积小于版图几何面积。由$$R\!\cdot\!A/R_P$$反推可得$$D_{\mathrm{elec}}\approx64.9\,\mathrm{nm}$$，与刻蚀损伤环带导致边缘电学失效的图像一致。因此，后续Brinkman电阻映射与阵列级失配分析均采用$$D_{\mathrm{elec}}$$而非$$D_{\mathrm{phys}}$$作为电学基准。
 
@@ -954,6 +954,7 @@ $$
 | P→AP | 175 mV | 94 ns | 135 ns |
 
 表2.7说明两态保持时间存在方向差异，但均处于百纳秒量级，远低于传统存储MRAM所要求的年量级保持时间[^note-retention-delta]，这也是sMTJ作为低势垒概率采样单元的设计前提[^ref-camsari-pbits]。
+[^note-retention-delta]: 存储MRAM典型$$\tau_{\mathrm{ret}}>10\,\mathrm{yr}$$对应$$\Delta>60$$。
 
 **热稳定性因子与零温临界电压。** Néel-Brown模型含三个自由参数而对数线性拟合仅提供两个约束，系统欠定，存在一族以$$\tau_0$$为参数的合法解，族内所有解给出相同的$$\tau_{\mathrm{ret}}$$和$$V_{c0}/\Delta$$。若要进一步分离$$\Delta$$与$$V_{c0}$$的绝对数值需引入$$\tau_0$$的先验约束。对于CoFeB/MgO基自由层，文献中报道的尝试频率$$f_0 = 1/\tau_0$$处于1–10 GHz量级[^ref-brown-thermal]，本文采用$$\tau_0 = 1\,\mathrm{ns}$$作为标准假设值，得器件Néel-Brown模型参数如表2.8所示。
 
@@ -981,6 +982,7 @@ $$
 ### 2.3.4 Sigmoid实测与NB外推的定量比较
 
 将前节反推得到的Néel-Brown参数代入NB阈值公式，外推至$$t_w = 0.75\,\mathrm{ns}$$概率测量点，可对NB模型在跨观测量一致性方面进行严格检验。Sigmoid斜率由$$\beta_s^{\mathrm{NB}} = 2\Delta\ln 2/V_{c0}$$给出，仅取决于反推的$$\Delta$$与$$V_{c0}$$而与$$t_w$$无关[^note-nb-slope]。四条曲线的NB外推值与Sigmoid拟合结果逐项对比列于表2.9。
+[^note-nb-slope]: 线性势垒近似下$$\beta_s^{\mathrm{NB}} = 2\Delta\ln 2/V_{c0}$$只取决于$$\Delta$$与$$V_{c0}$$，与$$t_w$$无关。
 
 **表2.9** $$t_w = 0.75\,\mathrm{ns}$$下NB外推与Sigmoid实测的逐项对比
 
@@ -1081,7 +1083,7 @@ $$
 \left.\frac{\partial P_{\mathrm{sw}}}{\partial \Delta}\right|_{V_{\mathrm{th}}} \approx -5.6 \times 10^{-3}
 $$
 
-由该灵敏度可估计工艺扰动传入$$P_{\mathrm{sw}}$$的幅度。对本文的纳秒工作点而言，灵敏度很小，因为器件被驱动到接近确定性翻转边界，写入概率主要由电压相对$$V_{c0}$$的位置决定，而非$$\Delta$$的微小扰动决定。这正是低势垒sMTJ作为概率单元的优势：用纳秒级写入窗口换取阵列级概率一致性。
+由该灵敏度可估计工艺扰动传入$$P_{\mathrm{sw}}$$的幅度。对本文的纳秒工作点而言，灵敏度很小，因为器件被驱动到接近确定性翻转边界，写入概率主要由电压相对$$V_{c0}$$的位置决定，而非$$\Delta$$的微小扰动决定。该特性构成低势垒sMTJ作为概率单元的优势：用纳秒级写入窗口换取阵列级概率一致性。
 
 与传统存储MRAM相比，差异来自工作点而非公式本身。存储器把十年保持作为目标，概率对$$\Delta$$极为敏感；本文器件工作在纳秒激活区，$$\Delta$$扰动被天然压低为二阶问题。该对比解释了为什么同样的工艺离散在存储可靠性中可能严苛，在概率采样接口中却可被容忍。
 
@@ -1093,6 +1095,7 @@ $$
 对该平均曲线重新进行Sigmoid拟合得等效斜率$$\beta_{\mathrm{eff}}$$。定义D2D传递函数$$\mathcal{F}(\mathrm{CV}_\Delta) \equiv \beta_{\mathrm{eff}}/\beta_{\mathrm{NB}}^{\mathrm{fit}}$$，其中$$\beta_{\mathrm{NB}}^{\mathrm{fit}}$$为$$\mathrm{CV}_\Delta = 0$$极限下NB单器件曲线用logistic函数拟合得到的斜率(Device A、P→AP、$$t_w = 0.75\,\mathrm{ns}$$条件下约8.35 V$$^{-1}$$)。对$$\mathrm{CV}_\Delta \in \{0, 3\%, \ldots, 60\%\}$$每个值生成$$N = 2 \times 10^4$$个Gaussian样本计算晶圆平均曲线并拟合，得$$\mathcal{F}(\mathrm{CV}_\Delta)$$的数值函数。
 
 由Jensen不等式与NB双指数函数对$$\Delta$$的凸性可严格证明$$\mathcal{F}(\mathrm{CV}_\Delta) \leq 1$$对所有$$\mathrm{CV}_\Delta \geq 0$$成立。D2D离散单调展宽阵列平均曲线，与前节解析灵敏度$$\partial P_{\mathrm{sw}}/\partial \Delta < 0$$给出的方向一致。考虑前节确定的C2C收窄因子$$\eta_c = 5.34$$[^note-eta-fit]后，阵列级Sigmoid斜率的联合预测为
+[^note-eta-fit]: 5.34为Monte Carlo数值拟合所得Device A、P→AP方向值；以表2.8解析参数代入$$\beta_s^{\mathrm{meas}}/\beta_s^{\mathrm{NB,\,analytic}} = 44.6/7.94 = 5.62$$，两者差异源于MC实现对NB拟合的轻度有限$$N$$偏差，不影响下游分析结论。
 
 $$
 \beta^{\mathrm{eff}}(\mathrm{CV}_\Delta) = \eta_c \cdot \mathcal{F}(\mathrm{CV}_\Delta) \cdot \beta_{\mathrm{NB}}^{\mathrm{fit}}
@@ -1121,6 +1124,7 @@ $$
 ![工艺波动对sMTJ概率响应的综合影响](figs/Chapter02_local_15.png)
 
 **图2.15** 工艺波动对sMTJ概率响应的综合影响，基于PDK失配的方差预算与Monte Carlo验证，以Device A、P→AP、$$t_w = 0.75\,\mathrm{ns}$$实测为基准。(a)$$\mathrm{CV}(\Delta) = 7.7\%$$方差预算分解，$$V_{\mathrm{mag}}$$中由横向面积失配引入的份额贡献约66%方差、$$H_k$$约27%、$$M_s$$约7%，自由层厚度$$t_f$$单独贡献约0.2%；红色虚线标示按平方和合成法则得到的总$$\mathrm{CV}(\Delta) = 7.7\%$$位置[^note-variance-sum]。(b)不同$$\mathrm{CV}_\Delta$$下的C2C校准晶圆平均Sigmoid曲线族，CV=0按构造等于实测 (青色虚线)，PDK基线$$\mathrm{CV}_\Delta = 7.7\%$$ (琥珀色) 与实测几乎完全重合，CV扩展至60%以体现极端工艺条件下的微弱展宽；插图给出各曲线相对CV=0的偏差$$\Delta P_{\mathrm{sw}}$$ (单位%)，呈现典型的双叶结构 (过渡区前后符号相反，对应Sigmoid斜率减缓)，PDK基线偏差<0.3%、CV=60%偏差达约$$\pm 3\%$$，与解析灵敏度$$\partial P_{\mathrm{sw}}/\partial \Delta \approx -5.6 \times 10^{-3}$$的预测一致。(c)D2D传递函数$$\mathcal{F}(\mathrm{CV}_\Delta) = \beta_{\mathrm{eff}}/\beta_{\mathrm{NB}}^{\mathrm{fit}}$$的Monte Carlo数值，PDK基线处$$\mathcal{F} = 0.997$$ (琥珀色星号)，$$\mathrm{CV}_\Delta = 60\%$$时降至约0.90，单调下降反映Jensen不等式的渐进生效。(d)四组参考的联合对比 (对数y轴)，蓝色虚线为NB单器件拟合斜率 (约8.35 V$$^{-1}$$) 、蓝色方块为晶圆NB预测$$\mathcal{F}\cdot\beta_{\mathrm{NB}}^{\mathrm{fit}}$$、青色虚线为实测$$\beta_s = 44.6\,\mathrm{V^{-1}}$$、红色圆线为联合预测$$\eta_c\mathcal{F}\beta_{\mathrm{NB}}^{\mathrm{fit}}$$；PDK基线处联合预测44.5 V$$^{-1}$$为实测99.7%，验证双层分解框架的定量自洽性。曲线在面板内挤压程度小这一点本身即是物理结果：$$t_w = 0.75\,\mathrm{ns}$$工作点($$V_{\mathrm{th}}/V_{c0} \approx 0.984$$)已接近NB确定性极限，对$$\Delta$$扰动的灵敏度天然较低，因此即便$$\mathrm{CV}_\Delta$$高至60%，阵列平均斜率退化也仅10%量级。
+[^note-variance-sum]: 该合成值小于诸单源CV代数和12.3%，原因在于独立随机变量按方差而非标准差线性叠加：$$\sqrt{\mathrm{Var}(X+Y)} = \sqrt{\mathrm{Var}(X)+\mathrm{Var}(Y)}\leq\sqrt{\mathrm{Var}(X)}+\sqrt{\mathrm{Var}(Y)}$$。
 
 为检验上述$$\Delta$$单参数投影是否遗漏端电压驱动下的器件级展宽，本工作进一步将同一PDK失配预算注入宏自旋求解器：由$$R_P$$残余失配采样$$D$$与$$D_{\mathrm{elec}}$$，由$$t_f$$、$$M_s$$与TMR代理采样自由层厚度、饱和磁化和各向异性参数，并将$$R_{\mathrm{SOT}}$$失配映射到$$R_W$$。该设置在固定$$|V_{\mathrm{SOT}}|$$下尤其关键，因为$$R_W$$变化会同步改变每个样本实际获得的$$|I_{\mathrm{SOT}}|$$与SOT自热功率。图2.16显示标称器件在实测阈值附近仍保留清晰的Sigmoid上升段，而工艺失配平均曲线因D2D阈值横向散布而变浅。由此可见，图2.15给出的“PDK基线下$$\Delta$$扰动展宽较弱”结论成立于NB单参数传递函数；若观察固定端电压下的宏自旋响应，则磁性参数漂移与$$R_{\mathrm{SOT}}$$电压-电流换算漂移仍会对晶圆平均$$P_{\mathrm{sw}}$$曲线产生可见展宽。
 
@@ -1159,6 +1163,7 @@ $$
 | 30% | 10000 | 0.9629 | 0.9633 | +0.04% | 0.0028 | 0.28% | 100.0% |
 
 图2.17和表2.12说明，$$\hat{\mathcal{F}}$$近似无偏，方差按$$N^{-1/2}$$下降，并随$$\mathrm{CV}_\Delta$$增大而放大。因此推荐采样数不需要固定为保守的大常数，而可随工艺离散水平自适应调整。PDK基线下的MC预算可大幅压缩；当工艺监控显示$$\mathrm{CV}_\Delta$$恶化时，再按图2.17(d)提高$$N$$即可[^note-mc-budget]。
+[^note-mc-budget]: 此处推荐的$$N$$值以"在统计意义下恢复理想$$P_{\mathrm{sw}}(V)$$曲线全形态"作为评判基准，即要求$$\hat{\mathcal{F}}$$在95%置信度内逼近$$N\rightarrow\infty$$的连续概率响应。在第三章伊辛节点退火与第四章PBNN训练等下游应用中，算法仅依赖工作区内$$P_{\mathrm{sw}}$$的局部线性灵敏度而非全形态精度，所需采样次数可进一步压缩至更小量级，相关定量结果将在对应章节给出。
 
 ---
 
@@ -1222,6 +1227,7 @@ r_{\downarrow}(V) = \frac{1}{\tau_0}\exp\!\big[-\Delta(1 + V/V_{c0})\big],
 $$
 
 其中$$r_{\uparrow}$$驱动$$-1\!\to\!+1$$、$$r_{\downarrow}$$驱动$$+1\!\to\!-1$$，$$\Delta$$、$$V_{c0}$$沿用2.3.3节由实测反推的热稳定因子与零温临界电压，$$\tau_0$$为attempt time。$$r_{\uparrow}$$即2.3.3节的Néel-Brown速率，$$r_{\downarrow}$$为其在$$V\!\to\!-V$$下的镜像，二者共同刻画偏置对两态占据的细致平衡调制。线性反对称势垒只在$$|V|\ll V_{c0}$$下成立；速率指数取$$\max[\Delta(1\mp V/V_{c0}),\,0]$$下截 (与2.3.3节$$P_{\mathrm{sw}}$$同一约定)，使逃逸速率不超过尝试频率$$1/\tau_0$$。$$|V|=V_{c0}$$处一侧势垒消失，越过后双阱图像失效、器件确定性钉扎于单态，故$$|V|<V_{c0}$$为本模型的物理有效域[^note-rtn-clip]。
+[^note-rtn-clip]: 2.4节RTN模型的数值实现初版未对速率指数下截，在$$|V|>V_{c0}$$处给出超过尝试频率$$1/\tau_0$$的非物理逃逸速率 ($$\tau_0=1\,\mathrm{ns}$$、$$\Delta=5.15$$时$$V=1.2\,\mathrm{V}$$处$$r_{\uparrow}\approx6.3/\tau_0$$)。经与2.3.3节$$P_{\mathrm{sw}}$$统一采用$$\max[\cdot,0]$$下截后修正：越过$$V_{c0}$$即封顶于$$1/\tau_0$$并按单态确定性钉扎处理。
 
 由两速率可直接得到稳态占据。记$$p_{\uparrow}(t)$$为处于$$+1$$态的概率，二态主方程为$$\dot p_{\uparrow} = r_{\uparrow}p_{\downarrow} - r_{\downarrow}p_{\uparrow}$$ ($$p_{\downarrow}=1-p_{\uparrow}$$)，其稳态解为$$p_{\uparrow}^{\infty}(V) = r_{\uparrow}/(r_{\uparrow}+r_{\downarrow})$$，相应的时域均值为
 
@@ -1259,6 +1265,7 @@ $$
 ### 2.4.2 sLLG自由演化验证与参数标定
 
 上述两态模型是对连续磁化动力学的约化抽象。为检验其统计签名，并标定不能由Néel-Brown先验直接沿用的参数，这里采用2.2节的sLLG宏自旋引擎模拟低势垒自由演化。目标势垒不直接任意指定，而是由有效各向异性能反解界面各向异性，使形状退磁项被一并计入；相关标定细节见[^note-rtn-bridge-pitfall]。器件在零SOT电流下仅由热涨落驱动，双阱倾斜以纵向场注入，其无量纲标定与2.4.1节$$\tanh$$宗量同构。驻留时间以滞回阈值提取，避免把赤道附近抖动误记为翻转。
+[^note-rtn-bridge-pitfall]: 该反解关系本身来自一次实现教训。桥接验证初版按"纯PMA"图像直接把$$K_i$$压低两个数量级以求低$$\Delta$$，忽略形状项后$$K_U^{\mathrm{eff}}$$变负、易轴翻至面内，$$m_z(t)$$表现为赤道扩散而非双态电报；且若以$$\mathrm{sign}(m_z)$$的原始翻转计数驻留，赤道抖动会被误计为越垒、给出非物理的亚纳秒$$\tau_0$$。改为含去磁项反解$$K_i$$并采用滞回阈值后方得到2.4.2节的统计。
 
 图2.20(b)与表2.14给出驻留统计。正文需要强调的是，低势垒自由演化确实呈指数驻留，因而支持两态Markov抽象；但有效attempt time不能直接沿用2.3.3节的文献先验。由于两态模型中的保持时间、最大记忆窗和储备池时间常数都与$$\tau_0$$成比例，接入具体器件时必须用自由演化仿真或RTN谱测量重新标定这一时间尺度。
 
@@ -1313,29 +1320,17 @@ $$
 
 低势垒RTN把同一器件物理扩展到时间计算。两态Markov模型把稳态$$\tanh$$非线性和指数衰落记忆写成可标定参数，sLLG自由演化验证其统计形状，同时提醒$$\tau_0$$与读出摆幅必须按目标器件重标定。节点群验证进一步表明，输入投影、异质时间常数和耦合拓扑共同决定记忆—非线性配比；真实二值读出的散粒噪声是硬件化储备池必须正面处理的成本。
 
-本章仍有明确边界：实测样本只覆盖少量同批次单器件，工艺源独立性仍依赖PDK假设，宏自旋模型无法替代完整微磁分析，RTN储备池也还停留在最小网络验证。后续章节将在这些边界内使用本章接口：第三章把Sigmoid sMTJ接入伊辛自旋，第四章把它接入概率二值权重，RTN参数则为低势垒时序节点保留入口。本章真正完成的是把全自旋三位一体架构所需的器件层封装成统一、可标定、可被多任务复用的物理对象。
+本章仍有明确局限：实测样本只覆盖少量同批次单器件，工艺源独立性仍依赖PDK假设，宏自旋模型无法替代完整微磁分析，RTN储备池也还停留在最小网络验证。后续章节将在这些边界内使用本章接口：第三章把Sigmoid sMTJ接入伊辛自旋，第四章把它接入概率二值权重，RTN参数则为低势垒时序节点保留入口。
 
 ## 注释与文献
 
-[^note-mc-budget]: 此处推荐的$$N$$值以"在统计意义下恢复理想$$P_{\mathrm{sw}}(V)$$曲线全形态"作为评判基准，即要求$$\hat{\mathcal{F}}$$在95%置信度内逼近$$N\rightarrow\infty$$的连续概率响应。在第三章伊辛节点退火与第四章PBNN训练等下游应用中，算法仅依赖工作区内$$P_{\mathrm{sw}}$$的局部线性灵敏度而非全形态精度，所需采样次数可进一步压缩至更小量级，相关定量结果将在对应章节给出。
-[^note-retention-delta]: 存储MRAM典型$$\tau_{\mathrm{ret}}>10\,\mathrm{yr}$$对应$$\Delta>60$$。
-[^note-nb-slope]: 线性势垒近似下$$\beta_s^{\mathrm{NB}} = 2\Delta\ln 2/V_{c0}$$只取决于$$\Delta$$与$$V_{c0}$$，与$$t_w$$无关。
-[^note-eta-fit]: 5.34为Monte Carlo数值拟合所得Device A、P→AP方向值；以表2.8解析参数代入$$\beta_s^{\mathrm{meas}}/\beta_s^{\mathrm{NB,\,analytic}} = 44.6/7.94 = 5.62$$，两者差异源于MC实现对NB拟合的轻度有限$$N$$偏差，不影响下游分析结论。
-[^note-variance-sum]: 该合成值小于诸单源CV代数和12.3%，原因在于独立随机变量按方差而非标准差线性叠加：$$\sqrt{\mathrm{Var}(X+Y)} = \sqrt{\mathrm{Var}(X)+\mathrm{Var}(Y)}\leq\sqrt{\mathrm{Var}(X)}+\sqrt{\mathrm{Var}(Y)}$$。
-[^note-rtn-clip]: 2.4节RTN模型的数值实现初版未对速率指数下截，在$$|V|>V_{c0}$$处给出超过尝试频率$$1/\tau_0$$的非物理逃逸速率 ($$\tau_0=1\,\mathrm{ns}$$、$$\Delta=5.15$$时$$V=1.2\,\mathrm{V}$$处$$r_{\uparrow}\approx6.3/\tau_0$$)。经与2.3.3节$$P_{\mathrm{sw}}$$统一采用$$\max[\cdot,0]$$下截后修正：越过$$V_{c0}$$即封顶于$$1/\tau_0$$并按单态确定性钉扎处理。
-[^note-rtn-bridge-pitfall]: 该反解关系本身来自一次实现教训。桥接验证初版按"纯PMA"图像直接把$$K_i$$压低两个数量级以求低$$\Delta$$，忽略形状项后$$K_U^{\mathrm{eff}}$$变负、易轴翻至面内，$$m_z(t)$$表现为赤道扩散而非双态电报；且若以$$\mathrm{sign}(m_z)$$的原始翻转计数驻留，赤道抖动会被误计为越垒、给出非物理的亚纳秒$$\tau_0$$。改为含去磁项反解$$K_i$$并采用滞回阈值后方得到2.4.2节的统计。
 
-[^note-dev-thetacalib]: 该有效值由一次自下而上的标定试错确定，并非直接取自文献。以文献β-W体系的$$\theta_{\mathrm{SH}}\approx0.25$$起步时，仿真给出的SER 50%阈值仅约$$140\,\mu\mathrm{A}$$ ($$V_{\mathrm{SOT}}\approx109\,\mathrm{mV}$$)，较同批次Device A P→AP实测的$$I_{\mathrm{th}}\approx1.09\,\mathrm{mA}$$ ($$V_{\mathrm{th}}(0.75\,\mathrm{ns})\approx844\,\mathrm{mV}$$) 低约$$4.7$$倍。依2.1.3节临界电流标度$$I_{c0}^{\mathrm{SOT}}\propto1/\theta_{\mathrm{SH}}$$，在$$\theta_{\mathrm{SH}}$$、$$K_i$$、$$M_s$$、$$\alpha$$、$$R_W$$五个候选旋钮按灵敏度分级、每点数十条轨迹的短Monte Carlo试扫中，$$\theta_{\mathrm{SH}}$$被选为主调参 ($$\alpha=0.05$$已达CoFeB典型上限不宜再增)。先调至$$0.07$$使$$t_w=5\,\mathrm{ns}$$点的$$V_{\mathrm{th}}^{\mathrm{sim}}\approx508\,\mathrm{mV}$$与实测$$511\,\mathrm{mV}$$吻合，再细调至$$0.04$$以同时命中$$0.75\,\mathrm{ns}/894\,\mathrm{mV}$$靶点。标定流程见`scripts/09_simulation_figures/calibrate_to_experiment.py`。**其后修订**：2.2.3.2节积分核的场样SOT力矩符号勘误 (详见下文关于Cayley积分核的脚注) 使翻转阈值整体上移约40%，依同一$$1/\theta_{\mathrm{SH}}$$标度以保模长Cayley积分器重新标定后，$$\theta_{\mathrm{SH}}$$终值由$$0.04$$调整为$$0.066$$，$$V_{\mathrm{th}}(0.75\,\mathrm{ns})$$恢复至$$895\,\mathrm{mV}$$；该值仍较正文引用的文献β-W本征$$\theta_{\mathrm{SH}}\approx0.3$$低约4.5倍，差额对应集总模型未显式建模的自旋力矩损耗通道。
-[^note-dev-cayley]: 此结论源于实现过程中的实测教训而非先验取舍。仿真器最初的积分核 (`dynamic_switching.switching`) 即为球坐标$$(\theta,\phi)$$下的显式Euler步，在PMA稳态$$m_z\approx\pm1$$ (即$$\theta\to0,\pi$$) 附近因运动方程的$$1/\sin\theta$$项触发数值发散；显式切线步还须逐步手动重归一化，反过来扰动了热噪声场的Stratonovich统计权重、使等效仿真温度偏离设定值。为此将内核改写为笛卡尔形式并引入下文的保模长Cayley步 (`dynamic_switching_vector`，`integrator="cayley"`)，并顺带把自旋霍尔极化方向$$\hat{\sigma}_{\mathrm{SH}}$$由原先硬编码的$$-\hat{x}$$改为显式三矢量传入，以支持任意偏置构型。**进一步勘误**：在保留球坐标核作为交叉校验路径的复核中，发现其场样 (field-like) SOT项对$$\mathrm{d}\phi/\mathrm{d}t$$的$$\cos\theta\cos\phi$$分量存在一处符号错误，使该核与笛卡尔Cayley核的右端项在方位方向最大相差约25% (经符号代数逐项重推与回归测试`tests/test_integrator_consistency.py`确认)。改正后两套积分器在右端项层面完全一致，本文遂将默认积分器统一为Cayley。值得指出的是，该符号误差此前在数值上"人为锐化"了$$P_{\mathrm{sw}}(V)$$过渡曲线：改正后的翻转概率在阈值工作区附近仍与实验Sigmoid相符，但过驱区的back-hopping回切平台更为显著、整体过渡略宽——这是更忠实于sLLG动力学的物理结果，也提示以单宏自旋模型外推深过驱区写概率时须保留该平台修正而非简单沿用单调Sigmoid。
-[^note-dev-hex]: 该垂直关系在标定中被确认为模型的一处方向敏感点：交换偏置场一旦偏离与$$\hat{\sigma}_{\mathrm{SH}}$$ (本仿真器默认$$-\hat{x}$$) 垂直的设置，仿真SER即塌缩为约$$0.5$$的随机比特平台，器件退化为不再受驱动电流极性确定性偏置的无偏硬币 (与上述对称性破缺机制互为印证)。故实现中将$$\mathbf{H}_{\mathrm{EX}}$$严格约束为垂直于$$\hat{\sigma}_{\mathrm{SH}}$$，默认取沿$$-\hat{y}$$的$$-50\,\mathrm{Oe}$$。
-[^note-dev-bdr]: 将$$F=\dfrac{t_{\mathrm{ox}}}{\mathrm{R\!\cdot\!A}\,\sqrt{\phi_{\mathrm{ox}}}}\exp\!\big(2t_{\mathrm{ox}}\sqrt{2m_e e\phi_{\mathrm{ox}}}/\hbar\big)$$代回正文$$R_P$$表达式，两处$$\exp$$因子、$$t_{\mathrm{ox}}$$与$$\sqrt{\phi_{\mathrm{ox}}}$$逐项相消，得$$R_P=\mathrm{R\!\cdot\!A}/A_{\mathrm{MTJ}}$$，与$$\phi_{\mathrm{ox}}$$、$$t_{\mathrm{ox}}$$均无关。代码核查中发现早期`compute_Rp`实现即等价于此恒等式 (其WKB指数结构在数值上不起作用，属"装饰性"参数化)；为在保留实测R·A定标的同时仍能以势垒参数正向预测R·A，配套实现另提供真实的Simmons/BDR预测函数`resistance_area_bdr` (`src/vgsot_sim/initialize.py`)，其在MgO有效质量$$m^*\approx0.3\,m_e$$、$$\phi_{\mathrm{ox}}=0.4\,\mathrm{eV}$$下给出与实测同量级的R·A，势垒参数在其中真实进入。
 
 [^ref-akerman-tmr]: J. J. Akerman, J. M. Slaughter, R. W. Dave, and I. K. Schuller, "Tunneling criteria for magnetic-insulator-magnetic structures," *Applied Physics Letters*, vol. 79, pp. 3104-3106, 2001. DOI: [10.1063/1.1415412](https://doi.org/10.1063/1.1415412).
 [^ref-appeltant-delay]: L. Appeltant et al., "Information processing using a single dynamical node as complex system," *Nature Communications*, vol. 2, Art. no. 468, 2011. DOI: [10.1038/ncomms1476](https://doi.org/10.1038/ncomms1476).
 [^ref-ascher-petzold]: U. M. Ascher and L. R. Petzold, *Computer Methods for Ordinary Differential Equations and Differential-Algebraic Equations*. SIAM, 1998. DOI: [10.1137/1.9781611971392](https://doi.org/10.1137/1.9781611971392).
 [^ref-berger-stt]: L. Berger, "Emission of spin waves by a magnetic multilayer traversed by a current," *Physical Review B*, vol. 54, pp. 9353-9358, 1996. DOI: [10.1103/PhysRevB.54.9353](https://doi.org/10.1103/PhysRevB.54.9353).
 [^ref-bloch-law]: F. Bloch, "Zur Theorie des Ferromagnetismus," *Zeitschrift fur Physik*, vol. 61, pp. 206-219, 1930. DOI: [10.1007/BF01339661](https://doi.org/10.1007/BF01339661).
-[^ref-borders-factorization]: W. A. Borders, A. Z. Pervaiz, S. Fukami, K. Y. Camsari, H. Ohno, and S. Datta, "Integer factorization using stochastic magnetic tunnel junctions," *Nature*, vol. 573, pp. 390-393, 2019. DOI: [10.1038/s41586-019-1557-9](https://doi.org/10.1038/s41586-019-1557-9).
 [^ref-brinkman-bdr]: W. F. Brinkman, R. C. Dynes, and J. M. Rowell, "Tunneling conductance of asymmetrical barriers," *Journal of Applied Physics*, vol. 41, pp. 1915-1921, 1970. DOI: [10.1063/1.1659141](https://doi.org/10.1063/1.1659141).
 [^ref-brown-thermal]: W. F. Brown Jr., "Thermal fluctuations of a single-domain particle," *Physical Review*, vol. 130, pp. 1677-1686, 1963. DOI: [10.1103/PhysRev.130.1677](https://doi.org/10.1103/PhysRev.130.1677).
 [^ref-callen-callen]: H. B. Callen and E. Callen, "The present status of the temperature dependence of magnetocrystalline anisotropy, and the l(l+1)/2 power law," *Journal of Physics and Chemistry of Solids*, vol. 27, pp. 1271-1285, 1966. DOI: [10.1016/0022-3697(66)90012-1](https://doi.org/10.1016/0022-3697(66)90012-1).
@@ -1374,4 +1369,3 @@ $$
 [^ref-welbourne-rc]: A. Welbourne et al., "Voltage-controlled superparamagnetic ensembles for low-power reservoir computing," *Applied Physics Letters*, vol. 118, 202402, 2021. DOI: [10.1063/5.0048911](https://doi.org/10.1063/5.0048911).
 [^ref-yang-300mm]: W. Yang, E. Liu, *et al.* (S. He), "Achieving High Yield of Perpendicular SOT-MTJ Manufactured on 300 mm Wafers," *IEEE Transactions on Electron Devices*, vol. 71, p. 2095, 2024. DOI: [10.1109/TED.2024.3360664](https://doi.org/10.1109/TED.2024.3360664).
 [^ref-zhang-vgsot]: K. Zhang, D. Zhang, C. Wang, L. Zeng, Y. Wang, and W. Zhao, "Compact modeling and analysis of voltage-gated spin-orbit torque magnetic tunnel junction," *IEEE Access*, vol. 8, pp. 50792-50800, 2020. DOI: [10.1109/ACCESS.2020.2980073](https://doi.org/10.1109/ACCESS.2020.2980073).
-
