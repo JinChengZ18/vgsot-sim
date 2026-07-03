@@ -2,7 +2,7 @@
 
 Every substantive physics/engineering claim in the docs/code is mapped here to the test or committed artifact that backs it. Goal: **no unbacked assertion**. `backed` = a passing test or committed numeric artifact reproduces it; `gap` = asserted but not yet pinned by a dedicated check; `pending` = blocked on an open project item.
 
-Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (67 tests).
+Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (72 tests).
 
 ## Physics kernels (Python)
 
@@ -46,6 +46,9 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (67 tests).
 | Low-Δ free-running sLLG → exponential dwell (CV≈0.99), τ0≈15–27 ns (≠1 ns), tanh-shape ⟨m_z⟩ amplitude-compressed A≈0.7 | numbers quoted in `scripts/10_rtn_reservoir/README.md`; regenerate deterministically (fixed seeds) via `validate_bridge.py` (`*_results.json` is gitignored as reproducible output) | backed (script + README) |
 | Heterogeneous W_in reservoir MC≈8 ≫ broadcast-identical baseline MC≈0.6 (ridge readout recovers a linear map) | `tests/test_rtn_reservoir.py::test_heterogeneous_beats_broadcast_baseline`, `::test_ridge_recovers_linear_map`, `::test_memory_capacity_decays_with_delay` | backed |
 | NARMA-10 NRMSE≈0.55; stochastic single-device MC≈0.36 (needs replica-averaging) | numbers quoted in `scripts/10_rtn_reservoir/README.md`; regenerate deterministically (fixed seeds) via `benchmark_reservoir.py` (`*_results.json` is gitignored as reproducible output) | backed (script + README) |
+| Ring delay-line (`ring_reservoir`) beats the filter-bank MC ceiling (MC 19→37 @ n=25→200, grows with n); random coupling lowers MC at every tested (radius, scale) | `tests/test_rtn_reservoir.py::test_ring_reservoir_beats_filter_bank_mc` + committed fig `article/figs/Chapter02_local_21.png` (panel script recomputes with fixed seeds) | backed |
+| Ring trade-off: IPC deg-2 = 0, parity at chance; Mackey-Glass ranking reverses the MC ranking (qualitative only — h=84 magnitudes numerically fragile, Gram cond 1e14–1e20) | `scripts/10_rtn_reservoir/README.md` (D1/D5 sections incl. conditioning caveat); `::test_mackey_glass_series_and_task` (smoke) | backed (documented) |
+| Kernel/generalization rank + ESP convergence; device-budget optimum is few-nodes × deep-averaging at every tested B (64/256/1024 → n=8) | `::test_kernel_quality_and_esp`; `scripts/10_rtn_reservoir/budget_allocation.json` (committed run) | backed |
 
 ## Verilog-A engine (`va/llg/vgsot_llg.va`)
 

@@ -220,6 +220,34 @@ reservoir. Design implication: single-shot binary readout is the wrong regime �
 use longer per-step time-averaging (R can equivalently be realised in time) or
 readouts robust to binary states.
 
+### Mackey-Glass prediction (D5): the ranking flips with the task
+
+Chaotic time-series prediction (`mackey_glass_task`, tau=17, centred input,
+fixed seeds) needs *nonlinearity* as much as memory, and the construction
+**ranking** is the reverse of the linear-MC ranking — in every run observed:
+
+| construction (n=100) | NRMSE @ h=17 | NRMSE @ h=84 |
+|---|---|---|
+| delay loop (Appeltant — most nonlinear) | **0.01–0.03** | **0.33–0.67** |
+| filter bank (heterogeneous W_in) | 0.06–0.11 | 0.46–0.60 |
+| ring delay-line (linear) | 0.38–0.41 | 0.73–0.78 |
+
+The ring that dominates linear memory (MC 33) is the *worst* chaotic
+predictor; the delay loop that lost on MC wins here. Total capacity is
+conserved, topology chooses the linear↔nonlinear allocation, and the right
+construction depends on the task.
+
+**Numerical-fragility caveat (a real trial-and-error lesson).** The h=84
+figures are given as ranges, not points: the readout Gram matrices here have
+condition numbers 3e14 (delay) to 1e20 (filter bank / ring), so at small ridge
+`alpha` the long-horizon NRMSE drifts across BLAS invocations (we observed
+delay@84 = 0.325 / 0.381 / 0.45 / 0.67 for byte-identical calls in different
+processes). The *ranking* is reproducible; the magnitudes are not
+publication-grade without a better-conditioned readout (state standardisation
+or stronger, spectrum-scaled regularisation). For this reason MG numbers are
+kept OUT of thesis Table 2.15 — only the qualitative ranking reversal is stated
+in §2.4.3.
+
 ### Next steps (for thesis write-up, recommended with author review)
 
 - **Thesis write-back** — a §2.4.5 bridge subsection (τ0 ≈ tens of ns; the

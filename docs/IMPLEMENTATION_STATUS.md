@@ -2,7 +2,7 @@
 
 Map of the **physical effects modeled in Chapter 2 of the thesis** versus what the current `vgsot-sim` code base actually implements. Items marked **Not implemented** are intentional gaps — the underlying physics is described in the thesis text but the corresponding numerical machinery is still pending.
 
-Last updated: 2026-05-16 (latest round closes the remaining "Not implemented" gaps via opt-in toggles: `R_series` parasitic resistance, end-to-end `rng=…` plumbing through `field()` / `switching()` / `run_piecewise_*`, a Psw↔SER display toggle on `SerResult`, plus `ser_sot_no_vcma_thermal(rng_mode=, integrator=)` for MC reproducibility and per-call integrator choice. Regression covered by `tests/test_toggles.py`. Project layout reorganised: chapter scripts now live in `scripts/02PDK … 09_simulation_figures` and the chapter prose in `article/00_chapter_drafts`).
+Last updated: 2026-07-02 (RC deepening round: RTN node rigor fixes, `rtn/bridge.py` sLLG validation, `rtn/reservoir.py` reservoir layer + benchmarks, thesis §2.4 figures 2.19–2.21 / tables 2.14–2.15 via the `scripts/build_ppt_figs.py` panel flow — see `docs/version_notes.md` 2026-07 and `scripts/10_rtn_reservoir/README.md`. Earlier 2026-05 round: opt-in toggles `R_series`, end-to-end `rng=…` plumbing, Psw↔SER display toggle, `rng_mode`/`integrator` selection; regression in `tests/test_toggles.py`.)
 
 ---
 

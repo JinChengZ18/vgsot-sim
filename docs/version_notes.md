@@ -4,6 +4,33 @@ This file records implementation-level changes that are useful for maintainers
 and for reproducing older results. The README stays focused on installation and
 day-to-day use.
 
+## 2026-07 — RC deepening round: node rigor, sLLG bridge, reservoir layer, thesis §2.4 figures
+
+A 3-stage plan (audit-driven) turned the single-node RTN primitive into a validated,
+benchmarked reservoir-computing study. Test suite: 72.
+
+- **Node rigor** (`rtn/telegraph.py`): escape rate floored at the attempt frequency
+  1/τ0 (same clip as `nb_fit.psw_nb`; physical domain |V|<Vc0, `step()` warns
+  outside); `V` documented as a phenomenological tilt, not `V_MTJ`; propagator
+  exactness scoped to piecewise-constant input.
+- **sLLG↔RTN bridge** (`rtn/bridge.py` + `scripts/10_rtn_reservoir/`): low-barrier
+  free-running LLG reproduces exponential dwell (CV=0.99) and a tanh-shaped
+  transfer, but amplitude-compressed (LSQ A=0.63) and with attempt time
+  τ0≈15–27 ns — an order above the 1 ns prior; Δ↔Ki inversion must include the
+  demag term (~208 kBT). t_step=4 ps validated against 1 ps.
+- **Reservoir layer** (`rtn/reservoir.py`): W_in input projection + heterogeneous
+  nodes + ridge readout (MC≈8 vs broadcast-collapse 0.58); Appeltant delay loop;
+  ring delay-line (`ring_reservoir`) breaking the filter-bank MC ceiling
+  (MC 19→37 @ n=25→200) at the cost of all nonlinear capacity; benchmarks
+  (memory capacity, NARMA-10, parity-N, IPC, Mackey-Glass) and quality metrics
+  (kernel/generalization rank, ESP); stochastic binary-device mode quantifying
+  the device-averaging cost (budget optimum is few-nodes × deep-averaging).
+- **Thesis §2.4**: subsections restructured (node model / sLLG validation /
+  reservoir minimal validation), figs 2.19–2.21 + tables 2.14–2.15 added via the
+  PPT panel-assembly flow (`scripts/build_ppt_figs.py`: python-pptx AUTOFIG slides
+  + LibreOffice + PyMuPDF export), 6 RC references DOI-verified and cited; Fig 2.1
+  corrected (free layer on the HM channel; σ̂ ⊥ J drawn out-of-plane).
+
 ## 2026-06 — verification round, BDR/demag fixes, RTN primitive, Verilog-A engine
 
 A correctness + over-claim audit drove this round. Quantitative LLG/SER results shift vs 2026-05 because of the FL-SOT fix; figures were re-run and `theta_SH` recalibrated 0.04 → 0.066 (below).

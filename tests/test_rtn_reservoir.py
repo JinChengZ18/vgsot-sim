@@ -136,6 +136,21 @@ def test_random_coupling_runs_and_is_bounded():
     assert np.all(np.abs(X) <= 1.0 + 1e-9)
 
 
+def test_mackey_glass_series_and_task():
+    """Smoke test only: the MG readout Gram is ill-conditioned (cond 1e14-1e20),
+    so exact NRMSE values drift across BLAS invocations — assert capability, not
+    a benchmark figure (see scripts/10_rtn_reservoir/README.md)."""
+    from vgsot_sim.rtn.reservoir import mackey_glass, mackey_glass_task
+    x = mackey_glass(1500, seed=0)
+    assert x.shape == (1500,)
+    assert 0.2 < x.min() and x.max() < 1.6          # bounded chaotic attractor
+    assert x.std() > 0.1                             # not collapsed to fixed point
+    r = Reservoir(ReservoirConfig(n_nodes=40), seed=4)
+    t = mackey_glass_task(r, horizon=10, n_samples=1200, washout=150,
+                          alpha=1e-3, seed=4)
+    assert np.isfinite(t.nrmse) and t.nrmse < 1.2    # short-horizon is learnable
+
+
 def test_kernel_quality_and_esp():
     from vgsot_sim.rtn.reservoir import esp_convergence, kernel_quality
     fb = Reservoir(ReservoirConfig(n_nodes=24), seed=3)

@@ -355,6 +355,47 @@ def information_processing_capacity(reservoir: Reservoir, *, max_delay: int = 15
     return IPCResult(float(deg1 + deg2), float(deg1), float(deg2))
 
 
+def mackey_glass(n_samples: int, *, tau: int = 17, dt: float = 1.0,
+                 x0: float = 1.2, warmup: int = 500, seed: int = 0) -> np.ndarray:
+    """Discrete Mackey-Glass (tau=17, chaotic) series, standard RC benchmark.
+
+    Euler integration of dx/dt = 0.2 x(t-tau)/(1+x(t-tau)^10) - 0.1 x(t); the
+    ``warmup`` prefix is discarded. ``seed`` jitters the initial history so
+    different seeds give different chaotic trajectories.
+    """
+    rng = np.random.default_rng(seed)
+    hist = int(round(tau / dt))
+    n_tot = warmup + n_samples
+    x = np.empty(n_tot + hist)
+    x[:hist] = x0 + 0.01 * rng.standard_normal(hist)
+    for t in range(hist, n_tot + hist - 1):
+        xd = x[t - hist]
+        x[t + 1] = x[t] + dt * (0.2 * xd / (1.0 + xd ** 10) - 0.1 * x[t])
+    return x[hist + warmup:]
+
+
+def mackey_glass_task(reservoir, *, horizon: int = 84, n_samples: int = 4000,
+                      washout: int = 200, train_frac: float = 0.6,
+                      alpha: float = 1e-6, mode: str = "meanfield",
+                      seed: int = 0) -> TaskResult:
+    """Mackey-Glass ``horizon``-step-ahead prediction; returns NRMSE and R².
+
+    The series is centred (u = x - 1, range ~±0.4) before driving the reservoir;
+    the readout predicts u[t+horizon] from the state at t.
+    """
+    x = mackey_glass(n_samples + washout + horizon, seed=seed)
+    u = x - 1.0
+    X = reservoir.run(u[:n_samples + washout], mode=mode, washout=washout, seed=seed)
+    y = u[washout + horizon:washout + horizon + X.shape[0]]
+    T = X.shape[0]
+    n_train = int(train_frac * T)
+    W = ridge_fit(X[:n_train], y[:n_train, None], alpha=alpha)
+    yp = ridge_predict(X[n_train:], W)[:, 0]
+    yte = y[n_train:]
+    nrmse = float(np.sqrt(np.mean((yp - yte) ** 2)) / (np.std(yte) + 1e-12))
+    return TaskResult(nrmse, _r2_corr(yte, yp))
+
+
 def kernel_quality(reservoir, *, n_streams: int = 40, t_len: int = 60,
                    washout: int = 150, sv_threshold: float = 1e-4,
                    generalization: bool = False, seed: int = 0) -> int:
