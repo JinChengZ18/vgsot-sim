@@ -381,6 +381,9 @@ def run_sweep(cfg, checkpoint_path=None):
             n_plateau = min(8, n_traj)
             tau_acc = []
             for k in range(n_traj):
+                if k % 8 == 0:
+                    print(f"  .. [{integ}] dt={dt_ps}ps traj {k+1}/{n_traj} "
+                          f"(elapsed {time.time()-t_start:.0f}s)", flush=True)
                 rng = np.random.default_rng(base_seed + 100003 * k +
                                             7919 * integ_idx[integ] +
                                             int(round(dt_ps * 1000)))
@@ -610,12 +613,18 @@ def main():
     ap.add_argument("--tag", type=str, default=None,
                     help="output-filename tag override (avoids clobbering a "
                          "previous partial run's outputs)")
+    ap.add_argument("--dt-list", type=str, default=None,
+                    help="comma-separated dt list in ps; run LARGEST-FIRST so "
+                         "cheap cells checkpoint before the expensive fine-dt "
+                         "cells (kill/reboot resilience)")
     args = ap.parse_args()
 
     cfg = dict(FULL_CFG if args.full else PILOT_CFG)
     tag = args.tag or ("full" if args.full else "pilot")
     if args.integrators:
         cfg["integrators"] = args.integrators.split(",")
+    if args.dt_list:
+        cfg["dt_list_ps"] = [float(v) for v in args.dt_list.split(",")]
 
     out_dir = os.path.join("result", "sec_2_2_3_2", "B")
     os.makedirs(out_dir, exist_ok=True)
