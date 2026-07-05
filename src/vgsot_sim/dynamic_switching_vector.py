@@ -132,6 +132,88 @@ def cayley_step(m, omega, dt):
     return m + factor * (cross1 + s * cross2)
 
 
+def _sot_stt_prefactors(V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, R_SOT_FL_DL,
+                        R_STT_FL_DL, Ms_use, constants):
+    """Shared SOT/STT/precession prefactors (identical to the explicit path)."""
+    I_MTJ = V_MTJ / R_MTJ if R_MTJ != 0.0 else 0.0
+    J_STT = I_MTJ / constants.A1
+    J_SOT = I_SOT / constants.A2
+    gamma_red = constants.gamma / (1.0 + constants.alpha ** 2)
+    H_DL_STT = ESTT * constants.h_bar * constants.P * J_STT / (2 * constants.e * constants.u0 * Ms_use * constants.tf)
+    H_FL_STT = R_STT_FL_DL * H_DL_STT
+    H_DL_SOT = ESOT * constants.h_bar * constants.theta_SH * J_SOT / (2 * constants.e * constants.u0 * Ms_use * constants.tf)
+    H_FL_SOT = R_SOT_FL_DL * H_DL_SOT
+    return gamma_red, H_DL_STT, H_FL_STT, H_DL_SOT, H_FL_SOT
+
+
+def _switching_vector_midpoint(m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, *,
+                               VNV, NON, R_SOT_FL_DL, R_STT_FL_DL,
+                               sigma_SH, sigma_STT, constants,
+                               Ki_T, Ms_T, T, h_th_ext, demag_mode,
+                               n_midpoint, rng):
+    """TRUE implicit-midpoint Cayley step (§2.2.3.2), second order.
+
+    Runs `n_midpoint` fixed-point iterations of ω evaluated at the normalised
+    midpoint `(m_n + m_{n+1})/2`, reusing the SAME `_omega_from_state` /
+    `cayley_step` primitives as the explicit path. The single Cayley rotation is
+    always applied from the left endpoint `m_n`; only the ω evaluation point
+    moves. When thermal noise is active the noise field is drawn ONCE, before
+    the loop, and frozen for all iterations (the Stratonovich midpoint reuses
+    the step's single noise draw).
+    """
+    Ms_use = constants.Ms if Ms_T is None else Ms_T
+    T_use = constants.T if T is None else T
+
+    # Freeze the thermal-noise field ONCE (reused across every iteration). If a
+    # noise vector was supplied it is already fixed; otherwise draw it here with
+    # the SAME Brown-1963/FDT scaling `anisotropy.field()` would apply, so the
+    # deterministic `H_eff` can be re-evaluated at the moving midpoint while the
+    # random field stays constant. NON=0 → no thermal field at all.
+    if h_th_ext is not None:
+        h_th_fixed = np.asarray(h_th_ext, dtype=float)
+    elif NON != 0:
+        from math import sqrt
+        from .stochastic import stochastic
+        H_th_mag = sqrt(2 * constants.kb * T_use * constants.alpha
+                        / (constants.u0 * Ms_use * constants.gamma
+                           * constants.v * constants.t_step))
+        h_th_fixed = H_th_mag * stochastic(1, rng=rng)
+    else:
+        h_th_fixed = None
+
+    gamma_red, H_DL_STT, H_FL_STT, H_DL_SOT, H_FL_SOT = _sot_stt_prefactors(
+        V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, R_SOT_FL_DL, R_STT_FL_DL,
+        Ms_use, constants,
+    )
+
+    def omega_at(m_eval):
+        theta = float(np.arccos(np.clip(m_eval[2], -1.0, 1.0)))
+        phi = float(np.arctan2(m_eval[1], m_eval[0]))
+        # The frozen noise vector is passed as h_th_ext so `field()` reuses it
+        # verbatim (NON still gates whether it enters H_eff at all).
+        H_eff, _ = field(theta, phi, V_MTJ, n=1, NON=NON, ENE=1, VNV=VNV,
+                         constants=constants, demag_mode=demag_mode,
+                         Ki_T=Ki_T, Ms_T=Ms_T, T=T, h_th_ext=h_th_fixed, rng=rng)
+        H_eff = np.asarray(H_eff, dtype=float)
+        return _omega_from_state(
+            m_eval, H_eff, sigma_SH,
+            H_DL_SOT=H_DL_SOT, H_FL_SOT=H_FL_SOT,
+            H_DL_STT=H_DL_STT, H_FL_STT=H_FL_STT,
+            sigma_STT=sigma_STT,
+            alpha=constants.alpha, gamma_red=gamma_red,
+        )
+
+    mn = m.copy()
+    for _ in range(n_midpoint):
+        mmid = (m + mn) / 2.0
+        mmid = mmid / np.linalg.norm(mmid)
+        mn = cayley_step(m, omega_at(mmid), constants.t_step)
+    nrm = np.linalg.norm(mn)
+    if nrm > 0.0:
+        mn = mn / nrm
+    return mn
+
+
 def switching_vector(m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, *,
                      VNV=1, NON=0,
                      R_SOT_FL_DL=0.83, R_STT_FL_DL=0.0,
@@ -143,6 +225,7 @@ def switching_vector(m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, *,
                      T: float | None = None,
                      h_th_ext=None,
                      demag_mode: str = "ellipsoid",
+                     n_midpoint: int = 0,
                      rng=None):
     """One Cayley-transform sLLG step in Cartesian form.
 
@@ -164,6 +247,18 @@ def switching_vector(m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, *,
     touching `np.random`'s global state. When None (default) the legacy
     global state is used.
 
+    `n_midpoint` selects the time-integration scheme:
+      * `0` (default) — the published EXPLICIT-ω step: ω is evaluated once at
+        the left endpoint `m_n` and a single closed-form Cayley rotation is
+        applied. Globally first order. This path is byte-identical to the
+        original implementation.
+      * `k > 0` — the TRUE implicit midpoint scheme (§2.2.3.2), globally second
+        order: ω is evaluated at the normalised midpoint `(m_n+m_{n+1})/2` via
+        `k` fixed-point iterations, all sharing the SAME Cayley primitive. When
+        thermal noise is active the noise field is drawn ONCE before the loop
+        and held fixed across the `k` iterations (Stratonovich midpoint reuses
+        the step's single noise draw — noise is NOT redrawn per iteration).
+
     Returns
     -------
     m_new : np.ndarray, shape (3,)
@@ -173,6 +268,16 @@ def switching_vector(m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT, *,
         raise ValueError("constants must be provided.")
 
     m = np.asarray(m, dtype=float)
+
+    if n_midpoint > 0:
+        return _switching_vector_midpoint(
+            m, V_MTJ, I_SOT, R_MTJ, ESTT, ESOT,
+            VNV=VNV, NON=NON, R_SOT_FL_DL=R_SOT_FL_DL, R_STT_FL_DL=R_STT_FL_DL,
+            sigma_SH=sigma_SH, sigma_STT=sigma_STT, constants=constants,
+            Ki_T=Ki_T, Ms_T=Ms_T, T=T, h_th_ext=h_th_ext,
+            demag_mode=demag_mode, n_midpoint=n_midpoint, rng=rng,
+        )
+
     # Spherical coords are needed only to call field() (which is parameterised
     # by θ, φ). Use the current m to derive them.
     theta = float(np.arccos(np.clip(m[2], -1.0, 1.0)))

@@ -20,6 +20,20 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (72 tests).
 | Process-variability CV(Δ) budget partitions total variance; macrospin sample reproducible | `tests/test_variability.py` (2) | backed |
 | End-to-end `rng=` byte-reproducibility (euler + cayley); `rng_mode` switch; Psw=1−SER alias | `tests/test_toggles.py` (rng/mode/psw tests) | backed |
 
+## §2.2.3.2 numerical-methods audit (this work)
+
+> Every strong §2.2.3.2 claim empirically pinned. The shipped `switching_vector` is the EXPLICIT-ω Cayley step (ω frozen at m_n), NOT the implicit midpoint the prose implied; the true midpoint is now selectable via `integrator="cayley_midpoint"` (`n_midpoint>0`). "artifact" = committed reproducible script; its numeric output lands in the gitignored `result/sec_2_2_3_2/`.
+
+| Claim | Backing | Status |
+|---|---|---|
+| Norm \|m\|=1 preserved to ≤2e-16 over dt∈[1e-15,1e6]×\|ω\|∈[1,1e14]; the per-step renorm is decorative (raw 0.75 ns trajectory drift ≤1.9e-15) | `scripts/02_integrator/test_norm_preservation.py` | backed (artifact) |
+| Published explicit-ω step is GLOBALLY FIRST-order (p=1.01); `cayley_midpoint` recovers SECOND order (p=2.00); a constant-ω control isolates the loss to ω(m(t)) time-variation, not damping/renorm | `tests/test_integrator_order.py`, `tests/test_integrator_midpoint.py` (10) | backed |
+| Strong stochastic order = 0.97 [0.95,1.00] (GBM-gated harness, common-Brownian-path coupling, independent midpoint reference) | `scripts/11_strong_order/strong_order_brownian.py` | backed (artifact) |
+| Weak stochastic order = 1.98–2.04 (self-Cayley + midpoint refs); survives a transverse symmetry-breaking field (pooled ≥1.8) | `scripts/10_weak_order/weak_order_audit.py`, `weak_order_symbreak.py` | backed (artifact) |
+| Explicit-ω Cayley samples the correct Boltzmann law: T_eff/T = 0.979±0.014 (60 ns, Δt→0 extrap); true-midpoint = 0.979 (⇒ no explicit-ω / renorm stationary bias) | `scripts/11_boltzmann_teff/teff_dtsweep.py`, `merge_full_results.py` | backed (artifact) |
+| Spherical-Euler equilibrates at EXACTLY T/2 (0.49, dt-independent) — missing Wong–Zakai drift D·cot θ; adding the term restores 0.94; RHS-consistency tests cannot catch this ensemble-limit defect | `scripts/11_boltzmann_teff/euler_drift_discrimination.py` | backed (artifact) |
+| Figure/param provenance: fig 2.10 runs cayley (driver default), fig 2.11 runs euler-spherical; runtime `theta_SH=0.066` (chapter captions still say 0.04) | `scripts/09_simulation_figures/integrator_audit.py`, `audit_theta_sh.py`, `tests/test_figure_provenance.py` | backed |
+
 ## RTN node primitive (candidate reservoir node, `vgsot_sim.rtn`)
 
 > Scope: a SINGLE free-running 2-state node, not a reservoir (no input weights, node

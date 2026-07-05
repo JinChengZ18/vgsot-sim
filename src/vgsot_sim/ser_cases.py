@@ -62,8 +62,9 @@ def _switching_error_rate_single_isot(
                         the new `rng=` plumbing. Cleaner — does not touch the
                         global numpy state, friendlier to multiprocessing.
 
-    `integrator` lets callers force the LLG step type ("euler_spherical" or
-    "cayley"); falls back to the stepper default when None.
+    `integrator` lets callers force the LLG step type ("euler_spherical",
+    "cayley", or the 2nd-order "cayley_midpoint"); falls back to the stepper
+    default when None.
     """
     failures = 0
     loop = trange(cfg.trials, desc=f"MC isot={i_sot:.3e}A", disable=not show_progress)
@@ -127,7 +128,8 @@ def ser_sot_no_vcma_thermal(
       `seed`        — int master seed (None → no seeding).
       `rng_mode`    — "legacy" (default, np.random.seed) or "generator"
                        (np.random.default_rng, no global state).
-      `integrator`  — None (stepper default) or "euler_spherical" / "cayley".
+      `integrator`  — None (stepper default) or "euler_spherical" / "cayley" /
+                       "cayley_midpoint" (true 2nd-order implicit midpoint).
     """
     cfg = cfg or SerSotNoVcmaThermalConfig()
     ser = np.array(

@@ -146,9 +146,11 @@ def run_piecewise_terminal_voltage(
             Ms_T = None
             Ki_T = None
 
-        if integrator == "cayley":
+        if integrator in ("cayley", "cayley_midpoint"):
             # Cartesian + Cayley-rotation step (norm-preserving, accepts an
             # explicit sigma_SH 3-vector). Mirrors run_piecewise_direct_excitation.
+            # "cayley_midpoint" runs the true 2nd-order implicit-midpoint scheme
+            # (§2.2.3.2); "cayley" keeps the published explicit-ω 1st-order step.
             m_vec = np.array([
                 np.sin(theta) * np.cos(phi),
                 np.sin(theta) * np.sin(phi),
@@ -161,6 +163,7 @@ def run_piecewise_terminal_voltage(
                 sigma_SH=sig_SH,
                 constants=constants,
                 Ki_T=Ki_T, Ms_T=Ms_T, T=(T_now if enable_self_heating else None), demag_mode=demag_mode,
+                n_midpoint=(3 if integrator == "cayley_midpoint" else 0),
                 rng=rng,
             )
             mz = float(m_vec_new[2])
@@ -304,10 +307,12 @@ def run_piecewise_direct_excitation(
             Ms_T = None
             Ki_T = None
 
-        if integrator == "cayley":
+        if integrator in ("cayley", "cayley_midpoint"):
             # Cartesian + Cayley-rotation step (norm-preserving, accepts
             # an explicit sigma_SH 3-vector). Convert (θ, φ) ↔ m at the
             # interface so the existing scalar arrays stay populated.
+            # "cayley_midpoint" runs the true 2nd-order implicit-midpoint
+            # scheme (§2.2.3.2); "cayley" keeps the published explicit-ω step.
             m_vec = np.array([
                 np.sin(theta) * np.cos(phi),
                 np.sin(theta) * np.sin(phi),
@@ -320,6 +325,7 @@ def run_piecewise_direct_excitation(
                 sigma_SH=sig_SH,
                 constants=constants,
                 Ki_T=Ki_T, Ms_T=Ms_T, T=(T_now if enable_self_heating else None), demag_mode=demag_mode,
+                n_midpoint=(3 if integrator == "cayley_midpoint" else 0),
                 rng=rng,
             )
             mz = float(m_vec_new[2])
