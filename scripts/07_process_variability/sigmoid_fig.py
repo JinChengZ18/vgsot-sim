@@ -221,8 +221,8 @@ fig.suptitle(
     r"(100 reps per point, $H_x = 200$ Oe, $t_w = 0.75$ ns)",
     y=0.965,
 )
-fig.savefig(OUTDIR + "Chapter02_local_13.png", dpi=300, bbox_inches="tight")
-print(f"Saved  Chapter02_local_13.png")
+fig.savefig(OUTDIR + "Chapter02_local_14.png", dpi=300, bbox_inches="tight")
+print(f"Saved  Chapter02_local_14.png")
 
 # ── Summary ─────────────────────────────────────────────────────────────────
 print()

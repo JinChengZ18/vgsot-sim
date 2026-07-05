@@ -752,9 +752,9 @@ $$
 
 由上述Cayley更新公式可见，每一步的计算仅需构造$$3 \times 3$$矩阵$$\mathbf{A}_n$$的一次求逆与矩阵-向量乘积。对于$$3 \times 3$$矩阵，逆矩阵可由解析公式直接给出而无需迭代，因此单步计算代价固定且极低，使在常规CPU平台上对$$10^5$$以上独立轨迹进行快速并行Monte Carlo扫描成为可能。
 
-![保模长Cayley积分器的几何原理与数值验证](figs/Chapter02_local_22.png)
+![保模长Cayley积分器的几何原理与数值验证](figs/Chapter02_local_07.png)
 
-**图2.7** 保模长Cayley积分器的几何原理与数值验证 (面板字母按左上、右上、左下、右下依次对应a–d)。(a) 单位球面上的单步更新：显式切线步使模长按$$\sqrt{1+\Delta t^2|\mathbf{w}_\perp|^2}$$增长而离开球面，Cayley步等价于绕$$\Delta t\,\mathbf{w}$$的刚性旋转，对任意步长严格保持$$|\mathbf{m}|=1$$；旋转矢量$$\mathbf{w}$$的取值点决定时间精度，左端点取值 (内核默认) 为一阶，中点自洽取值恢复二阶。(b) 关闭热噪声、相对131072步中点参考解的确定性全局收敛阶 (斜率拟合取最细6档$$\Delta t$$)：左端点Cayley与$$(\theta,\phi)$$坐标卡Euler均为一阶 ($$p=1.01/1.02$$)，中点变体为二阶 ($$p=2.00$$)。(c) $$(\theta,\phi)$$坐标卡下缺失噪声诱导漂移$$D\cot\theta$$的后果：稳态密度失去$$\sin\theta$$的Jacobian权重，由$$p(x)\propto x\,e^{-x^2}$$退化为$$p(x)\propto e^{-x^2}$$ ($$x=\theta\sqrt{\Delta}$$，小角近似$$\sin\theta\approx\theta$$)；阶梯直方图为两类积分器在$$\Delta=48.5$$深势阱中实测采样的平衡分布，分别贴合对应解析律。(d) 60 ns零驱动弛豫平衡的有效温度：两种Cayley步的$$\Delta t\to0$$外推截距均为0.979 (1–2%内即Boltzmann分布)，$$(\theta,\phi)$$坐标卡Euler锁定于0.492$$\approx$$1/2；误差棒为48条轨迹的block-bootstrap $$1\sigma$$，星号为加权$$\Delta t\to0$$外推。
+**图2.7** 保模长Cayley积分器的几何原理与数值验证。(a) 单位球面上的单步更新：显式切线步使模长按$$\sqrt{1+\Delta t^2|\mathbf{w}_\perp|^2}$$增长而离开球面，Cayley步等价于绕$$\Delta t\,\mathbf{w}$$的刚性旋转，对任意步长严格保持$$|\mathbf{m}|=1$$；旋转矢量$$\mathbf{w}$$的取值点决定时间精度，左端点取值 (内核默认) 为一阶，中点自洽取值恢复二阶。(b) 关闭热噪声、相对131072步中点参考解的确定性全局收敛阶 (斜率拟合取最细6档$$\Delta t$$)：左端点Cayley与$$(\theta,\phi)$$坐标卡Euler均为一阶 ($$p=1.01/1.02$$)，中点变体为二阶 ($$p=2.00$$)。(c) $$(\theta,\phi)$$坐标卡下缺失噪声诱导漂移$$D\cot\theta$$的后果：稳态密度失去$$\sin\theta$$的Jacobian权重，由$$p(x)\propto x\,e^{-x^2}$$退化为$$p(x)\propto e^{-x^2}$$ ($$x=\theta\sqrt{\Delta}$$，小角近似$$\sin\theta\approx\theta$$)；阶梯直方图为两类积分器在$$\Delta=48.5$$深势阱中实测采样的平衡分布，分别贴合对应解析律。(d) 60 ns零驱动弛豫平衡的有效温度：两种Cayley步的$$\Delta t\to0$$外推截距均为0.979 (1–2%内即Boltzmann分布)，$$(\theta,\phi)$$坐标卡Euler锁定于0.492$$\approx$$1/2；误差棒为48条轨迹的block-bootstrap $$1\sigma$$，星号为加权$$\Delta t\to0$$外推。
 
 ---
 
@@ -804,7 +804,7 @@ $$
 
 最底层为物理内核 (Kernel)，负责实现sLLG方程的Cayley变换求解、有效场构建、热噪声生成以及温度状态更新等核心计算逻辑；中间层为实验配置 (Config)，用于声明具体仿真条件，包括脉冲参数、材料参数与扫描范围；顶层为输入输出层 (IO)，负责结果的序列化存储、统计汇总以及与外部系统的数据交换。该分层结构的核心设计原则是将物理模型与实验场景完全解耦：内核函数不携带任何与具体实验相关的状态，配置层仅通过参数对象驱动内核行为，因此同一求解器可在参数空间的不同工作点无修改地复用。IO层通过统一的结果数据结构封装磁化轨迹、翻转标志与统计量，使Monte Carlo汇总、曲线拟合以及后续分析流程均可直接调用。整体架构如图2.8所示。
 
-![vgsot-sim三层架构示意](figs/Chapter02_local_07.png)
+![vgsot-sim三层架构示意](figs/Chapter02_local_08.png)
 
 **图2.8** vgsot-sim仿真软件框架。用户接口层提供命令行与Python API两条等价调用路径；实验配置层以参数对象形式声明标准化测试场景与扫描范围；物理内核层按单步更新回路组织磁化动力学、有效场、热噪声、电学输运与电阻五个功能模块，各模块间的数据流在每个时间步内完成一次磁化状态、电阻与温度的自洽更新，最终对外输出磁化轨迹与翻转概率统计。
 
@@ -839,17 +839,17 @@ $$
 
 
 
-![单次m_z与R_MTJ演化事件](figs/Chapter02_local_08.png)
+![单次m_z与R_MTJ演化事件](figs/Chapter02_local_09.png)
 
 **图2.9** vgsot-sim在$$t_w = 0.75\,\mathrm{ns}$$写入脉冲下的单次轨迹输出。(a)归一化磁化分量$$m_z(t)$$。(b)由TMR模型换算的瞬时MTJ电阻$$R_{\mathrm{MTJ}}(t)$$ ($$R_P\!\approx\!5\,\mathrm{k}\Omega$$、$$R_{AP}\!\approx\!10\,\mathrm{k}\Omega$$，与图2.13滞回回线幅度一致)。(c)SOT驱动电流脉冲$$I_{\mathrm{SOT}}(t)$$。初始态为PAP=1 ($$m_z\approx-1$$) 、热噪声NON=1、自热反馈开启 (详见2.2.2.5节) ；仿真使用2.2.4节校准至Device A P→AP @ 0.75 ns实验阈值的有效$$\theta_{\mathrm{SH}}=0.066$$ (经2.2.3.2节保模长Cayley积分器标定)，并以代表性RNG种子使各$$I_{\mathrm{SOT}}$$级展现其在SER MC分布中的最可能行为。四条$$I_{\mathrm{SOT}}\in\{-600,-1100,-1300,-2000\}\,\mu\mathrm{A}$$跨越亚阈值、临界、刚翻转与确定性翻转四种情形：600 µA下$$m_z$$维持在$$-1$$不动 ($$R_{\mathrm{MTJ}}\!\approx\!R_{AP}$$) ；1100 µA接近阈值但脉冲关断后仍沿$$-z$$方向回落；1300 µA处出现成功跨越赤道并落入$$+z$$基态的翻转事件 ($$R_{\mathrm{MTJ}}$$跃迁至$$R_P$$) ；2000 µA给出更快的赤道达到时刻。临界电流1100–1300 µA区间与实验$$I_{\mathrm{th}}(0.75\,\mathrm{ns})\approx 1152\,\mu\mathrm{A}$$ ($$V_{\mathrm{th}}\approx 894\,\mathrm{mV}$$) 量纲匹配。
 
-![单次磁化矢量在单位球面上的三维轨迹](figs/Chapter02_local_09.png)
+![单次磁化矢量在单位球面上的三维轨迹](figs/Chapter02_local_10.png)
 
 **图2.10** vgsot-sim在$$I_{\mathrm{SOT}}=-2000\,\mu\mathrm{A}$$、$$t_w=0.75\,\mathrm{ns}$$确定性翻转条件下的单次磁化矢量轨迹。(a)在单位球面上以时间为色标显示完整$$\mathbf{m}(t)$$演化路径，蓝色圆点表示初态反平行极，金色五角星表示终态平行极，紫色细线为球面网格仅作几何参考。轨迹在初始的SOT驱动阶段 (0–0.75 ns) 沿赤道附近螺旋上升，进动周期约0.2 ns，与$$H_k$$对应的Larmor频率量级一致；脉冲关断后磁化在剩余3.25 ns弛豫窗口内沿Gilbert阻尼通道收敛至上极。(b)同次仿真的笛卡儿分量$$m_x(t)$$、$$m_y(t)$$、$$m_z(t)$$时域演化，赤道附近的高频振荡周期与三维视图所呈现的螺旋间距一致，$$m_z$$穿越零点的时刻对应轨迹跨越赤道；该视角与图2.9的多电流情形形成互补，前者刻画进动几何，后者刻画统计行为。
 
 第二类输出是多条独立轨迹汇总得到的$$P_{\mathrm{sw}}$$或$$\mathrm{SER}$$曲线。该输出才是本章与概率计算接口相连的核心：图2.11把宏自旋求解器给出的概率窗口与2.3.2节实测Sigmoid放到同一量纲下，并显示自热反馈会在阈值附近改变翻转概率。由此，$$P_{\mathrm{sw}}$$/SER曲线成为后续实验标定、工艺失配注入与Bernoulli采样预算分析的输入。
 
-![Monte Carlo Psw扫描结果](figs/Chapter02_local_10.png)
+![Monte Carlo Psw扫描结果](figs/Chapter02_local_11.png)
 
 **图2.11** $$t_w = 0.75\,\mathrm{ns}$$写入脉冲 + 3.25 ns弛豫窗口下输出的$$P_{\mathrm{sw}}$$–$$|I_{\mathrm{SOT}}|$$蒙特卡罗扫描结果 (以2.2.3.2节保模长Cayley积分器、有效$$\theta_{\mathrm{SH}}=0.066$$标定值生成)。(a)宽范围扫描 (300–3500 µA，每点80条独立轨迹，Wilson 95% 置信区间以阴影带给出)，蓝色实线为自热反馈关闭、红色虚线为自热开启；青色虚线标示2.3.2节Sigmoid拟合给出的实验阈值$$I_{\mathrm{th}}=V_{\mathrm{th}}/R_W=894\,\mathrm{mV}/776\,\Omega\!\approx\!1152\,\mu\mathrm{A}$$。亚阈值区 ($$|I_{\mathrm{SOT}}|\!\lesssim\!900\,\mu\mathrm{A}$$) $$P_{\mathrm{sw}}\!\approx\!0$$；过渡区在阈值附近抬升后，超阈值区$$P_{\mathrm{sw}}$$进入由过驱进动回切 (back-hopping) 上限主导的$$\approx\!0.75$$–$$0.85$$平台，并延伸至数 mA 量级而始终低于1、不再单调升至饱和——此即2.2.3.2节场样SOT符号勘误后更忠实呈现的物理特征 (改正前该误差曾"人为锐化"过渡曲线并压窄该平台，见[^note-dev-cayley])。(b)阈值区精扫描inset (1100–1400 µA附近密集取点，每点80条)，琥珀色曲线给出50%翻转点$$\approx\!1160\,\mu\mathrm{A}$$，与实验$$I_{\mathrm{th}}=1152\,\mu\mathrm{A}$$一致至约1%。相对勘误前，改正后的过渡略宽、回切平台更显著，但工作区阈值定位精度反而提高。自热开启支在阈值工作点高于关闭支 ($$\Delta T_{\mathrm{eq}}\approx 36\,\mathrm{K}$$对应$$\Delta K_i/K_i\approx-7\%$$，使阈值在统计意义下向左偏移) ；超阈值区$$|\Delta P_{\mathrm{sw}}|$$落入Wilson带宽内不可识别。
 
@@ -868,7 +868,7 @@ $$
 | MTJ平行态电阻$$R_P$$ | 10.89 kΩ |
 | SOT沟道电阻$$R_{\mathrm{SOT}}$$ | 776 Ω |
 
-![SOT-MTJ器件实验表征综合图](figs/Chapter02_local_11.png)
+![SOT-MTJ器件实验表征综合图](figs/Chapter02_local_12.png)
 
 **图2.12** SOT-MTJ器件实验平台与统计表征综合视图。(a)高速测试系统原理框图：超快电压脉冲经功率分配器分为两路 (上路可选$$-6\,\mathrm{dB}$$衰减)，射频偏置器合并高频脉冲与10 mV直流偏置后施加于器件顶层或底层电极，定向耦合器监测信号状态，SMU在顶层电极处采集电流响应。(b)实物照片：芯片样品、器件阵列光学显微镜照片及探针台测试系统。
 
@@ -919,19 +919,19 @@ $$
 
 ---
 
-![sMTJ写入特性与Néel-Brown联合概率模型](figs/Chapter02_local_12.png)
+![sMTJ写入特性与Néel-Brown联合概率模型](figs/Chapter02_local_13.png)
 
 **图2.13** sMTJ器件在不同脉冲宽度下的写入特性与Néel-Brown联合概率模型。(a)$$t_w = 0.75\,\mathrm{ns}$$、$$1\,\mathrm{ns}$$、$$2\,\mathrm{ns}$$、$$5\,\mathrm{ns}$$条件下测得Device A的电阻-脉冲电压滞回回线，随脉冲持续时间缩短翻转电压窗口逐渐展宽。(b)临界翻转电压$$V_{\mathrm{th}\pm}$$随脉冲宽度的对数依赖关系，空心符号为实验数据点，实线为对数线性拟合$$V = a\mp b\ln(t_w/\mathrm{ns})$$；内嵌注释给出由$$\tau_0 = 1\,\mathrm{ns}$$先验反推得到的两方向Néel-Brown参数$$(\Delta, V_{c0}, \tau_{\mathrm{ret}})$$。(c)基于反推NB参数构建的二维联合翻转概率分布$$P_{\mathrm{sw}}(V, t_w)$$热力图(AP→P方向)，紫色等概率轮廓在低概率区可读，白色等概率轮廓在高概率区可读，黑色虚线为50%等概率轨迹即$$V_{\mathrm{th}}(t_w)$$；空心圆(Device A)与三角(Device B)标示两器件的滞回提取点，与50%轨迹吻合。
 
 ---
 
-![Sigmoid测量与Néel-Brown外推对比](figs/Chapter02_local_13.png)
+![Sigmoid测量与Néel-Brown外推对比](figs/Chapter02_local_14.png)
 
 **图2.14** $$t_w = 0.75\,\mathrm{ns}$$、$$H_x = 200\,\mathrm{Oe}$$条件下100次重复Sigmoid测量与C2C-修正后的Néel-Brown模型对比。(a)Device A AP→P：实测在$$V \gtrsim 940\,\mathrm{mV}$$出现back-hopping回跳平台。(b)Device A P→AP：干净单段过渡($$R^2 > 0.99$$)，作为主基准曲线。(c)Device B AP→P：840–860 mV附近出现两段过渡。(d)Device B P→AP：干净单段过渡($$R^2 > 0.99$$)。空心符号为实验数据点(误差线为二项分布的Wilson 95%置信区间)，实线为C2C-修正NB曲线 (数学上等价于四参数Sigmoid拟合)，各面板内嵌注释给出$$\eta_c = \beta_s/\beta^{\mathrm{NB}}$$与该曲线的物理特征。Sigmoid拟合对四条曲线的$$V_{\mathrm{th}}$$预测精度均优于+7.4%，但未修正NB预测的斜率(约8 V⁻¹)普遍低于实测数倍，必须以$$\eta_c$$因子作C2C修正方能重现实测分布陡度。
 
 ---
 
-![同批次器件间Néel-Brown参数一致性对比](figs/Chapter02_local_14.png)
+![同批次器件间Néel-Brown参数一致性对比](figs/Chapter02_local_15.png)
 
 **图2.15** Device A 与 Device B 两个器件的Néel-Brown参数一致性对比。(a)正向(AP→P)临界翻转电压$$V_{\mathrm{th}+}$$随脉冲宽度$$t_w$$的对数线性依赖；Device A (红色圆点) 与Device B (紫色三角) 数据点近似落在同一条对数直线上，两器件的$$\Delta$$与$$V_{c0}$$拟合值在5%–15%范围内一致。(b)以$$\tau_0 = 1\,\mathrm{ns}$$先验反推得到的两方向热稳定性因子$$\Delta$$柱状图，AP→P (红色) 与P→AP (蓝色) 方向在同一器件上数值接近(器件A的两方向$$\Delta$$分别为5.15与4.91、器件B分别为4.46与4.95)，对应零温临界电压$$V_{c0}$$分别为884 mV (器件A) 与876 mV (器件B)，证实sMTJ作为概率单元具备良好的器件间均匀性，为后续阵列级建模与工艺容差分析提供同批次基线参考。
 
@@ -1116,7 +1116,7 @@ $$
 
 ---
 
-![工艺波动对sMTJ概率响应的综合影响](figs/Chapter02_local_15.png)
+![工艺波动对sMTJ概率响应的综合影响](figs/Chapter02_local_16.png)
 
 **图2.16** 工艺波动对sMTJ概率响应的综合影响，基于PDK失配的方差预算与Monte Carlo验证，以Device A、P→AP、$$t_w = 0.75\,\mathrm{ns}$$实测为基准。(a)$$\mathrm{CV}(\Delta) = 7.7\%$$方差预算分解，$$V_{\mathrm{mag}}$$中由横向面积失配引入的份额贡献约66%方差、$$H_k$$约27%、$$M_s$$约7%，自由层厚度$$t_f$$单独贡献约0.2%；红色虚线标示按平方和合成法则得到的总$$\mathrm{CV}(\Delta) = 7.7\%$$位置[^note-variance-sum]。(b)不同$$\mathrm{CV}_\Delta$$下的C2C校准晶圆平均Sigmoid曲线族，CV=0按构造等于实测 (青色虚线)，PDK基线$$\mathrm{CV}_\Delta = 7.7\%$$ (琥珀色) 与实测几乎完全重合，CV扩展至60%以体现极端工艺条件下的微弱展宽；插图给出各曲线相对CV=0的偏差$$\Delta P_{\mathrm{sw}}$$ (单位%)，呈现典型的双叶结构 (过渡区前后符号相反，对应Sigmoid斜率减缓)，PDK基线偏差<0.3%、CV=60%偏差达约$$\pm 3\%$$，与解析灵敏度$$\partial P_{\mathrm{sw}}/\partial \Delta \approx -5.6 \times 10^{-3}$$的预测一致。(c)D2D传递函数$$\mathcal{F}(\mathrm{CV}_\Delta) = \beta_{\mathrm{eff}}/\beta_{\mathrm{NB}}^{\mathrm{fit}}$$的Monte Carlo数值，PDK基线处$$\mathcal{F} = 0.997$$ (琥珀色星号)，$$\mathrm{CV}_\Delta = 60\%$$时降至约0.90，单调下降反映Jensen不等式的渐进生效。(d)四组参考的联合对比 (对数y轴)，蓝色虚线为NB单器件拟合斜率 (约8.35 V$$^{-1}$$) 、蓝色方块为晶圆NB预测$$\mathcal{F}\cdot\beta_{\mathrm{NB}}^{\mathrm{fit}}$$、青色虚线为实测$$\beta_s = 44.6\,\mathrm{V^{-1}}$$、红色圆线为联合预测$$\eta_c\mathcal{F}\beta_{\mathrm{NB}}^{\mathrm{fit}}$$；PDK基线处联合预测44.5 V$$^{-1}$$为实测99.7%，验证双层分解框架的定量自洽性。曲线在面板内挤压程度小这一点本身即是物理结果：$$t_w = 0.75\,\mathrm{ns}$$工作点($$V_{\mathrm{th}}/V_{c0} \approx 0.984$$)已接近NB确定性极限，对$$\Delta$$扰动的灵敏度本身较低，因此即便$$\mathrm{CV}_\Delta$$高至60%，阵列平均斜率退化也仅10%量级。
 [^note-variance-sum]: 该合成值小于诸单源CV代数和12.3%，原因在于独立随机变量按方差而非标准差线性叠加：$$\sqrt{\mathrm{Var}(X+Y)} = \sqrt{\mathrm{Var}(X)+\mathrm{Var}(Y)}\leq\sqrt{\mathrm{Var}(X)}+\sqrt{\mathrm{Var}(Y)}$$。
@@ -1125,7 +1125,7 @@ $$
 
 ---
 
-![宏自旋工艺失配Monte Carlo下的Psw端电压扫描](figs/Chapter02_local_16.png)
+![宏自旋工艺失配Monte Carlo下的Psw端电压扫描](figs/Chapter02_local_17.png)
 
 **图2.17** 工艺失配下的端电压写入概率Monte Carlo曲线，$$t_p = 0.75\,\mathrm{ns}$$、$$V_{\mathrm{MTJ}} = 0$$。主图将图2.11的$$|I_{\mathrm{SOT}}| = 300\text{-}3500\,\mu\mathrm{A}$$宽谱扫描按标称$$R_W$$映射为固定$$|V_{\mathrm{SOT}}|$$轴，插图放大$$800\text{-}1400\,\mu\mathrm{A}$$阈值窗口对应的电压区间。蓝色圆线为标称宏自旋曲线，红色方线为PDK失配样本的晶圆平均，阴影为Wilson 95%区间，绿色虚线为同批次实测$$V_{\mathrm{th}} = 894\,\mathrm{mV}$$参考线；工艺样本采用6个D2D失配器件、每点8次热噪声试验。插图中标称曲线在阈值附近仍呈Sigmoid上升，失配平均曲线变浅则反映不同器件阈值横向散布以及$$R_{\mathrm{SOT}}$$引起的端电压到驱动电流换算漂移，而非单器件Sigmoid特征消失。
 
@@ -1162,7 +1162,7 @@ $$
 
 ---
 
-![MC采样数对D2D传递函数估计量的影响](figs/Chapter02_local_17.png)
+![MC采样数对D2D传递函数估计量的影响](figs/Chapter02_local_18.png)
 
 **图2.18** D2D传递函数$$\hat{\mathcal{F}}(N,\mathrm{CV}_\Delta)$$估计量对Monte Carlo采样数$$N$$的敏感度($$R = 40$$独立种子，Device A, P→AP, $$t_w = 0.75\,\mathrm{ns}$$；$$\mathcal{F}_{\mathrm{ref}}$$由$$N_{\mathrm{ref}} = 50000$$给出)。(a)$$\hat{\mathcal{F}}$$的种子平均值与5至95%分位带随$$N$$的变化，三条水平点线为对应$$\mathcal{F}_{\mathrm{ref}}$$，PDK基线(琥珀)分位带最窄、严重工况(红)最宽但均围绕各自参考值收敛。(b)种子间标准差$$\sigma(\hat{\mathcal{F}})$$对数-对数图，三条实线与$$\propto N^{-1/2}$$参考虚线(黑)斜率相同，验证中心极限定理标度。(c)相对标准差$$\sigma(\hat{\mathcal{F}})/\langle\hat{\mathcal{F}}\rangle$$(百分比)映射到$$\beta^{\mathrm{eff}}$$预测的相对误差，两条横向点线标示1%与2%精度目标；PDK基线在$$N\geq 100$$即可持续低于1%水平。(d)不同精度容差(1%, 2%, 5%)下满足95%置信度的最小$$N$$柱状图，数值由$$N^{-1/2}$$标度拟合与持久单调二分搜索精确迭代得到，整数精度；PDK基线下2%精度仅需$$N = 57$$，5%精度全部三档工况均可压缩至$$N\leq 143$$。
 
@@ -1204,7 +1204,7 @@ $$
 
 ---
 
-![sMTJ硬件Bernoulli采样可靠性分析](figs/Chapter02_local_18.png)
+![sMTJ硬件Bernoulli采样可靠性分析](figs/Chapter02_local_19.png)
 
 **图2.19** sMTJ硬件Bernoulli采样可靠性分析(Binomial精确解与MC、CLT对照，Device A, P→AP, $$t_w = 0.75\,\mathrm{ns}$$主基准工作点)。六个子面板按两行三列排列。(a)$$p = 0.5$$工作点下$$\hat p_K$$的Binomial概率质量函数在$$K\in\{5, 20, 100, 500\}$$时的离散分布，琥珀阴影带标示$$\varepsilon = 0.05$$误差带，$$K = 5$$时覆盖率为0%、$$K = 500$$达97.2%接近Gaussian极限。(b)$$\sigma(\hat p_K) = \sqrt{p(1-p)/K}$$对数-对数图，三条实线为Binomial精确值、正方形为$$M = 3000$$次MC实测，$$p = 0.1$$与$$p = 0.9$$曲线因对称性完全重合，MC markers与精确线吻合于$$K\geq 3$$全区间。(c)$$p = 0.5$$下精确覆盖率的离散阶梯曲线(三条$$\varepsilon$$水平)与$$M = 500$$的MC 95%置信带叠加，清晰展示局部非单调的阶梯倒退，五角星标示持久单调算法求解的精确$$K_{\mathrm{req}}$$。(d)MC覆盖率估计器在$$(K, p, \varepsilon) = (100, 0.5, 0.10)$$(真值$$\mathrm{cov}_{\mathrm{exact}} = 0.9431$$)的RMSE随replicate数$$M$$的衰减，200次独立seed测得的RMSE与理论$$\sqrt{\mathrm{cov}(1-\mathrm{cov})/M}$$完全吻合，1% RMSE目标对应$$M\approx 500$$。(e)三工作点$$\times$$三精度下三种估计器的$$K_{\mathrm{req}}$$对比(实心柱为精确Binomial、空心正方为MC $$M = 2\times 10^4$$、空心菱形为CLT近似)，MC与精确解符合至$$\pm 5\%$$以内而CLT全区间系统性低估、在$$K\leq 100$$区偏差达15%以上。(f)$$p = 0.5$$下精确$$K_{\mathrm{req}}(\varepsilon)$$从$$\varepsilon = 0.01$$至0.20的双对数曲线，紫色点线标示$$\propto\varepsilon^{-2}$$参考标度，水平点线标示2.3.2节的$$K = 100$$位置。
 
@@ -1253,7 +1253,7 @@ $$
 
 ---
 
-![低势垒sMTJ RTN节点物理特性](figs/Chapter02_local_19.png)
+![低势垒sMTJ RTN节点物理特性](figs/Chapter02_local_20.png)
 
 **图2.20** 低势垒sMTJ RTN节点的物理特性 (Device A参数系，$$V_{c0}=0.884\,\mathrm{V}$$、$$\tau_0=1\,\mathrm{ns}$$)。(a) 稳态平均$$\langle s\rangle_{\infty}=\tanh(\Delta V/V_{c0})$$随偏置的变化，$$\Delta\in\{2,\,3.8,\,5.15\}$$三条曲线，灰色区标示$$|V|>V_{c0}$$的模型失效域 (势垒消失、确定性钉扎)；(b) 关联时间$$\tau(V)$$半对数曲线，零偏置处取极大$$\tau_{\max}=\tau_0\exp(\Delta)/2$$，随$$|V|$$增大单调缩短并趋于$$\tau_0$$ (点线)，与(a)构成记忆—非线性权衡的两翼；(c) $$\Delta=3.8$$下三个偏置点的电报轨迹样本 (600 ns窗口，$$\mathrm{d}t=1\,\mathrm{ns}$$传播子采样)：$$V=0$$时两态近对称往复，$$V=0.10\,\mathrm{V}$$时正态占优，$$V=0.25\,\mathrm{V}$$时正态占据约九成、仅偶发回跳。
 
@@ -1277,7 +1277,7 @@ $$
 
 ---
 
-![sLLG自由演化对两态RTN统计的验证](figs/Chapter02_local_20.png)
+![sLLG自由演化对两态RTN统计的验证](figs/Chapter02_local_21.png)
 
 **图2.21** sLLG自由演化对两态RTN统计的验证 ($$\Delta=2$$，$$t_{\mathrm{step}}=4\,\mathrm{ps}$$，固定种子可复现)。(a) 零偏置自由演化的$$m_z(t)$$轨迹 (2 μs片段)：双态电报跳变叠加阱内热抖动，红色虚线为驻留提取的滞回阈值$$\pm0.5$$；(b) 8 μs主运行67段驻留时间的幸存函数 (阶梯线) 与指数律$$e^{-t/\bar\tau}$$ (虚线) 对照，$$\bar\tau_{\mathrm{dwell}}=113\,\mathrm{ns}$$、变异系数0.99；(c) 时间平均$$\langle m_z\rangle$$随无量纲倾斜量的变化 (圆点，每点$$4.8\,\mu\mathrm{s}\times2$$种子)：形状与$$\tanh$$一致但幅度压缩，最小二乘拟合$$A=0.63$$ (实线)，理想$$\tanh$$ (灰虚线) 为对照。
 
@@ -1299,7 +1299,7 @@ $$
 
 ---
 
-![RTN节点群储备池的最小验证](figs/Chapter02_local_21.png)
+![RTN节点群储备池的最小验证](figs/Chapter02_local_22.png)
 
 **图2.22** RTN节点群储备池的最小验证 (平均场态，固定种子，全部数值可由基准脚本确定性复现)。(a) 逐延迟记忆容量$$\mathrm{MC}_k$$：异质$$W_{\mathrm{in}}$$节点群 ($$n=100$$，蓝) 对比广播同质基线 (灰)，后者无论节点数多少都坍缩到$$\mathrm{MC}=0.58$$；(b) 总记忆容量随节点数的变化：异质滤波器组 (蓝圆) 在$$n\approx100$$后饱和于秩上限，均质环形延迟线 ($$\Delta=1$$、单点注入，绿三角) 持续增长至37；(c) 二值器件态下每节点平均$$R$$个器件的记忆容量 (红)，对照平均场极限 (蓝虚线)——器件平均是硬件化的主要开销。
 

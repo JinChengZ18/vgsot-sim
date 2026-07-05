@@ -385,8 +385,8 @@ ax_bot.text(0.02, 0.97, ann, transform=ax_bot.transAxes,
             bbox=dict(boxstyle="round,pad=0.4",
                       facecolor=NEAR_WHITE, edgecolor=THU_PALE, alpha=0.95))
 
-fig.savefig(OUTDIR + "Chapter02_local_12.png", dpi=300, bbox_inches="tight")
-print(f"\nSaved  Chapter02_local_12.png  to {OUTDIR}")
+fig.savefig(OUTDIR + "Chapter02_local_13.png", dpi=300, bbox_inches="tight")
+print(f"\nSaved  Chapter02_local_13.png  to {OUTDIR}")
 plt.close(fig)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -445,8 +445,8 @@ ax.set_ylim(0, 7.5)
 ax.legend(fontsize=10.5, loc="upper right")
 ax.grid(axis="x", visible=False)
 
-fig2.savefig(OUTDIR + "Chapter02_local_14.png", dpi=300, bbox_inches="tight")
-print(f"Saved  Chapter02_local_14.png  to {OUTDIR}")
+fig2.savefig(OUTDIR + "Chapter02_local_15.png", dpi=300, bbox_inches="tight")
+print(f"Saved  Chapter02_local_15.png  to {OUTDIR}")
 plt.close(fig2)
 
 # ─────────────────────────────────────────────────────────────────────────────

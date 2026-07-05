@@ -3,7 +3,7 @@
 The NB variability figure averages over Delta only.  This script pushes the
 same PDK/Brinkman mismatch budget into the macrospin solver so the magnetic
 parameters and the SOT voltage-to-current conversion vary per sampled device.
-The axes stay in terminal SOT voltage: the main sweep mirrors Chapter02_local_10's broad
+The axes stay in terminal SOT voltage: the main sweep mirrors Chapter02_local_11's broad
 current span through the nominal R_W, while each sampled device keeps that
 voltage fixed and therefore sees its own process-shifted I_SOT.
 """
@@ -30,7 +30,7 @@ PULSE_NS = 0.75
 TOTAL_NS = 4.0
 MEASURED_VTH_MV = 894.0
 
-# Follow Chapter02_local_10: a broad-spectrum main sweep plus a dense threshold
+# Follow Chapter02_local_11: a broad-spectrum main sweep plus a dense threshold
 # sweep.  These nominal current landmarks are converted to terminal voltages
 # once using the baseline channel resistance before process MC is evaluated.
 WIDE_I_SOT_UA = np.array([300, 600, 900, 1100, 1300, 1500, 1800,
@@ -175,7 +175,7 @@ def print_scale_summary(samples):
 
 
 def nominal_voltage_sweep(i_sot_ua, constants):
-    """Convert Chapter02_local_10-style |I_SOT| landmarks into baseline |V_SOT| values."""
+    """Convert Chapter02_local_11-style |I_SOT| landmarks into baseline |V_SOT| values."""
     return np.asarray(i_sot_ua, dtype=float) * 1e-6 * constants.R_W
 
 
@@ -243,7 +243,7 @@ def plot_curves(wide_voltages, baseline_wide, mean_wide,
     inset.grid(True, color=THU_GRID, ls="--", lw=0.45, alpha=0.65)
 
     fig.tight_layout()
-    out_path = Path(__file__).resolve().parent / "Chapter02_local_16.png"
+    out_path = Path(__file__).resolve().parent / "Chapter02_local_17.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=NEAR_WHITE)
     plt.close(fig)
     print(f"Saved {out_path}")

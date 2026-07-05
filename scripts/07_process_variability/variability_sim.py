@@ -469,8 +469,8 @@ fig.suptitle(
     y=0.97
 )
 
-fig.savefig(OUTDIR + "Chapter02_local_15.png", dpi=300, bbox_inches="tight")
-print(f"\nSaved  Chapter02_local_15.png  to {OUTDIR}")
+fig.savefig(OUTDIR + "Chapter02_local_16.png", dpi=300, bbox_inches="tight")
+print(f"\nSaved  Chapter02_local_16.png  to {OUTDIR}")
 plt.close(fig)
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -393,6 +393,13 @@ fig, axes = plt.subplots(2, 2, figsize=(PANEL_SIZE[0] * 2, PANEL_SIZE[1] * 2),
                                           top=0.955, bottom=0.07))
 for (fname, fn), ax in zip(PANELS, axes.ravel()):
     fn(ax)
+# panel letters (a)-(d) at each panel's top-left, in figure coordinates so
+# they clear the panel titles (this figure is auto-composited, so the letters
+# are baked here rather than added in a separate compositing pass)
+for ax, letter in zip(axes.ravel(), "abcd"):
+    ax.annotate(f"({letter})", xy=(0.0, 1.0), xytext=(-0.11, 1.13),
+                xycoords="axes fraction", fontsize=15, fontweight="bold",
+                color=CHARCOAL, va="top", ha="left")
 composite = os.path.join(OUT, "integrator_panels_composite.png")
 # bbox_inches='tight' expands the canvas to include the right-column direct
 # labels (which extend past the axes); relative title alignment is preserved
@@ -402,6 +409,6 @@ print("wrote", composite)
 
 # mirror into the manuscript figure folder as the next chapter figure
 import shutil
-dest = os.path.join(ROOT, "article", "figs", "Chapter02_local_22.png")
+dest = os.path.join(ROOT, "article", "figs", "Chapter02_local_07.png")
 shutil.copy(composite, dest)
 print("mirrored", dest)
