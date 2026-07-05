@@ -192,9 +192,9 @@ def panel_geometry(ax):
                 arrowprops=dict(arrowstyle="-", color=TEAL, lw=0.9,
                                 connectionstyle="arc3,rad=0.15"))
 
-    ax.set_xlim(-1.85, 3.10)
-    ax.set_ylim(-0.90, 1.62)
-    ax.set_aspect("equal")
+    ax.set_xlim(-1.90, 3.15)
+    ax.set_ylim(-1.24, 1.60)
+    ax.set_aspect("equal", adjustable="box", anchor="N")  # top-anchored → title aligns
     ax.axis("off")
     ax.set_title("Geometric step and $\\mathbf{w}$ evaluation point")
 
@@ -384,14 +384,24 @@ for fname, fn in PANELS:
     plt.close(fig)
     print("wrote", os.path.join(OUT, fname))
 
-# preview composite (inspection only, not for publication)
-fig, axes = plt.subplots(2, 2, figsize=(PANEL_SIZE[0] * 2, PANEL_SIZE[1] * 2))
+# ── article-ready 2x2 composite (no banner; titles top-aligned via a fixed
+# GridSpec + panel_geometry's anchor='N'; panel letters are added later in
+# PPT per the figure convention, so none are baked here) ─────────────────
+fig, axes = plt.subplots(2, 2, figsize=(PANEL_SIZE[0] * 2, PANEL_SIZE[1] * 2),
+                         gridspec_kw=dict(hspace=0.34, wspace=0.40,
+                                          left=0.065, right=0.90,
+                                          top=0.955, bottom=0.07))
 for (fname, fn), ax in zip(PANELS, axes.ravel()):
     fn(ax)
-fig.suptitle("PREVIEW ONLY — panels are composited in PPT", fontsize=10,
-             color=GRAY, y=0.995)
-fig.tight_layout(rect=(0, 0, 1, 0.985))
-fig.savefig(os.path.join(OUT, "integrator_panels_preview.png"),
-            bbox_inches="tight", facecolor="white")
+composite = os.path.join(OUT, "integrator_panels_composite.png")
+# bbox_inches='tight' expands the canvas to include the right-column direct
+# labels (which extend past the axes); relative title alignment is preserved
+fig.savefig(composite, facecolor="white", bbox_inches="tight", pad_inches=0.08)
 plt.close(fig)
-print("wrote", os.path.join(OUT, "integrator_panels_preview.png"))
+print("wrote", composite)
+
+# mirror into the manuscript figure folder as the next chapter figure
+import shutil
+dest = os.path.join(ROOT, "article", "figs", "Chapter02_local_22.png")
+shutil.copy(composite, dest)
+print("mirrored", dest)
