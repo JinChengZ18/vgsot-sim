@@ -32,7 +32,7 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (72 tests).
 | Weak stochastic order = 1.98–2.04 (self-Cayley + midpoint refs); survives a transverse symmetry-breaking field (pooled ≥1.8) | `scripts/10_weak_order/weak_order_audit.py`, `weak_order_symbreak.py` | backed (artifact) |
 | Explicit-ω Cayley samples the correct Boltzmann law: T_eff/T = 0.979±0.014 (60 ns, Δt→0 extrap); true-midpoint = 0.979 (⇒ no explicit-ω / renorm stationary bias) | `scripts/11_boltzmann_teff/teff_dtsweep.py`, `merge_full_results.py` | backed (artifact) |
 | Spherical-Euler equilibrates at EXACTLY T/2 (0.49, dt-independent) — missing Wong–Zakai drift D·cot θ; adding the term restores 0.94; RHS-consistency tests cannot catch this ensemble-limit defect | `scripts/11_boltzmann_teff/euler_drift_discrimination.py` | backed (artifact) |
-| Figure/param provenance: fig 2.10 runs cayley (driver default), fig 2.11 runs euler-spherical; runtime `theta_SH=0.066` (chapter captions still say 0.04) | `scripts/09_simulation_figures/integrator_audit.py`, `audit_theta_sh.py`, `tests/test_figure_provenance.py` | backed |
+| Figure provenance: fig 2.10 = cayley (driver default); fig 2.11 (SER) = euler by default but drive-dominated, so euler→cayley shifts I_50 only −0.5% (width ×1.16, euler sharper). runtime `theta_SH=0.066`: write-condition (self-heating ON) I_50≈1140 µA matches exp 1152 µA to ~1%; self-heating OFF ≈1300 µA (+13%). NB the ~12%/OFF figure alone would misstate the calibration | `scripts/09_simulation_figures/integrator_audit.py`, `audit_theta_sh.py`, `tests/test_figure_provenance.py` | backed |
 
 ## RTN node primitive (candidate reservoir node, `vgsot_sim.rtn`)
 
