@@ -152,6 +152,7 @@ explicit `rng`. Both are documented in [docs/api.md](docs/api.md).
 - [Documentation index](docs/README.md) — start here
 - [Simulation cases](docs/cases.md) · [Default parameters](docs/parameters.md) · [Parameter validation](docs/parameter_validation.md)
 - [API reference](docs/api.md) · [Project structure](docs/structure.md) · [Technical details](docs/technical_details.md)
+- [Reproducing the Chapter 2 figures](docs/reproducing_figures.md) — regenerate every figure from its script
 - Development: [implementation status](docs/maintenance/IMPLEMENTATION_STATUS.md) · [version notes](docs/maintenance/version_notes.md) · [claims backing matrix](CLAIMS.md)
 
 ## Citation

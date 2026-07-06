@@ -15,6 +15,7 @@ the pages below go deeper.
 - [API reference](api.md) — configs, result dataclasses, high-level cases, and low-level kernels
 - [Project structure](structure.md) — package layout, information flow, and public API surface
 - [Technical details](technical_details.md) — physics derivations, calibration notes, and figure provenance
+- [Reproducing the Chapter 2 figures](reproducing_figures.md) — every figure mapped to its script, command, input data, and runtime
 
 ## Development
 
