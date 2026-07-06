@@ -16,7 +16,7 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (72 tests).
 | `R_P = RA / A1` (honest; was a cancelling BDR expression) | `tests/test_bdr_resistance.py::test_compute_Rp_is_RA_over_A1`, `::test_compute_Rp_independent_of_barrier` | backed |
 | Simmons/BDR predictor `resistance_area_bdr` genuinely depends on φ_ox, t_ox; matches measured RA at MgO m*≈0.3 | `tests/test_bdr_resistance.py::test_bdr_predictor_depends_on_barrier`, `::..._matches_measured_RA...` | backed |
 | TMR(V) PDK 3-parameter (default) and Lorentzian forms; `R_series` additive | `tests/test_tmr_voltage.py` (4) + `tests/test_toggles.py::test_r_series_*` | backed |
-| Self-heating RC couples M_s(T)/K_i(T) into the field each step | `IMPLEMENTATION_STATUS.md` states "verified to 0.01 K"; **no committed pytest** | gap (low) |
+| Self-heating RC couples M_s(T)/K_i(T) into the field each step | `docs/maintenance/IMPLEMENTATION_STATUS.md` states "verified to 0.01 K"; **no committed pytest** | gap (low) |
 | Process-variability CV(Δ) budget partitions total variance; macrospin sample reproducible | `tests/test_variability.py` (2) | backed |
 | End-to-end `rng=` byte-reproducibility (euler + cayley); `rng_mode` switch; Psw=1−SER alias | `tests/test_toggles.py` (rng/mode/psw tests) | backed |
 

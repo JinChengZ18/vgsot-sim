@@ -110,7 +110,7 @@ cc = PhysicalConstantsConfig(theta_SH=0.25)   # literature β-W
 
 ## See also
 
-- [`docs/IMPLEMENTATION_STATUS.md`](../../docs/IMPLEMENTATION_STATUS.md) — feature coverage map (entries marked "2026-05" describe the new opt-in toggles exercised here)
+- [`docs/maintenance/IMPLEMENTATION_STATUS.md`](../../docs/maintenance/IMPLEMENTATION_STATUS.md) — feature coverage map (entries marked "2026-05" describe the new opt-in toggles exercised here)
 - [`docs/technical_details.md` §2.3](../../docs/technical_details.md) — calibration story behind `theta_SH = 0.04`
-- [`docs/version_notes.md`](../../docs/version_notes.md) — release-by-release physics changes
+- [`docs/maintenance/version_notes.md`](../../docs/maintenance/version_notes.md) — release-by-release physics changes
 - [`scripts/06_psw_t_fitting/`](../06_psw_t_fitting/) and [`scripts/07_process_variability/`](../07_process_variability/) — wafer-measurement and PDK-mismatch processing that produces the calibration target above

@@ -1,5 +1,48 @@
 
 
+## Information flow
+
+```mermaid
+flowchart LR
+    classDef io fill:#f5f3ff,stroke:#7c3aed,stroke-width:1.2px,color:#111;
+    classDef case fill:#f3e8ff,stroke:#9333ea,stroke-width:1.2px,color:#111;
+    classDef kernel fill:#ede9fe,stroke:#7c3aed,stroke-width:1.2px,color:#111;
+    classDef out fill:#faf5ff,stroke:#a855f7,stroke-width:1.2px,color:#111;
+
+    CLI["CLI / Config"]:::io
+    CASE["Selected case<br/>(time-series / SER)"]:::case
+
+    INIT["initialize.py<br/>initial state"]:::kernel
+    ELEC["electronic.py<br/>current / voltage mapping"]:::kernel
+    DYN["dynamic_switching.py<br/>magnetization update"]:::kernel
+    ANI["anisotropy.py<br/>effective field"]:::kernel
+    STO["stochastic.py<br/>thermal noise"]:::kernel
+    TMR["tmr.py<br/>resistance feedback"]:::kernel
+
+    RES["SimResult / SweepResult /<br/>SerResult"]:::out
+    SAVE["result_io.py<br/>CSV / plot export"]:::out
+
+    CLI --> CASE
+    CASE --> INIT
+    CASE --> ELEC
+    CASE --> DYN
+    DYN --> ANI
+    ANI --> STO
+    DYN --> TMR
+
+    INIT --> CASE
+    ELEC --> CASE
+    DYN --> CASE
+    TMR --> CASE
+
+    CASE --> RES
+    RES --> SAVE
+```
+
+This separates **physics kernels**, **experiment orchestration**, and **output
+utilities**, so the package is usable both as a CLI simulator and as a reusable
+Python library.
+
 ## Project structure
 
 The package is organised in three layers: **physics kernels**, **simulation
