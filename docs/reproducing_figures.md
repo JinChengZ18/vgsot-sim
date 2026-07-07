@@ -1,9 +1,10 @@
-# Reproducing the Chapter 2 figures
+# Reproducing the Chapter 2 figures and tables
 
-This guide maps every figure in Chapter 2 (the sMTJ device-modelling, integrator,
-process-variability, sampling, and RTN-reservoir study built on `vgsot-sim`) to
-the script that generates it, the exact command, its input data, and its rough
-runtime. It lets a reader regenerate the research conclusions behind each figure.
+This guide maps every figure and table in Chapter 2 (the sMTJ device-modelling,
+integrator, process-variability, sampling, and RTN-reservoir study built on
+`vgsot-sim`) to the script that generates it, the exact command, its input data,
+and its rough runtime. It lets a reader regenerate the research conclusions
+behind each result.
 
 ## Prerequisites
 
@@ -50,8 +51,8 @@ labels on top.
 | 图2.18 | `Chapter02_local_18.png` | MC sampling-size sensitivity of F̂(N, CV_Δ) | `scripts/08_sampling_effect/sampling_sensitivity_sim.py` | ~2–5 min |
 | 图2.19 | `Chapter02_local_19.png` | Hardware Bernoulli-sampling reliability | `scripts/08_sampling_effect/hw_sampling_reliability.py` | ~2–4 min |
 | 图2.20 | `Chapter02_local_20.png` | Low-barrier RTN node characteristics | `scripts/10_rtn_reservoir/plot_node_figs.py` → `scripts/build_ppt_figs.py` | ~minutes |
-| 图2.21 | `Chapter02_local_21.png` | sLLG free-running validation of the RTN abstraction | `scripts/10_rtn_reservoir/plot_bridge_figs.py` → `scripts/build_ppt_figs.py` | long (LLG dwell) |
-| 图2.22 | `Chapter02_local_22.png` | RTN-node reservoir minimal validation | `scripts/10_rtn_reservoir/plot_reservoir_figs.py` → `scripts/build_ppt_figs.py` | long (benchmarks) |
+| 图2.21 | `Chapter02_local_21.png` | sLLG free-running validation of the RTN abstraction | `scripts/10_rtn_reservoir/plot_bridge_figs.py` → `scripts/build_ppt_figs.py` | ~minutes (sLLG dwell) |
+| 图2.22 | `Chapter02_local_22.png` | RTN-node reservoir minimal validation | `scripts/10_rtn_reservoir/plot_reservoir_figs.py` → `scripts/build_ppt_figs.py` | ~seconds (mean-field) |
 
 ## §2.1–2.2.4 — device model, thermal effects, architecture (图2.1–2.11)
 
@@ -150,13 +151,53 @@ the full sequence and expected runtimes.
 
 ```bash
 # (Re)compute the reservoir/bridge results, then render panels:
-python scripts/10_rtn_reservoir/validate_bridge.py        # -> bridge_results.json
-python scripts/10_rtn_reservoir/benchmark_reservoir.py    # -> reservoir_results.json  (slow)
+python scripts/10_rtn_reservoir/validate_bridge.py        # -> bridge_results.json  (~minutes: free-running sLLG dwell)
+python scripts/10_rtn_reservoir/benchmark_reservoir.py    # -> reservoir_results.json  (mean-field, fast)
 python scripts/10_rtn_reservoir/plot_node_figs.py         # ch02_19_{a,b,c}  -> 图2.20
 python scripts/10_rtn_reservoir/plot_bridge_figs.py       # ch02_20_{a,b,c}  -> 图2.21
 python scripts/10_rtn_reservoir/plot_reservoir_figs.py    # ch02_21_{a,b,c}  -> 图2.22
 python scripts/build_ppt_figs.py                          # assemble _20/_21/_22
 ```
+
+## Tables
+
+Most tables carry numbers emitted to **stdout** by the same script that renders
+the neighbouring figure; a few are input-parameter or measured-data tables that
+are sourced rather than regenerated. Prerequisites are the same as above
+(`pip install -e .`, then run from the repository root).
+
+### Computed tables
+
+| Table | Content | Reproduce |
+|---|---|---|
+| 表2.6 | Four Sigmoid fits at t_w = 0.75 ns | `scripts/07_process_variability/sigmoid_fig.py` → stdout (same run as 图2.14) |
+| 表2.7 | Device A model-independent observables | `scripts/06_psw_t_fitting/fit_from_loops.py` → stdout (same run as 图2.13 / 图2.15) |
+| 表2.8 | Inverted Néel–Brown parameters (Δ, V_c0; τ₀ = 1 ns) | `scripts/06_psw_t_fitting/fit_from_loops.py` → stdout |
+| 表2.9 | Néel–Brown extrapolation vs Sigmoid measurement | `scripts/06_psw_t_fitting/fit_from_loops.py` + `scripts/07_process_variability/sigmoid_fig.py` → stdout |
+| 表2.10 | CV(Δ) variance-budget decomposition | `scripts/07_process_variability/variability_sim.py` → stdout |
+| 表2.11 | Process margin: array β^eff retention vs CV_Δ | `scripts/07_process_variability/variability_sim.py` → stdout |
+| 表2.12 | Estimator performance over (CV_Δ, N), R = 40, N_ref = 50000 | `scripts/08_sampling_effect/sampling_sensitivity_sim.py` → stdout (same run as 图2.18) |
+| 表2.13 | K_req: exact vs Monte-Carlo vs CLT | `scripts/08_sampling_effect/hw_sampling_reliability.py` → stdout (same run as 图2.19) |
+| 表2.14 | Low-barrier sLLG dwell statistics + attempt time τ₀ | `scripts/10_rtn_reservoir/validate_bridge.py` → `scripts/10_rtn_reservoir/bridge_results.json` |
+| 表2.15 | Reservoir benchmark capacity (three configurations) | `scripts/10_rtn_reservoir/benchmark_reservoir.py` → `scripts/10_rtn_reservoir/reservoir_results.json` |
+
+The 表2.14 / 表2.15 numbers are read from the committed result JSON
+(`bridge_results.json`, `reservoir_results.json`); re-run the compute script to
+regenerate them (`validate_bridge.py` runs the free-running sLLG dwell, ~minutes;
+the reservoir mean-field benchmark is fast).
+
+### Input and measured tables
+
+These are not regenerated by a run — they are the sourced inputs and measurements
+the model consumes:
+
+| Table | Content | Source |
+|---|---|---|
+| 表2.1 | STT vs SOT driving-mechanism comparison | Qualitative comparison stated in the chapter text — no data source |
+| 表2.2 | SOT-channel transport, thermal, and VCMA parameters | Literature values; the ones the simulator uses are the `PhysicalConstantsConfig` defaults in `src/vgsot_sim/configs.py` (VCMA β) plus the thermal parameters in `src/vgsot_sim/thermal.py` |
+| 表2.3 | 80 nm SOT-MTJ core magnetic and dimensional parameters | `PhysicalConstantsConfig` defaults in `src/vgsot_sim/configs.py` (M_s, K_i, D_elec, t_f, …) |
+| 表2.4 | TMR bias-decay PDK coefficients + port-level calibration | PDK coefficients (`k/a/b/c_tmr`) and the calibrated `TMR`, `RA`, `theta_SH` in `configs.py`; the θ_SH / RA calibration is reproduced by `scripts/09_simulation_figures/calibrate_to_experiment.py` |
+| 表2.5 | Device-array test statistics (batch means) | Experimental same-batch wafer measurements; raw data under `scripts/05_experimental_raw_data/` |
 
 ## Caveats
 
@@ -165,7 +206,8 @@ python scripts/build_ppt_figs.py                          # assemble _20/_21/_22
 - **图2.7 needs `result/sec_2_2_3_2/` first.** That directory is gitignored, so a
   fresh clone must run the §2.2.3.2 audit commands above before assembling the
   figure.
-- **Long runs:** 图2.7 panel B (overnight), 图2.17–2.19 (minutes), and the §2.4
-  reservoir benchmarks (slow). All other figures render in seconds.
+- **Long runs:** 图2.7 panel B (overnight); 图2.17–2.19, the §2.2.3.2 audit runs,
+  and the §2.4 free-running sLLG dwell (`validate_bridge.py`) take minutes. All
+  other results render in seconds.
 - Scripts render panels into their own folder; the published composites in
   `article/figs/` add panel `(a)/(b)` letters via the PowerPoint assembly step.
