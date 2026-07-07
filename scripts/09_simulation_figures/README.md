@@ -5,7 +5,7 @@ the calibrated `vgsot_sim` library through the §2.3.3 detailed-P_sw protocol
 (write pulse `t_w = 0.75 ns`, `V_MTJ = 0`, P→AP) and renders the chapter §2.3
 figures that close the loop between simulation and Device A measurements.
 
-The §2.3.4 calibration that selected `theta_SH = 0.04` as the package default
+The §2.3.4 calibration that selected `theta_SH = 0.066` as the package default
 also lives here — `calibrate_to_experiment.py` is the scan that produced the
 calibration table.
 
@@ -100,7 +100,7 @@ Device A P→AP @ 0.75 ns operating point (chapter §2.3.3 Sigmoid fit):
 | Implied current threshold `I_th = V_th / R_W` | ≈ 1152 µA  (R_W ≈ 776 Ω) |
 | Sigmoid slope `β_s` | 44.6 V⁻¹ |
 
-The current package default `theta_SH = 0.04` reproduces `V_th` to within ~1 %.
+The current package default `theta_SH = 0.066` reproduces `V_th` to within ~1 %.
 For bare-material studies, override the constant explicitly:
 
 ```python
@@ -111,6 +111,6 @@ cc = PhysicalConstantsConfig(theta_SH=0.25)   # literature β-W
 ## See also
 
 - [`docs/maintenance/IMPLEMENTATION_STATUS.md`](../../docs/maintenance/IMPLEMENTATION_STATUS.md) — feature coverage map (entries marked "2026-05" describe the new opt-in toggles exercised here)
-- [`docs/technical_details.md` §2.3](../../docs/technical_details.md) — calibration story behind `theta_SH = 0.04`
+- [`docs/technical_details.md` §2.3](../../docs/technical_details.md) — calibration story behind `theta_SH = 0.066`
 - [`docs/maintenance/version_notes.md`](../../docs/maintenance/version_notes.md) — release-by-release physics changes
 - [`scripts/06_psw_t_fitting/`](../06_psw_t_fitting/) and [`scripts/07_process_variability/`](../07_process_variability/) — wafer-measurement and PDK-mismatch processing that produces the calibration target above

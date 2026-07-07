@@ -17,7 +17,7 @@ Last updated: 2026-07-02 (RC deepening round: RTN node rigor fixes, `rtn/bridge.
 | 2.2.1.2 | PMA effective field $H_{PMA} = 2K_i/(\mu_0 M_s t_f) m_z$ | [`anisotropy.py:35`](../../src/vgsot_sim/anisotropy.py) | Accepts optional `Ki_T`, `Ms_T` overrides for use inside a T-dependent loop |
 | 2.2.1.2 | VCMA effective field $H_{VCMA} = -2\beta V_{MTJ} m_z / (\mu_0 M_s t_{ox} t_f)$ | `anisotropy.py:36` | β is the surface VCMA coefficient |
 | 2.2.1.2 | Demagnetisation tensor — thin-disk **and** exact oblate-ellipsoid | [`demag.py`](../../src/vgsot_sim/demag.py), `anisotropy.field(... demag_mode=...)` | Default `"ellipsoid"`; uses `D_elec` for the in-plane diameter |
-| 2.2.1.2 | Configurable in-plane bias field $H_{ex}$ | `anisotropy.py:30`, `configs.py:69-72` | `h_ex_x/y/z` — defaults to 200 Oe along +x |
+| 2.2.1.2 | Configurable in-plane bias field $H_{ex}$ | `anisotropy.py:30`, `configs.py` (`h_ex_x/y/z`) | `h_ex_x/y/z` — defaults to −50 Oe/(4π) along −ŷ (⊥ σ̂_SH = −x̂; the chapter's "200 Oe along current" maps to this) |
 | 2.2.1.2 | Thermal noise sampling — independent N(0,1) per axis, FDT amplitude | [`stochastic.py`](../../src/vgsot_sim/stochastic.py) + `anisotropy.py:35-37` | **Corrected from upstream** (see thesis §2.2.1.2 implementation note). `stochastic()` accepts optional `rng` for reproducibility. |
 | 2.2.1.2 (P1) | Initial-state thermal sampling — Rayleigh `θ`, uniform `φ` | [`initialize.py:init`](../../src/vgsot_sim/initialize.py) | Each Monte-Carlo trial now starts from an independent thermal draw rather than a single deterministic offset. `init()` takes optional `rng`. |
 | 2.2.3 (P1) | Polar-region numerical guard | `dynamic_switching.py:35-50` | `dphi/dt` frozen when `sin(θ) < 1e-8` to prevent `1/sin(θ)` roundoff blow-up |
