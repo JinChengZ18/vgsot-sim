@@ -63,7 +63,7 @@ ultimately into a magnetisation trajectory.
 
 ### Reference figure
 
-[`Chapter02_local_01.png`](../article/00_chapter_drafts/figs/Chapter02_local_01.png)
+[`Chapter02_local_01.png`](../article/figs/Chapter02_local_01.png)
 — three-terminal T-circuit schematic (chapter §2.1.1), produced by
 [`demo/plot_t_circuit.py`](../demo/plot_t_circuit.py). This shows the static
 mapping inside `electronic.electronic(V1, V2, V3, R_MTJ) → (I_SOT, V_MTJ)`.
@@ -88,7 +88,7 @@ free layer.
 
 ### Reference figure
 
-[`Chapter02_local_06.png`](../article/00_chapter_drafts/figs/Chapter02_local_06.png) —
+[`Chapter02_local_06.png`](../article/figs/Chapter02_local_06.png) —
 `m_z(t)` + `T(t)` with vs without the coupled self-heating step, produced by
 [`scripts/04_thermal_nonidealities/plot_self_heating_compare.py`](../scripts/04_thermal_nonidealities/plot_self_heating_compare.py).
 
@@ -153,14 +153,14 @@ sigmoid.
 
 ### Reference figures
 
-- [`Chapter02_local_08.png`](../article/00_chapter_drafts/figs/Chapter02_local_08.png)
+- [`Chapter02_local_09.png`](../article/figs/Chapter02_local_09.png)
   — four representative single trajectories across the threshold zone
   (`scripts/09_simulation_figures/plot_single_trajectory.py`).
-- [`Chapter02_local_10.png`](../article/00_chapter_drafts/figs/Chapter02_local_10.png)
+- [`Chapter02_local_11.png`](../article/figs/Chapter02_local_11.png)
   — Monte-Carlo `P_sw(|I_SOT|)` at 0.75 ns, self-heating OFF vs ON, with
   Wilson 95 % CI + threshold-region inset
   (`scripts/09_simulation_figures/plot_ser_mc.py`).
-- [`Chapter02_local_13.png`](../article/00_chapter_drafts/figs/Chapter02_local_13.png)
+- [`Chapter02_local_14.png`](../article/figs/Chapter02_local_14.png)
   — the experimental same-batch reference Sigmoid this case is calibrated against
   (`scripts/07_process_variability/sigmoid_fig.py`).
 
@@ -210,15 +210,15 @@ This case is not exposed through the CLI — call it directly from Python.
 
 ### Reference figures
 
-- [`Chapter02_local_15.png`](../article/00_chapter_drafts/figs/Chapter02_local_15.png)
+- [`Chapter02_local_16.png`](../article/figs/Chapter02_local_16.png)
   — full §2.3.5 four-panel summary (Brinkman CV(Δ) budget, wafer-averaged
   Sigmoid family, transfer function F(CV_Δ), joint prediction vs experiment),
   produced by [`scripts/07_process_variability/variability_sim.py`](../scripts/07_process_variability/variability_sim.py).
-- [`Chapter02_local_16.png`](../article/00_chapter_drafts/figs/Chapter02_local_16.png)
+- [`Chapter02_local_17.png`](../article/figs/Chapter02_local_17.png)
   — macrospin D2D Monte-Carlo sampling
   (`scripts/07_process_variability/macrospin_process_variability_mc.py`).
-- [`Chapter02_local_17.png`](../article/00_chapter_drafts/figs/Chapter02_local_17.png)
-  and [`Chapter02_local_18.png`](../article/00_chapter_drafts/figs/Chapter02_local_18.png)
+- [`Chapter02_local_18.png`](../article/figs/Chapter02_local_18.png)
+  and [`Chapter02_local_19.png`](../article/figs/Chapter02_local_19.png)
   — Wilson coverage + MC sampling-size sensitivity (chapter §2.3.6,
   `scripts/08_sampling_effect/`).
 

@@ -1,12 +1,12 @@
 """
-Figure 2.7: vgsot-sim software architecture.
+Figure 2.8: vgsot-sim software architecture.
 
 Journal-style revision: portrait-oriented layered architecture, reduced
 verbal load, manuscript-scale typography, and orthogonal data flow.
 
 Outputs:
-  demo/Chapter02_local_07.png
-  article/00_chapter_drafts/figs/Chapter02_local_07.png
+  demo/Chapter02_local_08.png
+  article/figs/Chapter02_local_08.png
 """
 from __future__ import annotations
 
@@ -186,14 +186,14 @@ arrow(1.25, 1.14, 1.25, 1.56, color=LINE, lw=0.82, ms=6.8)
 arrow(5.57, 1.50, 5.57, 1.14, color=LINE, lw=0.82, ms=6.8)
 
 
-out_path = Path(__file__).resolve().parent / "Chapter02_local_07.png"
+out_path = Path(__file__).resolve().parent / "Chapter02_local_08.png"
 plt.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white",
             pad_inches=0.05)
 plt.close(fig)
 
 chapter_fig = (
     Path(__file__).resolve().parent.parent
-    / "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_07.png"
+    / "article" / "figs" / "Chapter02_local_08.png"
 )
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)

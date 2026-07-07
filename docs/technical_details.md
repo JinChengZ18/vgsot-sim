@@ -13,11 +13,11 @@ are summarised in the following two chapter figures.
 
 | Behavioural model layers | vgsot-sim kernel architecture |
 |---|---|
-| ![](../article/00_chapter_drafts/figs/Chapter02_local_02.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_07.png) |
-| [`Chapter02_local_02.png`](../article/00_chapter_drafts/figs/Chapter02_local_02.png) — §2.1.2 abstraction layers | [`Chapter02_local_07.png`](../article/00_chapter_drafts/figs/Chapter02_local_07.png) — §2.2.4 module dataflow |
+| ![](../article/figs/Chapter02_local_02.png) | ![](../article/figs/Chapter02_local_08.png) |
+| [`Chapter02_local_02.png`](../article/figs/Chapter02_local_02.png) — §2.1.2 abstraction layers | [`Chapter02_local_08.png`](../article/figs/Chapter02_local_08.png) — §2.2.4 module dataflow |
 
 The three-terminal T-circuit that backs the electronic mapping is shown in
-[`Chapter02_local_01.png`](../article/00_chapter_drafts/figs/Chapter02_local_01.png).
+[`Chapter02_local_01.png`](../article/figs/Chapter02_local_01.png).
 
 
 
@@ -156,7 +156,7 @@ Thermal noise is responsible for **switching stochasticity** and **error rate**.
 
 | Overview | T-transient (closed-form) | M_s(T), K_i(T) scaling | Self-heating in LLG |
 |---|---|---|---|
-| ![](../article/00_chapter_drafts/figs/Chapter02_local_03.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_04.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_05.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_06.png) |
+| ![](../article/figs/Chapter02_local_03.png) | ![](../article/figs/Chapter02_local_04.png) | ![](../article/figs/Chapter02_local_05.png) | ![](../article/figs/Chapter02_local_06.png) |
 | `Chapter02_local_03` — overview of thermal-coupled effects | `Chapter02_local_04` — RC step response vs analytic steady state | `Chapter02_local_05` — Bloch / mod. Callen–Callen scalings | `Chapter02_local_06` — `m_z(t)` with vs without self-heating |
 
 Sources: [`demo/plot_thermal_nonideal_overview.py`](../demo/plot_thermal_nonideal_overview.py)
@@ -456,14 +456,14 @@ alongside the experiment-side §2.3.3 figures:
 
 | Single trajectory | 3D magnetisation | Monte-Carlo P_sw | Experimental Sigmoid |
 |---|---|---|---|
-| ![](../article/00_chapter_drafts/figs/Chapter02_local_08.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_09.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_10.png) | ![](../article/00_chapter_drafts/figs/Chapter02_local_13.png) |
-| `Chapter02_local_08` — `m_z, R, I_SOT` at four `I_SOT` values | `Chapter02_local_09` — `m(t)` on the unit sphere | `Chapter02_local_10` — `P_sw(\|I_SOT\|)` MC with Wilson CI | `Chapter02_local_13` — same-batch Sigmoid measurements (calibration target) |
+| ![](../article/figs/Chapter02_local_09.png) | ![](../article/figs/Chapter02_local_10.png) | ![](../article/figs/Chapter02_local_11.png) | ![](../article/figs/Chapter02_local_14.png) |
+| `Chapter02_local_09` — `m_z, R, I_SOT` at four `I_SOT` values | `Chapter02_local_10` — `m(t)` on the unit sphere | `Chapter02_local_11` — `P_sw(\|I_SOT\|)` MC with Wilson CI | `Chapter02_local_14` — same-batch Sigmoid measurements (calibration target) |
 
 The Néel-Brown extraction from hysteresis loops (the input to the
 `calibrate_to_experiment.py` target) is
-[`Chapter02_local_12.png`](../article/00_chapter_drafts/figs/Chapter02_local_12.png),
+[`Chapter02_local_13.png`](../article/figs/Chapter02_local_13.png),
 and the process-variability budget is
-[`Chapter02_local_15.png`](../article/00_chapter_drafts/figs/Chapter02_local_15.png).
+[`Chapter02_local_16.png`](../article/figs/Chapter02_local_16.png).
 
 
 

@@ -6,7 +6,7 @@ hierarchy, and compact 2 x 2 panel geometry.
 
 Outputs:
   demo/Chapter02_local_03.png
-  article/00_chapter_drafts/figs/Chapter02_local_03.png
+  article/figs/Chapter02_local_03.png
 """
 from __future__ import annotations
 
@@ -219,7 +219,7 @@ plt.close(fig)
 
 chapter_fig = (
     Path(__file__).resolve().parent.parent
-    / "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_03.png"
+    / "article" / "figs" / "Chapter02_local_03.png"
 )
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)

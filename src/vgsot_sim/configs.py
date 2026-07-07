@@ -279,7 +279,7 @@ class SerSotNoVcmaThermalConfig:
     i_sot_list: Sequence[float] = (
         -1500e-6, -1300e-6, -1200e-6, -1100e-6, -1000e-6, -900e-6, -700e-6,
     )
-    trials: int = 100              # interactive-friendly; chapter Chapter02_local_10 uses 80
+    trials: int = 100              # interactive-friendly; chapter Chapter02_local_11 uses 80
     sim_start_step: int = 1
     sim_mid1_step: int = 750
     sim_end_step: int = 4000

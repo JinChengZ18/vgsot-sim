@@ -7,7 +7,7 @@ the aspect ratio suitable for thesis text pages.
 
 Outputs:
   demo/Chapter02_local_02.png
-  article/00_chapter_drafts/figs/Chapter02_local_02.png
+  article/figs/Chapter02_local_02.png
 """
 from __future__ import annotations
 
@@ -357,7 +357,7 @@ plt.close(fig)
 
 chapter_fig = (
     Path(__file__).resolve().parent.parent
-    / "article" / "00_chapter_drafts" / "figs" / "Chapter02_local_02.png"
+    / "article" / "figs" / "Chapter02_local_02.png"
 )
 chapter_fig.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy(out_path, chapter_fig)

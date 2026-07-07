@@ -62,7 +62,7 @@ The schematic and self-contained-simulation figures need no external data:
 python demo/plot_t_circuit.py                 # 图2.1
 python demo/plot_behavioral_model_layers.py   # 图2.2
 python demo/plot_thermal_nonideal_overview.py # 图2.3
-python demo/plot_architecture.py              # 图2.8  (see caveat below)
+python demo/plot_architecture.py              # 图2.8
 
 # Self-contained vgsot_sim runs (thermal + trajectories)
 python scripts/04_thermal_nonidealities/plot_thermal_transients.py     # 图2.4
@@ -162,11 +162,6 @@ python scripts/build_ppt_figs.py                          # assemble _20/_21/_22
 
 - **图2.12 is not code-generated.** It is the experimental test-platform block
   diagram and device photographs; there is no script for it.
-- **`plot_architecture.py` writes `Chapter02_local_07.png`, not `_08`.** Its
-  output number is stale from before the 图2.7 integrator figure was inserted
-  (which shifted architecture to 图2.8). The canonical `article/figs/Chapter02_local_08.png`
-  is produced in the compositing step; regenerate the architecture panel from the
-  script but expect the `_07` filename locally.
 - **图2.7 needs `result/sec_2_2_3_2/` first.** That directory is gitignored, so a
   fresh clone must run the §2.2.3.2 audit commands above before assembling the
   figure.

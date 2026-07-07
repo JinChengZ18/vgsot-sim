@@ -1,5 +1,5 @@
 """
-图 2.10 — vgsot-sim 在 t_w = 0.75 ns 写入脉冲下的单次 (m_z, R_MTJ, I_SOT)
+图 2.9 — vgsot-sim 在 t_w = 0.75 ns 写入脉冲下的单次 (m_z, R_MTJ, I_SOT)
 演化事件可视化（与 §2.3.3 详细 P_sw 测试协议一致）。
 
 三面板：
@@ -9,7 +9,7 @@
 
 风格紧跟 04 章节 fig_material_params 范式（紧凑布局、字号合理、无重叠）。
 
-输出路径：本目录 + 同步到 ../../article/00_chapter_drafts/figs/Chapter02_local_09.png
+输出路径：本目录 + 同步到 ../../article/figs/Chapter02_local_09.png
 """
 from pathlib import Path
 import shutil

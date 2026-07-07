@@ -6,7 +6,7 @@
 并在单位球面上画出轨迹，配以时间彩色梯度（清华紫调色）、起止点标记，以及
 m_x, m_y, m_z 三分量随时间的演化。明亮的现代风格 + 清华紫主题。
 
-输出 Chapter02_local_10.png（本目录 + 同步到 article/00_chapter_drafts/figs/）。
+输出 Chapter02_local_10.png（本目录 + 同步到 article/figs/）。
 """
 from pathlib import Path
 import shutil

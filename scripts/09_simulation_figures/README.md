@@ -13,41 +13,41 @@ calibration table.
 
 | File | Output | Purpose |
 |---|---|---|
-| `plot_single_trajectory.py` | `Chapter02_local_08.png` | Single-trajectory `(m_z, R_MTJ, I_SOT)` for sub- / marginal / just-above / super-threshold `I_SOT` ∈ {−600, −1100, −1300, −2000} µA, self-heating ON, 0.75 ns write + 3.25 ns relax |
-| `plot_3d_trajectory.py` | `Chapter02_local_09.png` | Magnetisation vector `m(t)` on the unit sphere with time-encoded colour (cool→warm), plus Cartesian `m_x, m_y, m_z` time series for a super-threshold pulse |
-| `plot_ser_mc.py` | `Chapter02_local_10.png` | Monte-Carlo P_sw vs `\|I_SOT\|` sweep at 0.75 ns with **Wilson 95 % CI**, self-heating OFF vs ON, and a threshold-region zoom inset around the experimental `I_th ≈ 1152 µA` |
+| `plot_single_trajectory.py` | `Chapter02_local_09.png` | Single-trajectory `(m_z, R_MTJ, I_SOT)` for sub- / marginal / just-above / super-threshold `I_SOT` ∈ {−600, −1100, −1300, −2000} µA, self-heating ON, 0.75 ns write + 3.25 ns relax |
+| `plot_3d_trajectory.py` | `Chapter02_local_10.png` | Magnetisation vector `m(t)` on the unit sphere with time-encoded colour (cool→warm), plus Cartesian `m_x, m_y, m_z` time series for a super-threshold pulse |
+| `plot_ser_mc.py` | `Chapter02_local_11.png` | Monte-Carlo P_sw vs `\|I_SOT\|` sweep at 0.75 ns with **Wilson 95 % CI**, self-heating OFF vs ON, and a threshold-region zoom inset around the experimental `I_th ≈ 1152 µA` |
 | `calibrate_to_experiment.py` | stdout | `theta_SH` scan that picks the default; reports `V_th(0.75 ns)` and slope `β_s` per candidate, ranked by closeness to Device A P→AP target `V_th = 894 mV` |
 
 Each script also `shutil.copy`-mirrors its PNG into
-`../../article/00_chapter_drafts/figs/` so the manuscript and the code stay
+`../../article/figs/` so the manuscript and the code stay
 in lock-step. Delete that trailing copy block if you only want the local file.
 
 ### Generated figures
 
-The latest rendered outputs (also under `../../article/00_chapter_drafts/figs/`):
+The latest rendered outputs (also under `../../article/figs/`):
 
-#### `Chapter02_local_08.png`
+#### `Chapter02_local_09.png`
 
 `(m_z, R_MTJ, I_SOT)` time series for four representative `I_SOT` values
 spanning the threshold zone at 0.75 ns, self-heating ON.
 
-![Chapter02_local_08](Chapter02_local_08.png)
+![Chapter02_local_09](../../article/figs/Chapter02_local_09.png)
 
-#### `Chapter02_local_09.png`
+#### `Chapter02_local_10.png`
 
 Magnetisation vector `m(t)` traced on the unit sphere for the super-threshold
 `I_SOT = −2 mA` pulse, plus Cartesian components vs time. Time is encoded by
 the cool→warm colour gradient.
 
-![Chapter02_local_09](Chapter02_local_09.png)
+![Chapter02_local_10](../../article/figs/Chapter02_local_10.png)
 
-#### `Chapter02_local_10.png`
+#### `Chapter02_local_11.png`
 
 Monte-Carlo `P_sw(|I_SOT|)` at `t_w = 0.75 ns`, self-heating OFF vs ON, with
 Wilson 95 % CI bands. The inset zooms the threshold region around the
 experimental `I_th = 1152 µA` (teal dashed line).
 
-![Chapter02_local_10](Chapter02_local_10.png)
+![Chapter02_local_11](../../article/figs/Chapter02_local_11.png)
 
 ## Quick start
 
