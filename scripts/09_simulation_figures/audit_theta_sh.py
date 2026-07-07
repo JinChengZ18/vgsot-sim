@@ -10,7 +10,7 @@ Device-A P→AP 0.75 ns 的实验 V_th=894 mV → I_th≈1152 µA 重标定）�
 本脚本两段：
   PART B-1（决定性，cheap）— 运行时断言：
      * PhysicalConstantsConfig().theta_SH == 0.066
-     * 图 2.10 脚本 plot_single_trajectory.py 既不覆盖 theta_SH，也不覆盖
+     * 图 2.9 脚本 plot_single_trajectory.py 既不覆盖 theta_SH，也不覆盖
        integrator（→ 继承 0.066 + cayley）。
   PART B-2（系综溯源，较重；此处跑 *缩减 pilot* N≈30 种子）—
      对 θ_SH ∈ {0.066, 0.04}：在电流网格上对 N 个独立热噪声种子统计
@@ -24,7 +24,7 @@ Device-A P→AP 0.75 ns 的实验 V_th=894 mV → I_th≈1152 µA 重标定）�
 
 决定性判据 (C13)
 ----------------
-theta_SH == 0.066（而非 0.04）→ 图 2.10 标题 / 图脚本「0.04, 球坐标-Euler」
+theta_SH == 0.066（而非 0.04）→ 图 2.9 标题 / 图脚本「0.04, 球坐标-Euler」
 溯源注释**陈旧**、被发布代码证伪。
 
 只调用公共 API；不修改 src/。matplotlib 用 Agg。
@@ -171,12 +171,12 @@ def part_b1_readback():
     theta_SH = cc.theta_SH
     assert theta_SH == 0.066, f"theta_SH read-back FAILED: {theta_SH!r} != 0.066"
 
-    fig210_src = (FIG_DIR / "plot_single_trajectory.py").read_text(encoding="utf-8")
-    overrides_theta = ("theta_SH=" in fig210_src) or ("theta_SH =" in fig210_src
-                                                       and "cc.theta_SH" in fig210_src)
-    overrides_integrator = "integrator=" in fig210_src
+    fig29_src = (FIG_DIR / "plot_single_trajectory.py").read_text(encoding="utf-8")
+    overrides_theta = ("theta_SH=" in fig29_src) or ("theta_SH =" in fig29_src
+                                                       and "cc.theta_SH" in fig29_src)
+    overrides_integrator = "integrator=" in fig29_src
     # Mentions of the STALE 0.04 value live only in comments (provenance smell).
-    mentions_004_comment = "0.04" in fig210_src
+    mentions_004_comment = "0.04" in fig29_src
 
     I_th_exp_uA = 894e-3 / cc.R_W * 1e6
 
@@ -186,9 +186,9 @@ def part_b1_readback():
     print(f"  PhysicalConstantsConfig().theta_SH        = {theta_SH}  (期望 0.066)")
     print(f"  R_W                                       = {cc.R_W:.3f} Ω")
     print(f"  实验 I_th = 894 mV / R_W                  = {I_th_exp_uA:.1f} µA")
-    print(f"  fig2.10 覆盖 theta_SH?                     = {overrides_theta}")
-    print(f"  fig2.10 覆盖 integrator?                   = {overrides_integrator}")
-    print(f"  fig2.10 注释残留 '0.04'?                   = {mentions_004_comment}")
+    print(f"  fig2.9 覆盖 theta_SH?                     = {overrides_theta}")
+    print(f"  fig2.9 覆盖 integrator?                   = {overrides_integrator}")
+    print(f"  fig2.9 注释残留 '0.04'?                   = {mentions_004_comment}")
     print("-" * 78)
 
     return {
@@ -197,9 +197,9 @@ def part_b1_readback():
         "theta_SH_assert_passed": True,
         "R_W_ohm": cc.R_W,
         "I_th_exp_uA": I_th_exp_uA,
-        "fig210_overrides_theta_SH": bool(overrides_theta),
-        "fig210_overrides_integrator": bool(overrides_integrator),
-        "fig210_mentions_stale_0p04_in_source": bool(mentions_004_comment),
+        "fig29_overrides_theta_SH": bool(overrides_theta),
+        "fig29_overrides_integrator": bool(overrides_integrator),
+        "fig29_mentions_stale_0p04_in_source": bool(mentions_004_comment),
         "C13_stale_0p04_confirmed": bool(theta_SH == 0.066),
     }
 
@@ -336,10 +336,10 @@ def main():
             "abs_gap_uA": {k: (round(v, 1) if np.isfinite(v) else None)
                            for k, v in closeness.items()},
         },
-        "decisive_criterion": "theta_SH == 0.066 (not 0.04)  → fig-2.10 '0.04 / 球坐标-Euler' caption STALE",
+        "decisive_criterion": "theta_SH == 0.066 (not 0.04)  → fig-2.9 '0.04 / 球坐标-Euler' caption STALE",
         "C13_stale_0p04_confirmed": bool(b1["theta_SH_runtime"] == 0.066),
         "artifact_png": str(out_png.relative_to(REPO_ROOT)).replace("\\", "/"),
-        "verdict": ("STALE-CAPTION CONFIRMED: runtime theta_SH=0.066, fig 2.10 "
+        "verdict": ("STALE-CAPTION CONFIRMED: runtime theta_SH=0.066, fig 2.9 "
                     "overrides neither theta_SH nor integrator; the '0.04 / "
                     "spherical-Euler' figure caption/comment is stale."),
         "pilot_caveat": ("PART B-2 is a reduced N pilot; the red-team must-fix "

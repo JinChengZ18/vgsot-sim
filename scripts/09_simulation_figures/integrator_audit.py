@@ -7,7 +7,7 @@
 `--integrator` 帮助文本仍写「euler_spherical (default, matches the θ_SH=0.04
 experimental calibration)」，`plot_single_trajectory.py` 的注释亦提到「θ_SH=0.04
 … spherical-Euler」。这批注释是**陈旧的**：发布代码 `run_piecewise_direct_excitation`
-的 `integrator` 默认值实为 `'cayley'`，而图 2.10 的脚本恰恰不显式传 `integrator=`，
+的 `integrator` 默认值实为 `'cayley'`，而图 2.9 的脚本恰恰不显式传 `integrator=`，
 因此走的是 Cayley 向量步，而非球坐标-Euler。
 
 本脚本用一个 ~10 行的上下文管理器，对 `time_series_cases` 命名空间里实际被调用的
@@ -17,7 +17,7 @@ experimental calibration)」，`plot_single_trajectory.py` 的注释亦提到「
 
 决定性判据 (C4)
 ----------------
-图 2.10 (`plot_single_trajectory.py`)：n_euler == 0 且 n_cayley > 0，且
+图 2.9 (`plot_single_trajectory.py`)：n_euler == 0 且 n_cayley > 0，且
 默认 integrator == 'cayley'  →  「默认 Euler-球坐标」的图脚本注释陈旧、被证伪。
 
 只调用公共 API + 标准库 monkeypatch；不修改 src/。matplotlib 用 Agg 后端。
@@ -106,7 +106,7 @@ def introspect_default_integrator():
     return sig.parameters["integrator"].default
 
 
-def fig210_passes_integrator_kw(script_path: Path) -> bool:
+def fig29_passes_integrator_kw(script_path: Path) -> bool:
     """True if plot_single_trajectory.py passes an explicit `integrator=` kw
     to run_piecewise_direct_excitation. It must NOT — so it inherits the
     'cayley' driver default. (Static check complementing the runtime counters.)
@@ -116,7 +116,7 @@ def fig210_passes_integrator_kw(script_path: Path) -> bool:
 
 
 def main():
-    fig210 = FIG_DIR / "plot_single_trajectory.py"   # 图 2.10
+    fig29 = FIG_DIR / "plot_single_trajectory.py"   # 图 2.9
     fig211 = FIG_DIR / "plot_ser_mc.py"              # 图 2.11
 
     default_integrator = introspect_default_integrator()
@@ -130,20 +130,20 @@ def main():
 
     audit = {}
 
-    # --- 图 2.10 (decisive target) ---------------------------------------
-    print(f"  跑 {fig210.name} (图 2.10, 无 --integrator) ...")
-    c210 = run_figure_script(fig210)
-    print(f"    n_cayley = {c210['n_cayley']}   n_euler = {c210['n_euler']}")
-    fig210_overrides = fig210_passes_integrator_kw(fig210)
-    audit["fig_2.10_plot_single_trajectory"] = {
-        "script": str(fig210.relative_to(REPO_ROOT)).replace("\\", "/"),
-        "n_cayley": c210["n_cayley"],
-        "n_euler": c210["n_euler"],
-        "integrator_used": ("cayley" if c210["n_euler"] == 0 and c210["n_cayley"] > 0
-                            else ("euler_spherical" if c210["n_cayley"] == 0
-                                  and c210["n_euler"] > 0 else "mixed/none")),
-        "script_passes_integrator_kw": bool(fig210_overrides),
-        "passes_driver_default": not fig210_overrides,  # omits integrator= → default
+    # --- 图 2.9 (decisive target) ---------------------------------------
+    print(f"  跑 {fig29.name} (图 2.9, 无 --integrator) ...")
+    c29 = run_figure_script(fig29)
+    print(f"    n_cayley = {c29['n_cayley']}   n_euler = {c29['n_euler']}")
+    fig29_overrides = fig29_passes_integrator_kw(fig29)
+    audit["fig_2.9_plot_single_trajectory"] = {
+        "script": str(fig29.relative_to(REPO_ROOT)).replace("\\", "/"),
+        "n_cayley": c29["n_cayley"],
+        "n_euler": c29["n_euler"],
+        "integrator_used": ("cayley" if c29["n_euler"] == 0 and c29["n_cayley"] > 0
+                            else ("euler_spherical" if c29["n_cayley"] == 0
+                                  and c29["n_euler"] > 0 else "mixed/none")),
+        "script_passes_integrator_kw": bool(fig29_overrides),
+        "passes_driver_default": not fig29_overrides,  # omits integrator= → default
     }
 
     # --- 图 2.11 (context: its own default is euler_spherical) ------------
@@ -158,28 +158,28 @@ def main():
                             else ("euler_spherical" if c211["n_cayley"] == 0
                                   and c211["n_euler"] > 0 else "mixed/none")),
         "note": ("plot_ser_mc.py argparse default is 'euler_spherical' and it "
-                 "forwards integrator=INTEGRATOR explicitly; it is NOT fig 2.10."),
+                 "forwards integrator=INTEGRATOR explicitly; it is NOT fig 2.9."),
     }
 
     # --- decisive verdict for C4 -----------------------------------------
-    fig210_is_cayley = (c210["n_euler"] == 0 and c210["n_cayley"] > 0)
+    fig29_is_cayley = (c29["n_euler"] == 0 and c29["n_cayley"] > 0)
     default_is_cayley = (default_integrator == "cayley")
-    c4_confirmed = fig210_is_cayley and default_is_cayley
+    c4_confirmed = fig29_is_cayley and default_is_cayley
 
     result = {
         "experiment": "F",
         "part": "A_provenance",
         "claim": "C4",
-        "claim_text_zh": ("图 2.10 究竟用哪个积分器；图脚本注释「默认 "
+        "claim_text_zh": ("图 2.9 究竟用哪个积分器；图脚本注释「默认 "
                           "Euler-球坐标 / θ_SH=0.04」是否陈旧"),
         "run_piecewise_direct_excitation_default_integrator": default_integrator,
         "audit": audit,
-        "decisive_criterion": ("fig 2.10  n_euler==0 且 n_cayley>0  且  "
+        "decisive_criterion": ("fig 2.9  n_euler==0 且 n_cayley>0  且  "
                                "default integrator == 'cayley'"),
-        "fig_2.10_uses_cayley": bool(fig210_is_cayley),
+        "fig_2.9_uses_cayley": bool(fig29_is_cayley),
         "default_integrator_is_cayley": bool(default_is_cayley),
         "C4_stale_comment_confirmed": bool(c4_confirmed),
-        "verdict": ("STALE-COMMENT CONFIRMED: fig 2.10 runs Cayley, driver "
+        "verdict": ("STALE-COMMENT CONFIRMED: fig 2.9 runs Cayley, driver "
                     "default is 'cayley'; the '默认 Euler-球坐标' figure-script "
                     "comment is stale."
                     if c4_confirmed else
