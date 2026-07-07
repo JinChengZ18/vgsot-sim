@@ -4,7 +4,7 @@ This is the **second engine** of vgsot-sim. The Python package (`src/vgsot_sim/`
 
 ## `llg/vgsot_llg.va` — full-dynamics macrospin LLG
 
-A genuine time-domain LLG solver in Verilog-A: it integrates the magnetisation `m(t)` **internally** (Cartesian Landau–Lifshitz form, `ddt` state on internal nodes), not a precomputed compact curve. It is the Verilog-A counterpart of `src/vgsot_sim/{anisotropy,dynamic_switching_vector,tmr,electronic}.py`, per-formula aligned:
+A genuine time-domain LLG solver in Verilog-A: it integrates the magnetisation `m(t)` **internally** (Cartesian Landau–Lifshitz form, `ddt` state on internal nodes), not a precomputed compact curve. It is the Verilog-A counterpart of `src/vgsot_sim/{anisotropy,demag,dynamic_switching_vector,tmr,electronic}.py`, per-formula aligned:
 
 - effective field `H_eff = H_PMA + H_VCMA + H_demag(exact oblate ellipsoid) + H_ex + H_th`
 - `dm/dt = -g (m×H) - αg (m×(m×H)) + DL/FL spin-orbit torque + DL/FL spin-transfer torque`, `g = γ/(1+α²)`, `σ_SH = -x̂`, `σ_STT = +ẑ`
@@ -26,7 +26,7 @@ ngspice_con -b tb_switch.spice                   # .spiceinit loads the OSDI mod
 
 ### Status
 
-- **Deterministic dynamics: validated.** `|m|=1` conserved to ~1e-4 with no manual renormalisation; m_z(t) matches the Python `switching_vector` trajectory to **max ~0.006 over 0–3 ns** (exact agreement at the current-on equilibrium; the small transient difference is fixed-step Cayley vs ngspice adaptive `ddt`).
+- **Deterministic dynamics: validated.** `|m|=1` conserved to ~1e-4 with no manual renormalisation; m_z(t) matches the Python `switching_vector` trajectory to **max ~0.008 over 0–3 ns** (exact agreement at the current-on equilibrium; the small transient difference is fixed-step Cayley vs ngspice adaptive `ddt`).
 - **Stochastic via harness:** the `h_th` injection path is in place; the seeded Python↔VA Monte-Carlo equivalence harness and its committed regression are pending (see project `#15`).
 - **`theta_SH` default** is the recalibrated `0.066` (Cayley, post-FL-SOT-fix; `0.04` was the pre-fix value). The `.va` exposes `theta_SH` as a parameter, so the calibrated value can be set without editing the model.
 

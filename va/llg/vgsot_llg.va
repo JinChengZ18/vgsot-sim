@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 //
 // The Verilog-A counterpart of the vgsot-sim Python macrospin solver
-// (src/vgsot_sim/{anisotropy,dynamic_switching_vector,tmr,electronic}.py). It
+// (src/vgsot_sim/{anisotropy,demag,dynamic_switching_vector,tmr,electronic}.py). It
 // integrates the magnetisation m(t) INTERNALLY (Cartesian LL form, ddt state),
 // so Python and this .va are two engines for the SAME documented physics and
 // can be cross-validated trajectory-by-trajectory.
@@ -57,7 +57,7 @@ module vgsot_llg(sot_p, sot_n, mtj_p, mx, my, mz, hx, hy, hz);
    parameter real hex_z = 0.0;
 
    // ---- spin torque ----
-   parameter real theta_SH  = 0.066;   // effective, recalibrated to V_th(0.75ns)~0.896V (matches configs.py)
+   parameter real theta_SH  = 0.066;   // effective, recalibrated to V_th(0.75ns)~894 mV (matches configs.py)
    parameter real Pol       = 0.58;    // STT spin polarisation
    parameter real Rfldl_sot = 0.83;    // FL/DL ratio (SOT)
    parameter real Rfldl_stt = 0.0;     // FL/DL ratio (STT)

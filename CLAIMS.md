@@ -69,7 +69,7 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (72 tests).
 | Claim | Backing | Status |
 |---|---|---|
 | Full-LLG `.va` compiles (OpenVAF) and integrates m(t) in ngspice with \|m\|≈1 | `va/llg/tb_switch.spice` run (\|m\| drift ~1e-4) | backed (manual) |
-| `.va` m_z(t) matches the Python `switching_vector` engine | demonstrated: max \|Δm_z\|≈0.006 over 0–3 ns, exact at equilibrium | partial (`pending`: committed regression + pytest = project #15) |
+| `.va` m_z(t) matches the Python `switching_vector` engine | demonstrated: max \|Δm_z\|≈0.008 over 0–3 ns, exact at equilibrium | partial (`pending`: committed regression + pytest = project #15) |
 | Stochastic MC via harness-driven `h_th` (same seed → Python==VA) | injection path present; seeded-equivalence harness | pending (#15) |
 
 ## Consuming project (`smtj_pbnn_sim/eda/`) — cross-references
