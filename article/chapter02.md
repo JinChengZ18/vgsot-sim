@@ -1301,7 +1301,7 @@ $$
 
 ![RTN节点群储备池的最小验证](figs/Chapter02_local_22.png)
 
-**图2.22** RTN节点群储备池的最小验证 (平均场态，固定种子，全部数值可由基准脚本确定性复现)。(a) 逐延迟记忆容量$$\mathrm{MC}_k$$：异质$$W_{\mathrm{in}}$$节点群 ($$n=100$$，蓝) 对比广播同质基线 (灰)，后者无论节点数多少都坍缩到$$\mathrm{MC}=0.58$$；(b) 总记忆容量随节点数的变化：异质滤波器组 (蓝圆) 在$$n\approx100$$后饱和于秩上限，均质环形延迟线 ($$\Delta=1$$、单点注入，绿三角) 持续增长至37；(c) 二值器件态下每节点平均$$R$$个器件的记忆容量 (红)，对照平均场极限 (蓝虚线)——器件平均是硬件化的主要开销。
+**图2.22** RTN节点群储备池的最小验证 (平均场态，固定种子)。(a) 逐延迟记忆容量$$\mathrm{MC}_k$$：异质$$W_{\mathrm{in}}$$节点群 ($$n=100$$，蓝) 对比广播同质基线 (灰)，后者无论节点数多少都坍缩到$$\mathrm{MC}=0.58$$；(b) 总记忆容量随节点数的变化：异质滤波器组 (蓝圆) 在$$n\approx100$$后饱和于秩上限，均质环形延迟线 ($$\Delta=1$$、单点注入，绿三角) 持续增长至37；(c) 二值器件态下每节点平均$$R$$个器件的记忆容量 (红)，对照平均场极限 (蓝虚线)——器件平均是硬件化的主要开销。
 
 ## 2.5 本章小结
 
@@ -1343,6 +1343,7 @@ $$
 [^ref-kim-mtj-spice]: J. Kim et al., "A technology-agnostic MTJ SPICE model with user-defined dimensions for STT-MRAM scalability studies," *IEEE Custom Integrated Circuits Conference*, pp. 1-4, 2015. DOI: [10.1109/CICC.2015.7338407](https://doi.org/10.1109/CICC.2015.7338407).
 [^ref-kittel-domain]: C. Kittel, "Physical theory of ferromagnetic domains," *Reviews of Modern Physics*, vol. 21, pp. 541-583, 1949. DOI: [10.1103/RevModPhys.21.541](https://doi.org/10.1103/RevModPhys.21.541).
 [^ref-kloeden-platen]: P. E. Kloeden and E. Platen, *Numerical Solution of Stochastic Differential Equations*. Springer, 1992. DOI: [10.1007/978-3-662-12616-5](https://doi.org/10.1007/978-3-662-12616-5).
+
 [^ref-krizakova-sot-review]: V. Krizakova, M. Perumkunnil, S. Couet, P. Gambardella, and K. Garello, "Spin-orbit torque switching of magnetic tunnel junctions for memory applications," *Journal of Magnetism and Magnetic Materials*, vol. 562, 169692, 2022. DOI: [10.1016/j.jmmm.2022.169692](https://doi.org/10.1016/j.jmmm.2022.169692).
 [^ref-landau-lifshitz]: L. Landau and E. Lifshitz, "On the theory of the dispersion of magnetic permeability in ferromagnetic bodies," in *Perspectives in Theoretical Physics*. Pergamon, pp. 51-65, 1992. DOI: [10.1016/B978-0-08-036364-6.50008-9](https://doi.org/10.1016/B978-0-08-036364-6.50008-9).
 [^ref-li-jiang-vcma-sot]: S. Li and Y. Jiang, "Field-free switching model of spin-orbit torque (SOT)-MTJ device with thermal effect based on voltage-controlled magnetic anisotropy (VCMA)," *AIP Advances*, vol. 13, 025030, 2023. DOI: [10.1063/9.0000426](https://doi.org/10.1063/9.0000426).
