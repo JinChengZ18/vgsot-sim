@@ -105,12 +105,18 @@ def vth_from_curve(V, P):
                 vth_interp=vth_interp, y0=y0, L=L, k=k)
 
 
-def run_width(tw_ns: float, trials: int, multipliers=MULTIPLIERS, seed_offset: int = 0):
-    """Monte-Carlo P_sw(V) transition scan at one pulse width."""
+def run_width(tw_ns: float, trials: int, multipliers=MULTIPLIERS, seed_offset: int = 0,
+              center_override_uA: float | None = None):
+    """Monte-Carlo P_sw(V) transition scan at one pulse width.
+
+    `center_override_uA` re-centers the scan window; needed at 3/5 ns where
+    the simulated threshold sits well above the experimental-line-scaled
+    prediction (the transfer deviation under test) and the default window
+    misses the transition."""
     cc = PhysicalConstantsConfig()
     mid1 = int(round(tw_ns * 1e-9 / cc.t_step))
     end = mid1 + int(round(RELAX_NS * 1e-9 / cc.t_step))
-    grid_uA = np.round(center_uA(tw_ns) * multipliers)
+    grid_uA = np.round((center_override_uA or center_uA(tw_ns)) * multipliers)
     cfg = SerSotNoVcmaThermalConfig(
         i_sot_list=tuple(-grid_uA * 1e-6), trials=trials,
         sim_start_step=1, sim_mid1_step=mid1, sim_end_step=end,
@@ -183,13 +189,26 @@ def analyze(out_json: Path, fig_prefix: str):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    widths = []
+    raw = []
     for f in sorted(glob.glob(str(HERE / "e1_w*.json"))):
         with open(f, encoding="utf-8") as fh:
-            widths.append(json.load(fh))
-    widths.sort(key=lambda d: d["tw_ns"])
+            raw.append(json.load(fh))
+    # Merge files sharing a pulse width (base window + _hi supplements).
+    from collections import defaultdict
+    groups = defaultdict(list)
+    for d in raw:
+        groups[d["tw_ns"]].append(d)
+    widths = []
+    for t in sorted(groups):
+        ds = groups[t]
+        V = np.concatenate([np.asarray(d["V"], float) for d in ds])
+        P = np.concatenate([np.asarray(d["psw"], float) for d in ds])
+        o = np.argsort(V)
+        widths.append(dict(tw_ns=t, V=V[o].tolist(), psw=P[o].tolist(),
+                           trials=ds[0]["trials"], vth=ds[0]["vth"],
+                           n_files=len(ds)))
     if len(widths) < 3:
-        raise SystemExit(f"Need >=3 width JSONs for the log-linear fit, found {len(widths)}.")
+        raise SystemExit(f"Need >=3 widths for the log-linear fit, found {len(widths)}.")
 
     def crossing_and_sigma(V, P, n_trials):
         """Raw P = 0.5 crossing + binomial-noise-propagated 1-sigma.
@@ -334,6 +353,10 @@ def main():
     ap.add_argument("--widths", type=str, default=None,
                     help="comma-separated pulse widths in ns to run MC for")
     ap.add_argument("--trials", type=int, default=200)
+    ap.add_argument("--center-ua", type=float, default=None,
+                    help="override scan-window center (uA) for supplementary scans")
+    ap.add_argument("--suffix", type=str, default="",
+                    help="output filename suffix, e.g. _hi for a re-centered supplement")
     ap.add_argument("--freerun-only", action="store_true")
     ap.add_argument("--freerun-seg-ns", type=float, default=2000.0)
     ap.add_argument("--freerun-seeds", type=int, default=5)
@@ -368,8 +391,10 @@ def main():
     for i, w in enumerate(float(x) for x in args.widths.split(",")):
         print(f"[E1] MC width {w:g} ns, {args.trials} trials x {len(MULTIPLIERS)} points",
               flush=True)
-        out = run_width(w, trials=args.trials, seed_offset=int(round(w * 100)))
-        p = HERE / f"e1_w{w:g}.json"
+        out = run_width(w, trials=args.trials,
+                        seed_offset=int(round(w * 100)) + (7 if args.center_ua else 0),
+                        center_override_uA=args.center_ua)
+        p = HERE / f"e1_w{w:g}{args.suffix}.json"
         p.write_text(json.dumps(out, indent=2), encoding="utf-8")
         print(f"[E1] wrote {p.name}  (wall {out['wall_s']/60:.1f} min, "
               f"Vth_fit = {out['vth']['vth_fit']*1e3:.1f} mV)", flush=True)
