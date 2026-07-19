@@ -15,6 +15,12 @@ python run_e1.py --widths 2
 python run_e1.py --widths 3
 python run_e1.py --widths 5
 
+# 3/5 ns supplements: the simulated threshold sits above the experimental-line
+# -scaled default window (that shortfall is the transfer deviation under test),
+# so re-center the scan; --analyze merges same-width files automatically
+python run_e1.py --widths 3 --center-ua 973 --suffix _hi
+python run_e1.py --widths 5 --center-ua 877 --suffix _hi
+
 # Zero-drive free evolution (2 fields x 5 seeds x 2 us, ~15 min)
 python run_e1.py --freerun-only
 

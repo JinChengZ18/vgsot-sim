@@ -131,6 +131,34 @@ same-batch 0.75 ns P_sw points inline. 图2.17 runs a fresh macrospin ensemble
 (`--devices`, `--thermal-trials`, `--seed` tune cost; self-heating on by default,
 which is the state SER/P_sw thresholds must be reported in).
 
+### §2.3.3–2.3.4 verification runs (footnotes + 图2.13(d) panel)
+
+Two reviewer-round verification experiments back the quantitative claims in
+the §2.3.3 `note-tauret-freerun` and §2.3.4 `note-eta-sllg` footnotes and the
+pulse-width-transfer panel offered for 图2.13(d):
+
+```bash
+# E1 — pulse-width transfer of the single-point θ_SH calibration + zero-drive
+# retention bound (per-width shards parallelize; 3/5 ns need the re-centered
+# _hi supplements; ~30-60 min per shard)
+python scripts/12_pulse_width_transfer/run_e1.py --widths 0.75   # ... 1, 1.5, 2, 3, 5
+python scripts/12_pulse_width_transfer/run_e1.py --widths 3 --center-ua 973 --suffix _hi
+python scripts/12_pulse_width_transfer/run_e1.py --widths 5 --center-ua 877 --suffix _hi
+python scripts/12_pulse_width_transfer/run_e1.py --freerun-only
+python scripts/12_pulse_width_transfer/run_e1.py --analyze       # e1_results.json + panels
+
+# E2 — measured-Sigmoid overlay and η_c slope-ladder decomposition
+python scripts/13_sigmoid_overlay/run_e2.py --dense-shard 0      # ... shards 1-7
+python scripts/13_sigmoid_overlay/run_e2.py --overdrive
+python scripts/13_sigmoid_overlay/run_e2.py --relaxwin 3.25      # ... 10, 50
+python scripts/13_sigmoid_overlay/run_e2.py --analyze            # e2_results.json + panels
+```
+
+Both use the fig 2.11 calibration workpoint (Cayley integrator, self-heating
+ON, deterministic per-trial seeds); the e-series result JSONs are gitignored
+and regenerate from these commands. See the two scripts' READMEs for the
+acceptance criteria and panel descriptions.
+
 ## §2.3.6 — Monte-Carlo sampling budget (图2.18–2.19)
 
 Both are self-contained Monte-Carlo studies with fixed seeds:
