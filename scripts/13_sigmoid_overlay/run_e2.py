@@ -144,6 +144,12 @@ def analyze():
     )
     (HERE / "e2_results.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
+    def yerr_pair(P, lo, hi):
+        """Non-negative (lower, upper) error-bar pair; clips the float-eps
+        overshoot of the Wilson bounds at the degenerate p = 0/1 edges."""
+        P = np.asarray(P, float)
+        return [np.maximum(P - lo, 0.0), np.maximum(hi - P, 0.0)]
+
     # ── Style (repo academic convention; clean panels, no baked labels) ──
     CHARCOAL, NAVY, CRIMSON, TEAL, AMBER = "#2B2B2B", "#1F5FA8", "#A82038", "#1A6B5A", "#C47A00"
     plt.rcParams.update({
@@ -158,7 +164,7 @@ def analyze():
     # Panel 1: measured vs simulated transition + NB reference.
     fig, ax = plt.subplots(figsize=(6.8, 5.0))
     lo_m, hi_m = wilson(MEAS_P, MEAS_N)
-    ax.errorbar(MEAS_V_MV, MEAS_P, yerr=[MEAS_P - lo_m, hi_m - MEAS_P], fmt="s",
+    ax.errorbar(MEAS_V_MV, MEAS_P, yerr=yerr_pair(MEAS_P, lo_m, hi_m), fmt="s",
                 ms=6.5, color=TEAL, mfc="white", mew=1.5, capsize=2.5, lw=1.1,
                 label=f"measured (N = {MEAS_N}/point)")
     vv = np.linspace(0.78, 1.26, 400)
@@ -166,7 +172,7 @@ def analyze():
             "--", color=TEAL, lw=1.5,
             label=rf"measured fit  $\beta_s$ = {MEAS_FIT['beta']:.1f} V$^{{-1}}$")
     lo_s, hi_s = wilson(psw, n_tot)
-    ax.errorbar(V_mV, psw, yerr=[psw - lo_s, hi_s - psw], fmt="o", ms=6,
+    ax.errorbar(V_mV, psw, yerr=yerr_pair(psw, lo_s, hi_s), fmt="o", ms=6,
                 color=CRIMSON, mfc="white", mew=1.5, capsize=2.5, lw=1.1,
                 label=f"vgsot-sim (N = {n_tot}/point)")
     ax.plot(vv * 1e3, sigmoid4p(vv, *popt), "-", color=CRIMSON, lw=1.6,
@@ -174,7 +180,7 @@ def analyze():
     if over is not None:
         oV = np.array(over["V_mV"]); oP = np.array(over["psw"])
         lo_o, hi_o = wilson(oP, over["trials"])
-        ax.errorbar(oV, oP, yerr=[oP - lo_o, hi_o - oP], fmt="o", ms=6, color=CRIMSON,
+        ax.errorbar(oV, oP, yerr=yerr_pair(oP, lo_o, hi_o), fmt="o", ms=6, color=CRIMSON,
                     mfc=CRIMSON, mew=0, capsize=2.5, lw=1.1, alpha=0.75,
                     label="vgsot-sim over-drive")
     ax.plot(vv * 1e3, nb_fit.psw_nb(vv, PULSE_NS, NB_REF["Delta"], NB_REF["Vc0"]),
@@ -205,7 +211,7 @@ def analyze():
                 continue
             ps = np.array(ps); ns_ = np.array(ns_)
             lo, hi = wilson(ps, ns_)
-            ax.errorbar(ws, ps, yerr=[ps - lo, hi - ps], fmt="o-", ms=6.5, lw=1.5,
+            ax.errorbar(ws, ps, yerr=yerr_pair(ps, lo, hi), fmt="o-", ms=6.5, lw=1.5,
                         capsize=3, color=colors.get(i_uA, CHARCOAL),
                         label=rf"$|I_{{\mathrm{{SOT}}}}|$ = {i_uA:.0f} $\mu$A")
         ax.set_xscale("log")

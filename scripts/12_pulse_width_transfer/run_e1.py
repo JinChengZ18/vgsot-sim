@@ -191,10 +191,30 @@ def analyze(out_json: Path, fig_prefix: str):
     if len(widths) < 3:
         raise SystemExit(f"Need >=3 width JSONs for the log-linear fit, found {len(widths)}.")
 
+    def crossing_and_sigma(V, P, n_trials):
+        """Raw P = 0.5 crossing + binomial-noise-propagated 1-sigma.
+
+        This is the like-for-like counterpart of the experimental threshold
+        (hysteresis jump / sigmoid 50% point). The 4-parameter logistic
+        midpoint parameter is NOT comparable here: the over-drive
+        back-hopping plateau compresses its L below 1 and drags the
+        midpoint parameter tens of mV below the actual 50% crossing.
+        """
+        V = np.asarray(V, float); P = np.asarray(P, float)
+        o = np.argsort(V); V, P = V[o], P[o]
+        for i in range(len(V) - 1):
+            if (P[i] - 0.5) * (P[i + 1] - 0.5) <= 0 and P[i] != P[i + 1]:
+                slope = (P[i + 1] - P[i]) / (V[i + 1] - V[i])
+                vc = V[i] + (0.5 - P[i]) / slope
+                sig = np.sqrt(0.25 / n_trials) / abs(slope)
+                return float(vc), float(sig)
+        return float("nan"), float("nan")
+
     tw = np.array([d["tw_ns"] for d in widths])
-    vth = np.array([d["vth"]["vth_fit"] for d in widths])
-    vth_sig = np.array([d["vth"]["vth_sigma"] for d in widths])
-    vth_itp = np.array([d["vth"]["vth_interp"] for d in widths])
+    cross = [crossing_and_sigma(d["V"], d["psw"], d["trials"]) for d in widths]
+    vth = np.array([c[0] for c in cross])          # headline: raw 50% crossing
+    vth_sig = np.array([c[1] for c in cross])
+    vth_itp = np.array([d["vth"]["vth_fit"] for d in widths])  # secondary: logistic midpoint
 
     sim_fit = nb_fit.fit_direction(tw, vth, tau0=1.0)
     dev_line = vth - exp_line(tw)
@@ -209,8 +229,11 @@ def analyze(out_json: Path, fig_prefix: str):
         sim_nb=dict(a=sim_fit.a, b=sim_fit.b, Delta=sim_fit.Delta,
                     Vc0=sim_fit.Vc0, tau_ret_ns=sim_fit.tau_ret_ns, tau0_ns=1.0),
         exp_nb=EXP_NB, exp_line=dict(a=EXP_A, b=EXP_B),
+        vth_definition="raw P=0.5 crossing (like-for-like with experimental threshold); "
+                       "logistic midpoint kept as secondary",
+        vth_crossing_mV=(vth * 1e3).tolist(),
+        vth_logistic_mid_mV=(vth_itp * 1e3).tolist(),
         deviation_vs_exp_line_mV=(dev_line * 1e3).tolist(),
-        vth_fit_vs_interp_mV=((vth - vth_itp) * 1e3).tolist(),
         timestamp=datetime.now().isoformat(timespec="seconds"),
     )
     out_json.write_text(json.dumps(summary, indent=2), encoding="utf-8")
@@ -234,6 +257,12 @@ def analyze(out_json: Path, fig_prefix: str):
             label=r"experiment log-linear fit  $V=a-b\,\ln t_w$")
     ax.plot(EXP_WIDTHS_NS, exp_line(EXP_WIDTHS_NS) * 1e3, "s", ms=8, mfc="white",
             mec=TEAL, mew=1.6, label="experimental pulse widths")
+    # The simulator was calibrated to the sigmoid 50% anchor (894 mV), which
+    # itself sits ~6% above the hysteresis-jump log-linear line at 0.75 ns —
+    # mark it so definitional offset is not misread as model deviation.
+    ax.plot([0.75], [EXP_VTH_SIGMOID_075 * 1e3], "*", ms=13, color=AMBER,
+            mec=CHARCOAL, mew=0.6, zorder=5,
+            label="sigmoid 50% anchor (calibration target)")
     ax.errorbar(tw, vth * 1e3, yerr=np.maximum(vth_sig, 1e-4) * 1e3, fmt="o",
                 ms=7, color=CRIMSON, mfc="white", mew=1.6, capsize=3, lw=1.4,
                 label=r"vgsot-sim ($\theta_{\mathrm{SH}}$ calibrated at 0.75 ns only)")

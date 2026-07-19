@@ -65,3 +65,6 @@ notebooks/version/
 # Local secrets and environment overrides
 .env
 *.env
+
+# Reviewer-backlog experiment outputs (regenerable; see scripts/12+/README)
+scripts/**/e[0-9]_*.json
