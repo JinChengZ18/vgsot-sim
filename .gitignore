@@ -55,6 +55,8 @@ pics/*
 
 # Script-side benchmark outputs (results data, not source)
 scripts/**/*_results.json
+# Reviewer-backlog experiment raw scans (regenerable; see scripts/12+/README)
+scripts/**/e[0-9]_*.json
 
 # Historical or local-only folders
 old/
