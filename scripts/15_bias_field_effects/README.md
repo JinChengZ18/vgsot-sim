@@ -21,4 +21,14 @@ python run_e4.py --smoke
 - `e4_results.json` — per-field 50% crossings, top-band statistics, 200/50 Oe threshold ratio, angle records.
 - `e4_field_family.png`, `e4_angle_tolerance.png` — clean panels (Arial, English, no baked figure numbers).
 
-Deterministic per-trial seeds (base 20260719+4000×). E5 (reference-layer stray-field asymmetry via `h_ex_z`) is designed to share this directory.
+Deterministic per-trial seeds (base 20260719+4000×).
+
+# E5 — direction asymmetry vs reference-layer stray field (same directory)
+
+`run_e5.py` injects a z stray field H_z ∈ {0, 25, 50, 100} Oe and scans P_sw(I) for both switching directions (P→AP: `pap=1`, −I; AP→P: `pap=0`, +I), 11 points × 150 trials per shard. Findings: the threshold splitting ΔV_th = V_th^AP→P − V_th^P→AP grows linearly (−4/+27/+74/+144 mV at 0/25/50/100 Oe, MC resolution ~11–16 mV per value), so H_z ≈ 25 Oe reproduces Device A's measured asymmetry in magnitude and sign (21.5 mV sigmoid calibre / ~30 mV intercept calibre); the over-drive plateau shows no direction-consistent selectivity (both directions 0.68–0.83 at every field) and no two-segment transitions appear — the measured AP→P back-hopping morphology and two-segment features need mechanisms beyond macrospin.
+
+```bash
+python run_e5.py --direction p2ap --hstray 0     # ... 25, 50, 100; both directions
+python run_e5.py --analyze                       # -> e5_results.json + panel
+python run_e5.py --smoke
+```
