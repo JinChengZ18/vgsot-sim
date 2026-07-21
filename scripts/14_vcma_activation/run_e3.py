@@ -143,12 +143,24 @@ def analyze():
     import matplotlib.pyplot as plt
 
     cc = PhysicalConstantsConfig()
-    runs = []
+    raw = []
     for f in sorted(glob.glob(str(HERE / "e3_v*.json"))):
-        runs.append(json.loads(Path(f).read_text(encoding="utf-8")))
-    runs.sort(key=lambda d: d["v_mtj"])
-    if not runs:
+        raw.append(json.loads(Path(f).read_text(encoding="utf-8")))
+    if not raw:
         raise SystemExit("No e3_v*.json found.")
+    # Merge files sharing a V_MTJ (base window + low-current supplements).
+    from collections import defaultdict
+    groups = defaultdict(list)
+    for d in raw:
+        groups[d["v_mtj"]].append(d)
+    runs = []
+    for v in sorted(groups):
+        ds = groups[v]
+        I = np.concatenate([np.asarray(d["grid_uA"], float) for d in ds])
+        P = np.concatenate([np.asarray(d["psw"], float) for d in ds])
+        o = np.argsort(I)
+        runs.append(dict(v_mtj=v, grid_uA=I[o].tolist(), psw=P[o].tolist(),
+                         trials=ds[0]["trials"]))
     V = np.array([d["v_mtj"] for d in runs])
     cross = [crossing(d["grid_uA"], d["psw"], d["trials"]) for d in runs]
     ith = np.array([c[0] for c in cross])
