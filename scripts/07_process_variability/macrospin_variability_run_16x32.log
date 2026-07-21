@@ -1,0 +1,45 @@
+==============================================================================
+  Macrospin process-variability Monte Carlo
+==============================================================================
+  PDK/Brinkman CV(Delta) reference = 7.71%
+  Wide terminal-voltage sweep    = 233..2715 mV
+  Threshold voltage inset        = 621..1086 mV
+  Process MC control variable    = fixed terminal |V_SOT|
+  Self-heating                   = True
+  Integrator                     = cayley
+  Sampled scale factors (mean +/- std):
+           D: 1.0000 +/- 0.0324
+          tf: 1.0000 +/- 0.0019
+          Ms: 1.0000 +/- 0.0216
+    Ki_proxy: 1.0000 +/- 0.0301
+        Rsot: 1.0000 +/- 0.0627
+          RA: 1.0007 +/- 0.0374
+    R_W (ohm): 775.81 +/- 48.67
+
+  Wide Psw table (nominal vs process-MC wafer mean):
+       233 mV : nominal=0.000  process_MC=0.000
+       465 mV : nominal=0.000  process_MC=0.035
+       698 mV : nominal=0.000  process_MC=0.137
+       853 mV : nominal=0.312  process_MC=0.336
+      1009 mV : nominal=0.727  process_MC=0.574
+      1164 mV : nominal=0.764  process_MC=0.697
+      1396 mV : nominal=0.752  process_MC=0.715
+      1707 mV : nominal=0.750  process_MC=0.738
+      2172 mV : nominal=0.775  process_MC=0.730
+      2715 mV : nominal=0.777  process_MC=0.721
+
+  Threshold-inset Psw table (nominal vs process-MC wafer mean):
+       621 mV : nominal=0.000  process_MC=0.039
+       698 mV : nominal=0.000  process_MC=0.137
+       776 mV : nominal=0.033  process_MC=0.264
+       838 mV : nominal=0.225  process_MC=0.305
+       869 mV : nominal=0.340  process_MC=0.371
+       884 mV : nominal=0.463  process_MC=0.381
+       900 mV : nominal=0.512  process_MC=0.410
+       915 mV : nominal=0.586  process_MC=0.469
+       946 mV : nominal=0.711  process_MC=0.469
+       993 mV : nominal=0.746  process_MC=0.545
+      1047 mV : nominal=0.746  process_MC=0.596
+      1086 mV : nominal=0.725  process_MC=0.633
+==============================================================================
+Saved D:\Documents\Graduation Project-2026\02MRAMSim\vgsot-sim\scripts\07_process_variability\Chapter02_local_17.png

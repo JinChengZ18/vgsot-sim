@@ -287,7 +287,7 @@ res = ser_sot_no_vcma_thermal(cfg)
 | `T_ambient_K` | `300.0` | Sink temperature for the thermal network. |
 | `seed` | `None` | Master MC seed; per-trial seeds derived from `_trial_seed(seed, i_sot, idx)`. |
 | `rng_mode` | `"legacy"` | `"legacy"` = `np.random.seed` (chapter-figure bit-stream); `"generator"` = `np.random.default_rng` (multiprocessing-friendly). Both share the seed stream. |
-| `integrator` | `None` | `None` → stepper default (`"euler_spherical"`); `"euler_spherical"` or `"cayley"` force the step type. |
+| `integrator` | `None` | `None` → stepper default (`"cayley"`); `"euler_spherical"` or `"cayley"` force the step type. |
 
 **Returns:** `SerResult` (with `psw = 1 − ser` property).
 
@@ -351,9 +351,10 @@ stage3: [sim_mid2_step, sim_end_step)
 
 - `integrator="cayley"` dispatches to `dynamic_switching_vector.switching_vector`,
   which is norm-preserving to machine precision and takes the spin-Hall
-  polarisation `sigma_SH` as an explicit 3-vector. The default
-  `"euler_spherical"` matches the chapter calibration; switching to `"cayley"`
-  shifts the deterministic threshold by ~10 % near 0.75 ns.
+  polarisation `sigma_SH` as an explicit 3-vector. `"cayley"` is the default
+  and the kernel the calibration was performed on (θ_SH = 0.066 was
+  re-extracted against it after the FL-SOT sign fix); `"euler_spherical"`
+  remains available for the §2.2.3.2 integrator comparison.
 - With `enable_self_heating=True` the returned `SimResult` additionally
   populates `T_K`, `Ms_T`, `Ki_T` so the temperature trajectory and the
   T-corrected material parameters are available for post-hoc inspection.

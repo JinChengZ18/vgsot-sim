@@ -20,7 +20,7 @@ following opt-in toggles. Defaults preserve the original chapter behaviour.
 |---|---|---|
 | `enable_self_heating` | `False` | Advance `T(t)` through the RC thermal network, recompute `M_s(T)` / `K_i(T)` each step, and feed them back into `anisotropy.field()`. Diagnostics populated in `SimResult.T_K`, `Ms_T`, `Ki_T`. |
 | `T_ambient_K` | `300.0` | Initial / sink temperature for the thermal network. |
-| `integrator` | `"euler_spherical"` | LLG step type. `"cayley"` selects a norm-preserving Cartesian step that takes an explicit `sigma_SH` 3-vector. |
+| `integrator` | `"cayley"` | LLG step type. The default Cayley step is norm-preserving and takes an explicit `sigma_SH` 3-vector; `"euler_spherical"` selects the legacy spherical stepper. |
 | `sigma_SH` | `None` (= `[-1, 0, 0]`) | Spin-Hall polarisation direction; honoured only by the Cayley stepper. |
 | `rng` | `None` | Pass an `np.random.Generator` to make a single run byte-reproducible end-to-end (init draw, thermal noise, every kernel). |
 | `demag_mode` | `"ellipsoid"` | `"ellipsoid"` (exact oblate tensor with `D_elec`) or `"thin_disk"` (legacy approximation). |
@@ -143,9 +143,10 @@ directly — figure scripts under `09_simulation_figures/` default to `psw`.
 - `seed=<int>` + `rng_mode={"legacy","generator"}`: deterministically derive
   the per-trial seed from `(seed, I_SOT, trial_idx)`; chapter figures use the
   `"legacy"` default; multiprocessing pipelines should pick `"generator"`.
-- `integrator="cayley"`: forces every trial through the norm-preserving
-  Cartesian stepper; useful for precision studies but reports a slightly higher
-  threshold than the spherical-Euler default the calibration was performed on.
+- `integrator="cayley"`: the default; every trial goes through the
+  norm-preserving Cartesian stepper, which is the kernel θ_SH = 0.066 was
+  calibrated against. `"euler_spherical"` reports a lower threshold and is kept
+  for the §2.2.3.2 integrator comparison.
 
 ⚠️ Computationally heavy (Monte-Carlo trials). Defaults to `trials=200`; chapter
 figures use `trials=80` per point with the sweep widened to capture the full

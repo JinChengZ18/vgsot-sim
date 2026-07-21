@@ -47,7 +47,7 @@ labels on top.
 | 图2.14 | `Chapter02_local_14.png` | Sigmoid measurement vs Néel–Brown extrapolation | `scripts/07_process_variability/sigmoid_fig.py` | <5 s |
 | 图2.15 | `Chapter02_local_15.png` | Device-to-device Néel–Brown consistency | `scripts/06_psw_t_fitting/fit_from_loops.py` (figure 2) | <5 s |
 | 图2.16 | `Chapter02_local_16.png` | Process-variability composite (CV(Δ), F(CV), β) | `scripts/07_process_variability/variability_sim.py` | ~5–15 s |
-| 图2.17 | `Chapter02_local_17.png` | Macrospin process-variability MC P_sw(V) | `scripts/07_process_variability/macrospin_process_variability_mc.py` | minutes |
+| 图2.17 | `Chapter02_local_17.png` | Macrospin process-variability MC P_sw(V) | `scripts/07_process_variability/macrospin_process_variability_mc.py` | ~16 h at the committed defaults |
 | 图2.18 | `Chapter02_local_18.png` | MC sampling-size sensitivity of F̂(N, CV_Δ) | `scripts/08_sampling_effect/sampling_sensitivity_sim.py` | ~2–5 min |
 | 图2.19 | `Chapter02_local_19.png` | Hardware Bernoulli-sampling reliability | `scripts/08_sampling_effect/hw_sampling_reliability.py` | ~2–4 min |
 | 图2.20 | `Chapter02_local_20.png` | Low-barrier RTN node characteristics | `scripts/10_rtn_reservoir/plot_node_figs.py` → `scripts/build_ppt_figs.py` | ~minutes |
@@ -118,7 +118,7 @@ reads seven committed R–V hysteresis-loop files:
 python scripts/06_psw_t_fitting/fit_from_loops.py       # 图2.13 (fig 1) + 图2.15 (fig 2)
 python scripts/07_process_variability/sigmoid_fig.py            # 图2.14
 python scripts/07_process_variability/variability_sim.py       # 图2.16 (analytic MC, seed=42)
-python scripts/07_process_variability/macrospin_process_variability_mc.py   # 图2.17 (macrospin LLG MC)
+python scripts/07_process_variability/macrospin_process_variability_mc.py   # 图2.17 (macrospin LLG MC; defaults 16 devices x 32 trials, Cayley, ~16 h)
 ```
 
 Experimental data provenance: the raw same-batch wafer measurements are committed
@@ -129,7 +129,17 @@ reads ASCII-renamed copies of the seven full-loop files that live in
 two sets are byte-identical loop data. 图2.14 (`sigmoid_fig.py`) hard-codes its
 same-batch 0.75 ns P_sw points inline. 图2.17 runs a fresh macrospin ensemble
 (`--devices`, `--thermal-trials`, `--seed` tune cost; self-heating on by default,
-which is the state SER/P_sw thresholds must be reported in).
+which is the state SER/P_sw thresholds must be reported in). Its defaults are the
+committed figure's settings — 16 devices × 32 trials (512 pooled, Wilson 95%
+half-width ±4.3% at p = 0.5 for the nominal curve) on the Cayley kernel; the
+committed run took 15.6 h in one process, and cost scales roughly as
+(devices + 1) × trials. It also writes `macrospin_variability_summary.json`
+(crossings, fit-free 0.25→0.50 spans, logistic slopes under two baseline
+conventions, per-device crossings) next to the figure. It writes only into its
+own folder, so copy `Chapter02_local_17.png` to `article/figs/` after a
+regeneration. The stdout of the committed run is kept as
+`macrospin_variability_run_16x32.log` (whitelisted in `.gitignore`) because the
+chapter quotes numbers derived from its tables.
 
 ### §2.3.3–2.3.4 verification runs (footnotes + 图2.13(d) panel)
 

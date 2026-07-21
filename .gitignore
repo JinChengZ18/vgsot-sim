@@ -68,3 +68,6 @@ notebooks/version/
 
 # Reviewer-backlog experiment outputs (regenerable; see scripts/12+/README)
 scripts/**/e[0-9]_*.json
+
+# Committed provenance for the 图2.17 ensemble (16x32 run stdout)
+!scripts/07_process_variability/macrospin_variability_run_16x32.log

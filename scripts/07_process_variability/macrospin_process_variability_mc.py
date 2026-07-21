@@ -10,6 +10,8 @@ voltage fixed and therefore sees its own process-shifted I_SOT.
 from __future__ import annotations
 
 import argparse
+import json
+import time
 from pathlib import Path
 
 import matplotlib
@@ -91,15 +93,16 @@ plt.rcParams.update({
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--devices", type=int, default=6,
+    parser.add_argument("--devices", type=int, default=16,
                         help="number of D2D macrospin parameter samples")
-    parser.add_argument("--thermal-trials", type=int, default=8,
+    parser.add_argument("--thermal-trials", type=int, default=32,
                         help="thermal MC trials per sampled device and voltage")
     parser.add_argument("--seed", type=int, default=7,
                         help="master seed for device mismatch and thermal noise")
     parser.add_argument("--integrator", choices=("euler_spherical", "cayley"),
-                        default="euler_spherical",
-                        help="macrospin time-stepper; Euler matches current calibration")
+                        default="cayley",
+                        help="macrospin time-stepper; Cayley is the calibrated kernel "
+                             "(theta_SH = 0.066 was recalibrated against it)")
     parser.add_argument("--disable-self-heating", action="store_true",
                         help="run without the self-heating feedback loop")
     return parser.parse_args()
@@ -249,10 +252,130 @@ def plot_curves(wide_voltages, baseline_wide, mean_wide,
     print(f"Saved {out_path}")
 
 
+def level_crossing(voltages_v, psw, level=0.5):
+    """Raw P_sw = `level` crossing (V) by linear interpolation, plus the
+    binomial-propagated 1-sigma from the local slope. Fit-free, so it stays
+    meaningful for the wafer-mean curve, which does not saturate inside the
+    inset window."""
+    V = np.asarray(voltages_v, dtype=float)
+    P = np.asarray(psw, dtype=float)
+    order = np.argsort(V)
+    V, P = V[order], P[order]
+    for i in range(len(V) - 1):
+        if (P[i] - level) * (P[i + 1] - level) <= 0 and P[i] != P[i + 1]:
+            slope = (P[i + 1] - P[i]) / (V[i + 1] - V[i])
+            return float(V[i] + (level - P[i]) / slope), float(abs(slope))
+    return float("nan"), float("nan")
+
+
+def logistic_slope(voltages_v, psw, y0_min=0.0):
+    """4-parameter logistic slope beta = 1/k (V^-1) with a 95% half-width.
+
+    `y0_min` is exposed because the wafer-mean curve does not saturate inside
+    the window: with a negative baseline allowed, y0 pins to its bound and
+    beta becomes bound-controlled (4.7-9.1 V^-1 across the usual conventions).
+    The default y0_min = 0 is the physical floor (P_sw >= 0) and is the only
+    setting for which the fit leaves every parameter interior.
+    """
+    from scipy.optimize import curve_fit
+    from vgsot_sim.analysis.sigmoid_fit import sigmoid4p
+
+    V = np.asarray(voltages_v, dtype=float)
+    P = np.asarray(psw, dtype=float)
+    p0 = (0.0, 0.75, float(V[np.argmin(np.abs(P - 0.4))]), 0.03)
+    bounds = ([y0_min, 0.2, V.min() - 0.1, 1e-3], [0.30, 1.10, V.max() + 0.3, 0.6])
+    popt, pcov = curve_fit(sigmoid4p, V, P, p0=p0, bounds=bounds, maxfev=60000)
+    resid = P - sigmoid4p(V, *popt)
+    r2 = 1.0 - float(np.sum(resid ** 2) / np.sum((P - P.mean()) ** 2))
+    beta = 1.0 / popt[3]
+    return dict(beta=float(beta), beta_ci95=float(1.96 * np.sqrt(np.diag(pcov))[3] / popt[3] ** 2),
+                y0=float(popt[0]), L=float(popt[1]), Vth_mV=float(popt[2] * 1e3),
+                k_mV=float(popt[3] * 1e3), R2=r2, y0_min=y0_min)
+
+
+def summarize_broadening(inset_voltages, baseline_inset, mean_inset,
+                         device_inset, pooled_trials, args):
+    """Quantify D2D broadening without leaning on a saturation-dependent fit.
+
+    Headline metric is the fit-free 0.25 -> 0.50 voltage span; the logistic
+    slopes are reported alongside with their bound sensitivity, and the
+    per-device crossings give the threshold scatter that drives the effect.
+    """
+    def span(psw):
+        v25, _ = level_crossing(inset_voltages, psw, 0.25)
+        v50, _ = level_crossing(inset_voltages, psw, 0.50)
+        return v25, v50, v50 - v25
+
+    v25_n, v50_n, w_n = span(baseline_inset)
+    v25_m, v50_m, w_m = span(mean_inset)
+    sig_n = np.sqrt(0.25 / pooled_trials) / level_crossing(inset_voltages, baseline_inset)[1]
+    sig_m = np.sqrt(0.25 / pooled_trials) / level_crossing(inset_voltages, mean_inset)[1]
+
+    dev_cross = [level_crossing(inset_voltages, row)[0] for row in device_inset]
+    finite = [c for c in dev_cross if np.isfinite(c)]
+
+    def safe_fit(psw, y0_min):
+        try:
+            return logistic_slope(inset_voltages, psw, y0_min=y0_min)
+        except Exception as exc:                      # degenerate pilot runs
+            return dict(error=f"{type(exc).__name__}: {exc}")
+
+    fits = {}
+    for tag, y0_min in (("physical_y0ge0", 0.0), ("e2_convention_y0ge-0.05", -0.05)):
+        fits[tag] = dict(nominal=safe_fit(baseline_inset, y0_min),
+                         wafer_mean=safe_fit(mean_inset, y0_min))
+
+    z = 1.96
+    wilson_hw = lambda n: z * np.sqrt(0.25 / n) / (1 + z ** 2 / n)
+    summary = dict(
+        devices=args.devices, thermal_trials=args.thermal_trials,
+        pooled_trials=pooled_trials, integrator=args.integrator, seed=args.seed,
+        inset_voltages_mV=(np.asarray(inset_voltages) * 1e3).tolist(),
+        psw_nominal=list(map(float, baseline_inset)),
+        psw_wafer_mean=list(map(float, mean_inset)),
+        crossing_nominal_mV=v50_n * 1e3, crossing_nominal_sigma_mV=float(sig_n * 1e3),
+        crossing_wafer_mV=v50_m * 1e3, crossing_wafer_sigma_mV=float(sig_m * 1e3),
+        span25to50_nominal_mV=w_n * 1e3, span25to50_wafer_mV=w_m * 1e3,
+        span_ratio=float(w_m / w_n) if w_n else float("nan"),
+        logistic_fits=fits,
+        wilson_halfwidth_pooled=float(wilson_hw(pooled_trials)),
+        device_crossings_mV=[float(c * 1e3) for c in dev_cross],
+        device_crossing_mean_mV=float(np.mean(finite) * 1e3) if finite else None,
+        device_crossing_std_mV=float(np.std(finite, ddof=1) * 1e3) if len(finite) > 1 else None,
+        device_crossings_resolved=len(finite),
+    )
+
+    print()
+    print("  D2D broadening summary (threshold-inset window):")
+    print(f"    50% crossing      : nominal {summary['crossing_nominal_mV']:.1f} "
+          f"+/- {summary['crossing_nominal_sigma_mV']:.1f} mV | wafer mean "
+          f"{summary['crossing_wafer_mV']:.1f} +/- {summary['crossing_wafer_sigma_mV']:.1f} mV")
+    print(f"    0.25->0.50 span   : nominal {summary['span25to50_nominal_mV']:.1f} mV | "
+          f"wafer mean {summary['span25to50_wafer_mV']:.1f} mV "
+          f"(x{summary['span_ratio']:.2f} broadening, fit-free)")
+    for tag, pair in fits.items():
+        if "error" in pair["nominal"] or "error" in pair["wafer_mean"]:
+            print(f"    logistic [{tag}]: fit failed on this run")
+            continue
+        print(f"    logistic [{tag}]: nominal beta={pair['nominal']['beta']:.1f}"
+              f"+/-{pair['nominal']['beta_ci95']:.1f} (R2={pair['nominal']['R2']:.4f}) | "
+              f"wafer beta={pair['wafer_mean']['beta']:.1f}"
+              f"+/-{pair['wafer_mean']['beta_ci95']:.1f} (R2={pair['wafer_mean']['R2']:.4f})")
+    print(f"    Wilson 95% half-width at p=0.5, n={pooled_trials}: "
+          f"+/-{summary['wilson_halfwidth_pooled']*100:.1f}%  "
+          f"(nominal curve only; the wafer mean is a {args.devices}-device cluster sample)")
+    if summary["device_crossing_std_mV"] is not None:
+        print(f"    per-device 50% crossings: {summary['device_crossings_resolved']}"
+              f"/{args.devices} resolved, mean {summary['device_crossing_mean_mV']:.0f} mV, "
+              f"std {summary['device_crossing_std_mV']:.0f} mV")
+    return summary
+
+
 def main():
     args = parse_args()
     if args.devices < 1 or args.thermal_trials < 1:
         raise ValueError("--devices and --thermal-trials must be positive")
+    t_start = time.time()
 
     base = PhysicalConstantsConfig()
     budget = cv_delta_budget(PDK_INPUTS)
@@ -311,6 +434,16 @@ def main():
     for voltage, p_nom, p_mc in zip(inset_voltages, baseline_inset, mean_inset):
         print(f"    {voltage*1e3:6.0f} mV : nominal={p_nom:.3f}  process_MC={p_mc:.3f}")
     print("=" * 78)
+
+    summary = summarize_broadening(inset_voltages, baseline_inset, mean_inset,
+                                   device_psw[:, len(wide_voltages):],
+                                   pooled_trials, args)
+    summary["elapsed_s"] = time.time() - t_start
+    print(f"  Wall-clock elapsed: {summary['elapsed_s']/3600:.2f} h")
+    print("=" * 78)
+    out_json = Path(__file__).resolve().parent / "macrospin_variability_summary.json"
+    out_json.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(f"Saved {out_json}")
 
     plot_curves(wide_voltages, baseline_wide, mean_wide,
                 inset_voltages, baseline_inset, mean_inset, args, budget)

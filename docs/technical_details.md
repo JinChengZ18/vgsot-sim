@@ -518,7 +518,7 @@ The `integrator` argument is forwarded straight to `run_piecewise_direct_excitat
 
 ### 2.7.2 Symmetric coverage on `run_piecewise_terminal_voltage`
 
-Both piecewise drivers now accept the same opt-in trio (`integrator=`, `sigma_SH=`, `rng=`), so terminal-voltage simulations (with the three-terminal $V_1 / V_2 / V_3$ excitation pattern) can opt into Cayley + arbitrary σ̂_SH + byte-reproducible noise just like the direct-current driver. Defaults remain `("euler_spherical", None, None)` so legacy chapter figures are byte-identical.
+Both piecewise drivers now accept the same opt-in trio (`integrator=`, `sigma_SH=`, `rng=`), so terminal-voltage simulations (with the three-terminal $V_1 / V_2 / V_3$ excitation pattern) can opt into Cayley + arbitrary σ̂_SH + byte-reproducible noise just like the direct-current driver. Their defaults are `("cayley", None, None)`; passing `integrator="euler_spherical"` reproduces the legacy spherical-stepper behaviour.
 
 ```python
 from vgsot_sim.time_series_cases import run_piecewise_terminal_voltage
@@ -542,8 +542,8 @@ Two LLG steppers are available; choose via `run_piecewise_direct_excitation(...,
 
 | Integrator         | Coordinates    | Norm preservation | Cost / step | σ̂_SH parameter | Module |
 |--------------------|----------------|-------------------|-------------|-----------------|--------|
-| `"euler_spherical"` (default) | $(\theta, \phi)$ | analytic (1) | low | implicit $-\hat{x}$ | `dynamic_switching.py` |
-| `"cayley"`         | $(m_x, m_y, m_z)$ | machine-precision (2) | ~2× | runtime arg | `dynamic_switching_vector.py` |
+| `"euler_spherical"` | $(\theta, \phi)$ | analytic (1) | low | implicit $-\hat{x}$ | `dynamic_switching.py` |
+| `"cayley"` (default) | $(m_x, m_y, m_z)$ | machine-precision (2) | ~2× | runtime arg | `dynamic_switching_vector.py` |
 
 (1) Spherical exact arithmetic preserves $|\mathbf{m}|=1$ analytically but the $1/\sin\theta$ term in $d\phi/dt$ amplifies round-off near the poles (a polar-region guard exists in code).
 
