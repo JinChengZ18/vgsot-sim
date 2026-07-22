@@ -272,10 +272,11 @@ def logistic_slope(voltages_v, psw, y0_min=0.0):
     """4-parameter logistic slope beta = 1/k (V^-1) with a 95% half-width.
 
     `y0_min` is exposed because the wafer-mean curve does not saturate inside
-    the window: with a negative baseline allowed, y0 pins to its bound and
-    beta becomes bound-controlled (4.7-9.1 V^-1 across the usual conventions).
-    The default y0_min = 0 is the physical floor (P_sw >= 0) and is the only
-    setting for which the fit leaves every parameter interior.
+    the window: its baseline and amplitude are near-degenerate, so y0 pins to
+    whatever floor it is given and beta follows (5.6 / 7.9 / 9.1 V^-1 at
+    y0_min = -0.20 / -0.05 / 0 on the committed 16x32 ensemble). The default
+    y0_min = 0 is the physical floor (P_sw >= 0); the wafer fit still lands on
+    it, so the fit-free 0.25 -> 0.50 span is the metric to quote.
     """
     from scipy.optimize import curve_fit
     from vgsot_sim.analysis.sigmoid_fit import sigmoid4p
@@ -325,8 +326,10 @@ def summarize_broadening(inset_voltages, baseline_inset, mean_inset,
         fits[tag] = dict(nominal=safe_fit(baseline_inset, y0_min),
                          wafer_mean=safe_fit(mean_inset, y0_min))
 
-    z = 1.96
-    wilson_hw = lambda n: z * np.sqrt(0.25 / n) / (1 + z ** 2 / n)
+    def wilson_hw(n):
+        """Half-width of the same interval the figure's bands are drawn with."""
+        lo, hi = wilson_interval(0.5, n)
+        return 0.5 * float(hi - lo)
     summary = dict(
         devices=args.devices, thermal_trials=args.thermal_trials,
         pooled_trials=pooled_trials, integrator=args.integrator, seed=args.seed,

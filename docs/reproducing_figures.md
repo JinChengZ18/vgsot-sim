@@ -132,8 +132,9 @@ same-batch 0.75 ns P_sw points inline. 图2.17 runs a fresh macrospin ensemble
 which is the state SER/P_sw thresholds must be reported in). Its defaults are the
 committed figure's settings — 16 devices × 32 trials (512 pooled, Wilson 95%
 half-width ±4.3% at p = 0.5 for the nominal curve) on the Cayley kernel; the
-committed run took 15.6 h in one process, and cost scales roughly as
-(devices + 1) × trials. It also writes `macrospin_variability_summary.json`
+committed run took 15.6 h in one process, and cost scales as 2 × devices ×
+trials — the nominal baseline is run at the same pooled trial count as the whole
+mismatch ensemble, so `--devices` sets the nominal curve's statistics as well. It also writes `macrospin_variability_summary.json`
 (crossings, fit-free 0.25→0.50 spans, logistic slopes under two baseline
 conventions, per-device crossings) next to the figure. It writes only into its
 own folder, so copy `Chapter02_local_17.png` to `article/figs/` after a
@@ -244,7 +245,8 @@ the model consumes:
 - **图2.7 needs `result/sec_2_2_3_2/` first.** That directory is gitignored, so a
   fresh clone must run the §2.2.3.2 audit commands above before assembling the
   figure.
-- **Long runs:** 图2.7 panel B (overnight); 图2.17–2.19, the §2.2.3.2 audit runs,
+- **Long runs:** 图2.7 panel B and 图2.17 (overnight; 图2.17 is ~16 h at the
+  committed defaults); 图2.18–2.19, the §2.2.3.2 audit runs,
   and the §2.4 free-running sLLG dwell (`validate_bridge.py`) take minutes. All
   other results render in seconds.
 - Scripts render panels into their own folder; the published composites in
