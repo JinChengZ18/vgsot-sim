@@ -130,15 +130,15 @@ $$
 代入Néel–Brown模型可得VCMA辅助下的翻转概率
 
 $$
-P_{\mathrm{sw}}(t_w, V_{MTJ}) = 1 - \exp\!\left(-\frac{t_w}{\tau_0}\exp\!\left[-\Delta_0 + \beta_{\mathrm{VCMA}} V_{MTJ}\right]\right),
+P_{\mathrm{sw}}(t_w, V_{MTJ}) = 1 - \exp\!\left(-\frac{t_w}{\tau_0}\exp\!\left[-\Delta_0 + \beta_{\Delta} V_{MTJ}\right]\right),
 $$
 
-其中$$\Delta_0 = E_b(0)/(k_B T)$$，$$\beta_{\mathrm{VCMA}} = \xi V/(k_B T \cdot t_f t_{ox})$$。VCMA将翻转概率曲线沿$$V_{MTJ}$$方向左移，使较低写入能量下即可获得可控的随机翻转。
+其中$$\Delta_0 = E_b(0)/(k_B T)$$，$$\beta_{\Delta} = \xi V/(k_B T \cdot t_f t_{ox})$$为能垒压低系数 (量纲$$\mathrm{V^{-1}}$$)，区别于量纲$$\mathrm{fJ/(V\cdot m)}$$的VCMA系数$$\xi$$本身 (后者在2.2.1.2节与表2.2中记作$$\beta_{\mathrm{VCMA}}$$)。VCMA将翻转概率曲线沿$$V_{MTJ}$$方向左移，使较低写入能量下即可获得可控的随机翻转。
 
 VCMA与SOT联合作用时，自然的建模顺序是VCMA先降低各向异性与能垒 ($$H_k \to H_k(V_{MTJ})$$)，SOT再提供翻转驱动力，由此得到偏压依赖的SOT临界电流$$I_{c0}^{\mathrm{VCMA}}(V_{MTJ})$$及联合翻转概率
 
 $$
-P_{\mathrm{sw}}(t_w, I_{SOT}, V_{MTJ}) = 1 - \exp\!\left[-\frac{t_w}{\tau_0}\exp\!\left(-(\Delta_0 - \beta_{\mathrm{VCMA}}V_{MTJ})\!\left(1-\frac{I_{SOT}}{I_{c0}^{\mathrm{VCMA}}(V_{MTJ})}\right)^n\right)\right].
+P_{\mathrm{sw}}(t_w, I_{SOT}, V_{MTJ}) = 1 - \exp\!\left[-\frac{t_w}{\tau_0}\exp\!\left(-(\Delta_0 - \beta_{\Delta}V_{MTJ})\!\left(1-\frac{I_{SOT}}{I_{c0}^{\mathrm{VCMA}}(V_{MTJ})}\right)^n\right)\right].
 $$
 
 由于$$H_k(V_{MTJ})$$随VCMA偏压下降，$$I_{c0}^{\mathrm{VCMA}}$$亦相应降低，VCMA辅助SOT得以减小写电流与写能耗[^ref-zhang-vgsot]。该联合模型给出了三端sMTJ作为可编程伯努利源的完整描述：外部电路只需指定脉宽$$t_w$$、SOT电流$$I_{SOT}$$与MTJ偏压$$V_{MTJ}$$这一三元组，器件即输出对应概率的随机比特。
@@ -829,7 +829,7 @@ $$
 
 其中$$\mathcal{F}$$对应2.2.3.2节所述的Cayley变换步，在数学上严格保证$$|\mathbf{m}_{n+1}|=1$$。
 
-为使仿真结果能够直接服务于不同写入机制的对比分析，平台预置四类标准化的仿真场景：纯SOT基线场景关闭VCMA调制 ($$V_{\mathrm{MTJ}}=0$$)，其翻转概率仅由SOT电流密度与脉冲宽度决定，是建立基准曲线的出发点；VCMA辅助场景在SOT电流基础上施加MTJ偏置电压，通过$$\Delta(V)=\Delta_0-\beta_{\mathrm{VCMA}}V$$动态调低有效能垒以降低写入电流；优化双脉冲场景按2.1.3节的SOT-VCMA联合驱动模型调度VCMA与SOT两路脉冲时序，以VCMA偏压降低能垒并使其与SOT写入脉冲保持重叠，能效收益的量化见2.2.5节；SER蒙特卡罗场景对每个驱动参数工作点执行$$N$$次独立轨迹并统计写错误率$$\mathrm{SER}=1-\frac{1}{N}\sum_i s_i$$或等价的翻转概率$$P_{\mathrm{sw}}=1-\mathrm{SER}$$。$$N$$的默认值随目标置信度自适应调整 (参见2.2.3.2节)。
+为使仿真结果能够直接服务于不同写入机制的对比分析，平台预置四类标准化的仿真场景：纯SOT基线场景关闭VCMA调制 ($$V_{\mathrm{MTJ}}=0$$)，其翻转概率仅由SOT电流密度与脉冲宽度决定，是建立基准曲线的出发点；VCMA辅助场景在SOT电流基础上施加MTJ偏置电压，通过$$\Delta(V)=\Delta_0-\beta_{\Delta}V$$动态调低有效能垒以降低写入电流；优化双脉冲场景按2.1.3节的SOT-VCMA联合驱动模型调度VCMA与SOT两路脉冲时序，以VCMA偏压降低能垒并使其与SOT写入脉冲保持重叠，能效收益的量化见2.2.5节；SER蒙特卡罗场景对每个驱动参数工作点执行$$N$$次独立轨迹并统计写错误率$$\mathrm{SER}=1-\frac{1}{N}\sum_i s_i$$或等价的翻转概率$$P_{\mathrm{sw}}=1-\mathrm{SER}$$。$$N$$的默认值随目标置信度自适应调整 (参见2.2.3.2节)。
 
 行为级紧凑模型追求的是端口级输出与同批次实测对齐，平台因此以$$R_P$$、$$R_{AP}$$和0.75 ns写入阈值为共同标定靶点，得到端口级有效自旋霍尔角$$\theta_{\mathrm{SH}}\!\approx\!0.066$$[^note-dev-thetacalib]。该值应理解为集总后的等效力矩效率，吸收了界面自旋损失、寄生电阻与电流方向偏离等未显式建模通道；公开文献中的β-W/CoFeB材料参数[^ref-liu-chl][^ref-yang-300mm]只用于约束量级，本文的标定对象始终是2.3.2节同批次Device A的实测阈值、电阻幅度与Sigmoid响应。
 [^note-dev-thetacalib]: 该有效值由一次自下而上的标定试错确定，并非直接取自文献。以文献β-W体系的$$\theta_{\mathrm{SH}}\approx0.25$$起步时，仿真给出的SER 50%阈值仅约$$140\,\mu\mathrm{A}$$ ($$V_{\mathrm{SOT}}\approx109\,\mathrm{mV}$$)，较同批次Device A P→AP实测的$$I_{\mathrm{th}}\approx1.09\,\mathrm{mA}$$ ($$V_{\mathrm{th}}(0.75\,\mathrm{ns})\approx844\,\mathrm{mV}$$) 低约$$4.7$$倍。依2.1.3节临界电流标度$$I_{c0}^{\mathrm{SOT}}\propto1/\theta_{\mathrm{SH}}$$，在$$\theta_{\mathrm{SH}}$$、$$K_i$$、$$M_s$$、$$\alpha$$、$$R_W$$五个候选调参量按灵敏度分级、每点数十条轨迹的短Monte Carlo试扫中，$$\theta_{\mathrm{SH}}$$被选为主调参量 ($$\alpha=0.05$$已达CoFeB典型上限不宜再增)。先调至$$0.07$$使$$t_w=5\,\mathrm{ns}$$点的$$V_{\mathrm{th}}^{\mathrm{sim}}\approx508\,\mathrm{mV}$$与实测$$511\,\mathrm{mV}$$吻合，再细调至$$0.04$$以转而命中$$0.75\,\mathrm{ns}/894\,\mathrm{mV}$$靶点。其后，2.2.3.2节积分核的场样SOT力矩符号勘误使翻转阈值整体上移约40%，依同一$$1/\theta_{\mathrm{SH}}$$标度以保模长Cayley积分器重新标定后，$$\theta_{\mathrm{SH}}$$终值由$$0.04$$调整为$$0.066$$，$$V_{\mathrm{th}}(0.75\,\mathrm{ns})$$恢复至$$895\,\mathrm{mV}$$；该值仍较正文引用的文献β-W本征$$\theta_{\mathrm{SH}}\approx0.3$$低约4.5倍，差额对应集总模型未显式建模的自旋力矩损耗通道。
