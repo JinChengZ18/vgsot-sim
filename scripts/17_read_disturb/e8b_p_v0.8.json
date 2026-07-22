@@ -1,0 +1,10 @@
+{
+  "v_mtj": 0.8,
+  "state": "p",
+  "read_ns": 10.0,
+  "trials": 300,
+  "disturbed": 300,
+  "p_disturb": 1.0,
+  "wall_s": 1444.6962699890137,
+  "timestamp": "2026-07-22T16:42:37"
+}
