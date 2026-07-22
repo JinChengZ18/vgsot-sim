@@ -47,6 +47,8 @@ _spec.loader.exec_module(_fig17)
 
 PULSE_NS, TOTAL_NS = _fig17.PULSE_NS, _fig17.TOTAL_NS
 N_DEVICES, SEED, TRIALS = 16, 7, 48
+PLATEAU_GATE = 0.5      # a device whose top-of-scan P_sw stays below this has
+                        # no usable deterministic window; its crossing is noise
 # Wider than the 图2.17 inset: individual devices scatter well outside the
 # window that brackets the wafer mean.
 SCAN_UA = np.array([700, 800, 900, 1000, 1080, 1160, 1240, 1330, 1450, 1600], float)
@@ -89,13 +91,13 @@ def run_device(idx: int, trials: int = TRIALS):
     )
 
 
-def crossing(V_mV, P, trials):
+def crossing(V_mV, P, trials, level=0.5):
     V = np.asarray(V_mV, float); P = np.asarray(P, float)
     o = np.argsort(V); V, P = V[o], P[o]
     for i in range(len(V) - 1):
-        if (P[i] - 0.5) * (P[i + 1] - 0.5) <= 0 and P[i] != P[i + 1]:
+        if (P[i] - level) * (P[i + 1] - level) <= 0 and P[i] != P[i + 1]:
             s = (P[i + 1] - P[i]) / (V[i + 1] - V[i])
-            return float(V[i] + (0.5 - P[i]) / s), float(np.sqrt(0.25 / trials) / abs(s))
+            return float(V[i] + (level - P[i]) / s), float(np.sqrt(0.25 / trials) / abs(s))
     return float("nan"), float("nan")
 
 
@@ -107,46 +109,90 @@ def analyze():
     if not shards:
         raise SystemExit("No dev_thr_d*.json found.")
 
-    rows = []
+    V = np.asarray(shards[0]["V_mV"], float)
+    rows, spans = [], []
     for d in shards:
+        assert np.allclose(d["V_mV"], V), "shards must share the voltage grid"
         v50, sig = crossing(d["V_mV"], d["psw"], d["trials"])
+        v25, _ = crossing(d["V_mV"], d["psw"], d["trials"], level=0.25)
         P = np.asarray(d["psw"], float)
+        span = v50 - v25 if np.isfinite(v50) and np.isfinite(v25) else float("nan")
+        spans.append(span)
         rows.append(dict(device=d["device"], vth_mV=v50, sigma_mV=sig,
-                         plateau=float(P[-3:].max()), R_W=d["R_W"],
-                         Ki_scale=d["scales"].get("Ki_proxy"),
+                         span25to50_mV=span, plateau=float(P[-3:].max()),
+                         R_W=d["R_W"], Ki_scale=d["scales"].get("Ki_proxy"),
                          Rsot_scale=d["scales"].get("Rsot")))
+
+    def stats(vals):
+        v = np.asarray([x for x in vals if np.isfinite(x)], float)
+        if v.size == 0:
+            return None
+        return dict(n=int(v.size), mean_mV=float(v.mean()),
+                    std_mV=float(v.std(ddof=1)) if v.size > 1 else None,
+                    cv=float(v.std(ddof=1) / v.mean()) if v.size > 1 else None,
+                    min_mV=float(v.min()), max_mV=float(v.max()))
+
     vth = np.array([r["vth_mV"] for r in rows], float)
-    ok = np.isfinite(vth)
+    # A device whose curve never rises above 0.5 near the top of the scan has
+    # no usable deterministic window; its nominal crossing is a noise artifact.
+    # Both populations are reported so the exclusion's effect is visible.
+    usable = np.array([r["plateau"] > PLATEAU_GATE for r in rows])
+
+    # Direct average of the measured per-device curves. This is a model-free
+    # cross-check of the 图2.17 wafer mean: same 16 devices, independent
+    # voltage grid and trial count.
+    P_all = np.array([d["psw"] for d in shards], float)
+    mean_curve = P_all.mean(axis=0)
+    mv50, _ = crossing(V, mean_curve, TRIALS * len(shards))
+    mv25, _ = crossing(V, mean_curve, TRIALS * len(shards), level=0.25)
+
     summary = dict(
-        devices=len(rows), resolved=int(ok.sum()), trials_per_point=TRIALS,
-        scan_mV=[float(v) for v in np.asarray(SCAN_UA) * 1e-6 * PhysicalConstantsConfig().R_W * 1e3],
-        rows=rows,
-        vth_mean_mV=float(np.mean(vth[ok])) if ok.any() else None,
-        vth_std_mV=float(np.std(vth[ok], ddof=1)) if ok.sum() > 1 else None,
-        vth_min_mV=float(np.min(vth[ok])) if ok.any() else None,
-        vth_max_mV=float(np.max(vth[ok])) if ok.any() else None,
+        devices=len(rows), trials_per_point=TRIALS,
+        plateau_gate=PLATEAU_GATE,
+        excluded_devices=[r["device"] for r, u in zip(rows, usable) if not u],
+        scan_mV=V.tolist(), rows=rows,
+        vth_all=stats(vth), vth_usable=stats(vth[usable]),
+        span25to50_usable=stats(np.asarray(spans, float)[usable]),
+        mean_curve_psw=mean_curve.tolist(),
+        mean_curve_v25_mV=mv25, mean_curve_v50_mV=mv50,
+        mean_curve_span_mV=(mv50 - mv25) if np.isfinite(mv50) and np.isfinite(mv25) else None,
         nominal_vth_mV=896.1,          # 图2.17 nominal raw crossing
+        nominal_span_mV=51.5,          # 图2.17 nominal 0.25->0.50 span
+        fig217_wafer_v50_mV=965.5, fig217_wafer_span_mV=198.2,
         timestamp=datetime.now().isoformat(timespec="seconds"),
     )
-    if summary["vth_std_mV"]:
-        summary["vth_cv"] = summary["vth_std_mV"] / summary["vth_mean_mV"]
     (HERE / "device_threshold_scatter.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8")
 
-    print("=" * 66)
+    print("=" * 72)
     print("Per-device 50% thresholds (0.75 ns, P->AP, Cayley, self-heating ON)")
-    print("=" * 66)
-    for r in rows:
-        v = r["vth_mV"]
+    print("=" * 72)
+    for r, u in zip(rows, usable):
+        v, s = r["vth_mV"], r["span25to50_mV"]
         vs = f"{v:7.1f}" if np.isfinite(v) else "    n/a"
-        print(f"  device {r['device']:2d}: Vth = {vs} mV  "
-              f"(R_W = {r['R_W']:6.1f} ohm, plateau {r['plateau']:.2f})")
-    if summary["vth_std_mV"]:
-        print(f"\n  resolved {summary['resolved']}/{summary['devices']}: "
-              f"mean {summary['vth_mean_mV']:.1f} mV, std {summary['vth_std_mV']:.1f} mV "
-              f"(CV {summary['vth_cv']*100:.1f}%), range "
-              f"{summary['vth_min_mV']:.0f}-{summary['vth_max_mV']:.0f} mV")
-        print(f"  nominal reference: {summary['nominal_vth_mV']:.0f} mV")
+        ss = f"{s:5.1f}" if np.isfinite(s) else "  n/a"
+        flag = "" if u else "   <- no usable plateau, crossing not meaningful"
+        print(f"  device {r['device']:2d}: Vth = {vs} mV  span = {ss} mV  "
+              f"(R_W = {r['R_W']:6.1f} ohm, plateau {r['plateau']:.2f}){flag}")
+    for tag, st in (("all devices", summary["vth_all"]),
+                    (f"plateau > {PLATEAU_GATE}", summary["vth_usable"])):
+        if st and st["std_mV"]:
+            print(f"\n  threshold [{tag}] n={st['n']}: mean {st['mean_mV']:.1f} mV, "
+                  f"std {st['std_mV']:.1f} mV (CV {st['cv']*100:.1f}%), "
+                  f"range {st['min_mV']:.0f}-{st['max_mV']:.0f} mV")
+    sp = summary["span25to50_usable"]
+    if sp and sp["std_mV"]:
+        print(f"  per-device 0.25->0.50 span: mean {sp['mean_mV']:.1f} mV, "
+              f"std {sp['std_mV']:.1f} mV, range {sp['min_mV']:.0f}-{sp['max_mV']:.0f} mV "
+              f"(nominal single device: {summary['nominal_span_mV']:.1f} mV)")
+    print(f"\n  direct average of the {len(rows)} measured curves: "
+          f"V50 = {summary['mean_curve_v50_mV']:.1f} mV, "
+          f"span = {summary['mean_curve_span_mV']:.1f} mV")
+    print(f"  图2.17 wafer mean (independent grid, 32 trials): "
+          f"V50 = {summary['fig217_wafer_v50_mV']:.1f} mV, "
+          f"span = {summary['fig217_wafer_span_mV']:.1f} mV")
+    print(f"  nominal single device: V50 = {summary['nominal_vth_mV']:.1f} mV, "
+          f"span = {summary['nominal_span_mV']:.1f} mV")
     print("Wrote device_threshold_scatter.json")
 
 
