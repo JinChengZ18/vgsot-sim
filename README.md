@@ -61,7 +61,7 @@ By default, outputs go to `./result/` — figures as `Chapter02_local_*.png`, ti
 series and sweeps as `*.csv`. Change the output directory with
 `--out_dir my_results`, or disable progress bars with `--no_progress`.
 
-The four cases map to the chapter §2.3.3 Device A P→AP protocol (`t_w = 0.75 ns`
+The four cases map to the chapter §2.3.3 Device A AP→P protocol (`t_w = 0.75 ns`
 write pulse, `V_MTJ = 0`):
 
 ```

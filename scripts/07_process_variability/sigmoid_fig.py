@@ -3,8 +3,8 @@ Generate Figure 2.3-4 — the four 0.75 ns Sigmoid measurements (same-batch),
 clearly separated from the external 5 ns Sigmoid reference (different batch).
 
 Data source: each point's Psw is encoded in the measurement filename
-(e.g. 'device4pulse width_0.750 ns V_SOT 920.0 mV Hx 200 Oe Psw= 0.580.txt'),
-100 cycle repetitions per voltage.
+(e.g. 'device4pulse width_0.750 ns V_SOT 920.0 mV Hx 200 Oe Psw= 0.580.txt');
+the per-shot records in 05_experimental_raw_data hold 50 cycles per voltage.
 """
 
 import numpy as np
@@ -187,7 +187,7 @@ for (i, j), (dev, direction) in layout.items():
                 markerfacecolor="white", markeredgecolor=col,
                 markeredgewidth=1.6,
                 ecolor=col, elinewidth=1.0, capsize=2.5, zorder=10,
-                label="Measured" "\n" r"(100 reps, 95% Wilson CI)")
+                label="Measured" "\n" rf"({N_CYCLES} reps, 95% Wilson CI)")
 
     ax.axhline(0.5, color=CHARCOAL, lw=0.5, ls=":", alpha=0.5)
     ax.axvline(fit["Vth"], color=col, lw=0.6, ls=":", alpha=0.55)
@@ -220,7 +220,7 @@ for (i, j), (dev, direction) in layout.items():
 
 fig.suptitle(
     r"C2C-corrected Néel-Brown model vs. measured $P_{\rm sw}$  "
-    r"(100 reps per point, $H_x = 200$ Oe, $t_w = 0.75$ ns)",
+    rf"({N_CYCLES} reps per point, $H_x = 200$ Oe, $t_w = 0.75$ ns)",
     y=0.965,
 )
 fig.savefig(OUTDIR + "Chapter02_local_14.png", dpi=300, bbox_inches="tight")

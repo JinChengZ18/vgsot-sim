@@ -29,6 +29,10 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from matplotlib.gridspec import GridSpec
 
+# Repetition count of the §2.3.2 characterisation protocol: the committed
+# per-shot records in 05_experimental_raw_data hold 50 cycles per voltage.
+K_REF = 50
+
 # ── Style ────────────────────────────────────────────────────────────────
 THU_DEEP, THU_MID, THU_SOFT, THU_PALE, THU_TINT = \
     "#660874", "#8B3A9E", "#A966BE", "#C99FD4", "#EFE0F7"
@@ -363,8 +367,8 @@ K_guide = K0 * (e0 / eps_guide)**2
 ax_f.loglog(eps_guide * 100, K_guide, color=THU_PALE, lw=1.0, ls=":",
             label=r"$\propto \varepsilon^{-2}$ guide", zorder=3)
 
-ax_f.axhline(100, color=CHARCOAL, lw=0.8, ls=":", alpha=0.55)
-ax_f.text(1.0, 110, r"$K = 100$",
+ax_f.axhline(K_REF, color=CHARCOAL, lw=0.8, ls=":", alpha=0.55)
+ax_f.text(1.0, K_REF * 1.1, rf"$K = {K_REF}$",
           color=CHARCOAL, ha="left", va="bottom")
 
 ax_f.set_xlabel(r"Target precision  $\varepsilon$ (%)")
@@ -387,13 +391,12 @@ print(f"\nSaved  {outpath}")
 plt.close(fig)
 
 # ═════════════════════════════════════════════════════════════════════════
-# 7. §2.3.3 K = 100 context
+# 7. §2.3.2 characterisation-protocol context
 # ═════════════════════════════════════════════════════════════════════════
 print()
 print("=" * 78)
-print("  Context: the §2.3.3 K = 100 characterisation protocol")
+print(f"  Context: the §2.3.2 K = {K_REF} characterisation protocol")
 print("=" * 78)
-K_REF = 100
 for p in PS:
     lo, hi = 1e-4, 0.5
     for _ in range(60):
@@ -403,5 +406,5 @@ for p in PS:
         else:
             lo = mid
     eps_95 = hi
-    print(f"  p = {p:.1f}:  at K = 100, 95% CI half-width  ε ≈ "
+    print(f"  p = {p:.1f}:  at K = {K_REF}, 95% CI half-width  ε ≈ "
           f"{eps_95:.4f}  ({eps_95*100:.2f}%)")

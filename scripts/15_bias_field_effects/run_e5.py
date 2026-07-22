@@ -13,8 +13,14 @@ features the macrospin picture reproduces:
   (iii) two-segment transitions (not expected from a single macrospin).
 
 Directions at the fig 2.11 workpoint (0.75 ns, Cayley, self-heating ON):
-  p2ap: pap=1 (start m_z ~ -1 = P), drive -I, target m_z = +1.
-  ap2p: pap=0 (start m_z ~ +1 = AP), drive +I, target m_z = -1.
+  p2ap (key kept for the on-disk artifact names): pap=1, i.e. start
+      m_z ~ -1 = AP, drive -I, target m_z = +1 = P. This is an AP->P event.
+  ap2p (likewise historical): pap=0, start m_z ~ +1 = P, drive +I,
+      target m_z = -1 = AP. This is a P->AP event.
+  The two keys are named backwards relative to the physics (m_z = +1 is the
+  parallel state, see CLAIMS.md); they are retained only so the committed
+  e5_*.json filenames stay valid. Every human-facing label uses the physical
+  direction.
 
 Modes:
   python run_e5.py --direction p2ap --hstray 50    # -> e5_p2ap_h50.json
@@ -149,8 +155,9 @@ def analyze():
         for d in runs:
             if d["hstray_oe"] != h:
                 continue
-            c, lbl = (NAVY, "P" + r"$\rightarrow$" + "AP") if d["direction"] == "p2ap" \
-                else (CRIMSON, "AP" + r"$\rightarrow$" + "P")
+            # the "p2ap" key runs pap=1 / -I, which is physically AP->P
+            c, lbl = (NAVY, "AP" + r"$\rightarrow$" + "P") if d["direction"] == "p2ap" \
+                else (CRIMSON, "P" + r"$\rightarrow$" + "AP")
             ax.plot(d["grid_uA"], d["psw"], "o-", ms=4, lw=1.2, color=c, label=lbl)
         ax.axhline(0.5, color="gray", lw=0.5, ls=":")
         ax.set_title(rf"$H_z$ = {h:.0f} Oe", fontsize=12)
