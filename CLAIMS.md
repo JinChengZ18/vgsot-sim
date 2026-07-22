@@ -77,7 +77,7 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (72 tests).
 | Claim | Backing | Status |
 |---|---|---|
 | `smtj_sot.va` OSDI↔numpy regression R²=1.0, max\|err\|=3.5e-4 (tool self-consistency) | `eda/testbenches/regression_summary.json` (actually executed) | backed |
-| Behavioural sigmoid vs measured Device-A P→AP R²=0.992 | `eda/testbenches/golden_summary.json` | backed |
+| Behavioural sigmoid vs measured Device-A AP→P R²=0.992 | `eda/testbenches/golden_summary.json` | backed |
 | `.va` params ↔ device formulas ↔ committed golden stay consistent | `tests/test_golden_pins_device_source.py` (2) | backed |
 | LLG ↔ behavioural threshold cross-validation | `eda/testbenches/llg_validate_summary.json` (consuming project) | backed (threshold), post-recal (θ_SH=0.066): the LLG 50%-point matches the calibrated V_th within MC noise (~9 mV = 0.40·V_T); the FL-SOT-corrected macrospin is *broader* than the measured Sigmoid (the η_c C2C-narrowing gap) |
 | `θ_SH=0.066` gives V_th(0.75 ns)=0.895 V (Device-A 894 mV; 50%-crossing exact) | recalibrated (Cayley, post-FL-SOT-fix) via `scripts/09_simulation_figures/calibrate_to_experiment.py`; see `docs/maintenance/version_notes.md` | backed |
@@ -86,5 +86,6 @@ Run the test suite: `PYTHONPATH=src python -m pytest tests/ -q` (72 tests).
 
 - **γ folds μ0.** Code `gamma = 2 u0 uB / ħ ≈ 2.21e5 m/(A·s)` (= μ0·g·μB/ħ, g=2). Doc formulas for `H_SOT`/FDT that omit an explicit μ0 use fields in A/m where γ absorbs μ0 — dimensionally self-consistent, not a discrepancy.
 - **H_ex default.** `h_ex_y = −50·1000/(4π) ≈ −3979 A/m` = −50 Oe along −y, **perpendicular** to σ_SH=−x̂ (required for deterministic SOT switching). The chapter "200 Oe along the current" maps to `h_ex_y`; the 50-vs-200 Oe magnitude is a documented simulator-tuned value (`configs.py` §5). Sign/units are internally consistent.
+- **State convention (audited 2026-07-21).** `m_z = +1` is the PARALLEL state (`tmr()` → R_P ≈ 5 kΩ); `m_z = −1` is antiparallel (≈10 kΩ). `pap=1` therefore *starts* antiparallel and `target_mz=+1` *ends* parallel, i.e. a default SER run is an AP→P event — the `pap` name reads backwards and is kept only for compatibility. The 894.0 mV calibration target is the measured branch whose per-shot records run ≈10 kΩ → ≈4.9 kΩ (`05_experimental_raw_data`), so `θ_SH = 0.066` is fitted against the matching transition. The chapter's §2.2.2.3 interpolation and the experimental direction labels in `fit_from_loops.py` had the opposite sense until this audit; both were corrected, and no numerical result changed.
 - **Two resistance forms.** `initialize.py` sets the starting resistance via a fixed-TMR R(θ); `tmr.tmr()` uses the bias-dependent TMR_eff(V). Both coexist (documented caveat #1) and cancel within a single simulation; unifying on `tmr.tmr()` is a low-priority cleanup.
 - **`compute_Rp` BDR.** Corrected: it is now the honest `RA/A1`; the genuine barrier-physics predictor is `resistance_area_bdr` (see initialize.py). The old "~10% Cayley-vs-euler threshold" doc note was **wrong** (the bug-vs-correct gap is ~40%, the 0.066/0.04 θ_SH ratio); superseded by the θ_SH=0.066 recalibration (#12, done).

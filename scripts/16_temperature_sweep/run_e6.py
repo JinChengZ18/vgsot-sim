@@ -157,7 +157,7 @@ def analyze():
     plt.close(fig)
 
     print("=" * 68)
-    print("E6 summary (0.75 ns, P->AP, Cayley, self-heating ON)")
+    print("E6 summary (0.75 ns, AP->P, Cayley, self-heating ON)")
     print("=" * 68)
     print(f"{'T0 (K)':>8} {'Vth (mV)':>10} {'sigma':>7} {'beta (V^-1)':>12} {'95%CI':>8}")
     for t, v, s, b, bs in zip(T, vth, vth_sig, betas, beta_sigs):

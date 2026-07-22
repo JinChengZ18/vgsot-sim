@@ -191,7 +191,7 @@ def analyze():
         plt.close(fig)
 
     print("=" * 72)
-    print("E4 summary (0.75 ns, P->AP, Cayley, self-heating ON, vnv=0)")
+    print("E4 summary (0.75 ns, AP->P, Cayley, self-heating ON, vnv=0)")
     print("=" * 72)
     print(f"{'H (Oe)':>8} {'Ith (uA)':>10} {'p_max':>7} {'top band':>15}")
     for r in rows:

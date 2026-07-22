@@ -233,7 +233,7 @@ $$
 | Spin polarization        | $P$           | 0.58                | –    | Tunnel current spin polarization   |
 | Temperature              | $T$           | 300                 | K    | Operating temperature              |
 
-> **Note on calibrated $\theta_{SH}$.** The literature β-W value $\theta_{SH}\!\approx\!0.25$ leaves the simulator's deterministic threshold at $|I_{SOT}|\!\approx\!140\,\mu\mathrm{A}$ ($V_{SOT}\!\approx\!109\,\mathrm{mV}$ for $R_W\!\approx\!776\,\Omega$), about $8\times$ lower than the same-batch Device A P→AP detailed-$P_{sw}$ value $V_{th}(0.75\,\mathrm{ns})\!\approx\!894\,\mathrm{mV}$ ($I_{th}\!\approx\!1152\,\mu\mathrm{A}$) extracted in Section 2.3.3 (Sigmoid fit, $\beta_s = 44.6\,\mathrm{V^{-1}}$). A scan over $\theta_{SH}$ combinations (see `09_simulation_figures/calibrate_to_experiment.py`) converges on $\theta_{SH}\!\approx\!0.066$ as the calibration that — jointly with $TMR = 1.0$ and $RA = 16.6\times 10^{-12}\,\Omega\cdot\mathrm{m}^2$ — reproduces the same-batch $V_{th}(0.75\,\mathrm{ns})$ within $\sim 1\%$. This is the calibrated value used as the package default. The deviation from the textbook β-W value absorbs additional loss channels not in this simplified model: Néel–Edelstein contributions, interfacial spin-memory loss, top-electrode parasitic series resistance, and (over the pulse window) any partial misalignment between charge-current and the assumed σ̂ axis. For material-level studies of the bare spin Hall effect, override with `theta_SH=0.25` (or any literature value).
+> **Note on calibrated $\theta_{SH}$.** The literature β-W value $\theta_{SH}\!\approx\!0.25$ leaves the simulator's deterministic threshold at $|I_{SOT}|\!\approx\!140\,\mu\mathrm{A}$ ($V_{SOT}\!\approx\!109\,\mathrm{mV}$ for $R_W\!\approx\!776\,\Omega$), about $8\times$ lower than the same-batch Device A AP→P detailed-$P_{sw}$ value $V_{th}(0.75\,\mathrm{ns})\!\approx\!894\,\mathrm{mV}$ ($I_{th}\!\approx\!1152\,\mu\mathrm{A}$) extracted in Section 2.3.3 (Sigmoid fit, $\beta_s = 44.6\,\mathrm{V^{-1}}$). A scan over $\theta_{SH}$ combinations (see `09_simulation_figures/calibrate_to_experiment.py`) converges on $\theta_{SH}\!\approx\!0.066$ as the calibration that — jointly with $TMR = 1.0$ and $RA = 16.6\times 10^{-12}\,\Omega\cdot\mathrm{m}^2$ — reproduces the same-batch $V_{th}(0.75\,\mathrm{ns})$ within $\sim 1\%$. This is the calibrated value used as the package default. The deviation from the textbook β-W value absorbs additional loss channels not in this simplified model: Néel–Edelstein contributions, interfacial spin-memory loss, top-electrode parasitic series resistance, and (over the pulse window) any partial misalignment between charge-current and the assumed σ̂ axis. For material-level studies of the bare spin Hall effect, override with `theta_SH=0.25` (or any literature value).
 
 Effective anisotropy field:
 $$
@@ -419,7 +419,7 @@ $$
 |I_{SOT}| > I_{critical}
 $$
 With the calibrated defaults at $t_w = 0.75\,\mathrm{ns}$ (chapter §2.3.3
-detailed-$P_{sw}$ protocol, Device A P→AP target):
+detailed-$P_{sw}$ protocol, Device A AP→P target):
 $$
 I_{critical}(0.75\,\mathrm{ns}) \approx 1.1\text{–}1.2\,\mathrm{mA}
 \quad (V_{th} \approx 894\,\mathrm{mV})

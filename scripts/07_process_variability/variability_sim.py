@@ -121,23 +121,23 @@ from pathlib import Path
 OUTDIR = str(Path(__file__).resolve().parent) + "/"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 2. Baseline device parameters  (SAME-BATCH: Device A, P→AP, 0.75 ns)
+# 2. Baseline device parameters  (SAME-BATCH: Device A, AP→P, 0.75 ns)
 # ─────────────────────────────────────────────────────────────────────────────
 # At t_w = 0.75 ns the Psw(V) measurement was performed on the same device
 # (Device A) and in the same batch as the hysteresis measurements that
-# yielded Delta and V_c0.  The P→AP direction is chosen as primary reference
-# because the AP→P data exhibits a back-hopping plateau near V ~ 940-1000 mV
-# that corrupts a single-Sigmoid fit; the P→AP transition is clean
+# yielded Delta and V_c0.  The AP→P direction is chosen as primary reference
+# because the P→AP data exhibits a back-hopping plateau near V ~ 940-1000 mV
+# that corrupts a single-Sigmoid fit; the AP→P transition is clean
 # (R^2 = 0.993).  A separate 5 ns Sigmoid batch (beta_s = 56.9 V^-1) is kept
 # as an *external* reference, NOT as the baseline — see §2.3.5 of the
 # main document.
 TAU0      = 1.0           # ns (literature prior)
-DELTA0    = 4.91          # P→AP, from same-batch hysteresis
+DELTA0    = 4.91          # AP→P, from same-batch hysteresis
 VC0       = 0.857         # V
 TW        = 0.75          # ns (same-batch operating point)
 VTH_MEAS  = 0.894         # V, same-batch Sigmoid fit
 BETA_MEAS = 44.6          # V^-1 (= 1/k with k = 22.43 mV), same-batch
-BATCH_TAG = "Device A, P→AP, 0.75 ns (same batch)"
+BATCH_TAG = "Device A, AP→P, 0.75 ns (same batch)"
 BETA_NB_ANALYTIC = nb_fit.beta_nb_analytic(DELTA0, VC0)  # ~7.94 V^-1
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -197,7 +197,7 @@ res = variability_sweep(
     Delta=5.15,       # NB fit Δ for the device
     Vc0=0.884,        # NB fit V_c0
     tw_ns=0.75,
-    beta_meas=44.6,   # measured Sigmoid slope (V⁻¹) — Device A P→AP basis
+    beta_meas=44.6,   # measured Sigmoid slope (V⁻¹) — Device A AP→P basis
 )
 
 # res.cv_sweep, res.beta_eff, res.vth_eff, res.F_func, res.eta_c, res.beta_combined

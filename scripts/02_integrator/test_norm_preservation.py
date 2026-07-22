@@ -230,7 +230,7 @@ def part_B_raw_trajectory(cc, i_sot_A, *, t_horizon=0.75e-9, dt=1e-12,
     switching_vector() is decorative.
     """
     if m0 is None:
-        # start slightly off the +z pole, as in the P->AP drive
+        # start slightly off the +z pole, as in the AP->P drive
         th0 = 0.05
         m = np.array([np.sin(th0), 0.0, np.cos(th0)], float)
     else:
@@ -371,7 +371,7 @@ def main():
           f"{A_adv['worst_failing_omega_mag']}")
 
     # ---- Part B: LOAD-BEARING raw trajectory --------------------------
-    # Drive currents spanning sub-/super-threshold (P->AP, negative I_SOT).
+    # Drive currents spanning sub-/super-threshold (AP->P, negative I_SOT).
     i_list_uA = [-600, -1300, -2000]
     B_runs = []
     for i_uA in i_list_uA:

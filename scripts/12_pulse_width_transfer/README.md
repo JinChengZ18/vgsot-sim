@@ -1,6 +1,6 @@
 # 12 — Pulse-width transferability of the single-point θ_SH calibration (E1)
 
-The chapter calibrates the effective spin-Hall angle θ_SH = 0.066 against a single experimental anchor: Device A, P→AP, t_w = 0.75 ns, V_th = 894 mV (Cayley integrator, self-heating ON). This experiment tests whether that one-point calibration *transfers* across the pulse widths the experiment actually measured, and whether the deep-barrier macrospin model (intrinsic Δ₀ ≈ 48.5 at the calibrated parameter set) spontaneously reproduces the *shallow* effective Néel-Brown parameters (Δ_pulse ≈ 4.9, b ≈ 175 mV, Table 2.8) when its simulated V_th(ln t_w) is inverted with the same `analysis.nb_fit` machinery used on the measured data.
+The chapter calibrates the effective spin-Hall angle θ_SH = 0.066 against a single experimental anchor: Device A, AP→P, t_w = 0.75 ns, V_th = 894 mV (Cayley integrator, self-heating ON). This experiment tests whether that one-point calibration *transfers* across the pulse widths the experiment actually measured, and whether the deep-barrier macrospin model (intrinsic Δ₀ ≈ 48.5 at the calibrated parameter set) spontaneously reproduces the *shallow* effective Néel-Brown parameters (Δ_pulse ≈ 4.9, b ≈ 175 mV, Table 2.8) when its simulated V_th(ln t_w) is inverted with the same `analysis.nb_fit` machinery used on the measured data.
 
 A zero-drive free-evolution run at the same calibrated parameter set (|H_ex| = 50 Oe model default and 200 Oe experimental bias, 5 seeds × 2 µs each) bounds the actual retention of the simulated device: zero flips over 10 µs per field, where τ_ret = 135 ns would predict ~74, shows the Table-2.7 "retention time" is a linear-barrier extrapolation artifact of the nanosecond write regime, not a physical dwell time.
 
@@ -31,7 +31,7 @@ python run_e1.py --analyze
 python run_e1.py --smoke
 ```
 
-All Monte-Carlo settings mirror fig 2.11's calibration workpoint: `integrator="cayley"`, self-heating ON, `pap=1`/`target_mz=1.0` (P→AP), 3.25 ns relaxation tail, deterministic per-trial seeds (`rng_mode="generator"`, base seed 20260719 + 100·t_w).
+All Monte-Carlo settings mirror fig 2.11's calibration workpoint: `integrator="cayley"`, self-heating ON, `pap=1`/`target_mz=1.0` (AP→P), 3.25 ns relaxation tail, deterministic per-trial seeds (`rng_mode="generator"`, base seed 20260719 + 100·t_w).
 
 ## Outputs
 

@@ -1,7 +1,7 @@
 """
-参数标定 — 让 vgsot-sim 的 SER 阈值匹配 Device A P→AP @ 5 ns 实验数据。
+参数标定 — 让 vgsot-sim 的 SER 阈值匹配 Device A AP→P @ 5 ns 实验数据。
 
-实验靶值（来自章节 §2.3.4，τ_0 = 1 ns 先验，Device A P→AP 同批次）：
+实验靶值（来自章节 §2.3.4，τ_0 = 1 ns 先验，Device A AP→P 同批次）：
     a = 0.793 V, b = 0.175 V (V_th = a − b·ln(t_w/ns))
     V_th(0.75 ns)  ≈ 844 mV  →  I_SOT ≈ 1.09 mA
     V_th(5 ns)     ≈ 511 mV  →  I_SOT ≈ 659 µA
@@ -111,12 +111,12 @@ CANDIDATES = [
     ("θ_SH=0.075",                      dict(theta_SH=0.075)),
 ]
 
-EXP_V_TH_mV  = 894.0   # Device A P→AP @ 0.75 ns (chapter §2.3.3 detailed P_sw)
+EXP_V_TH_mV  = 894.0   # Device A AP→P @ 0.75 ns (chapter §2.3.3 detailed P_sw)
 EXP_I_TH_uA  = EXP_V_TH_mV / 776 * 1000     # ≈ 1152
 EXP_BETA_INV = 44.6                          # V⁻¹
 
 print("=" * 90)
-print(f"  Calibration scan — target Device A P→AP @ {PULSE_NS:.2f} ns:")
+print(f"  Calibration scan — target Device A AP→P @ {PULSE_NS:.2f} ns:")
 print(f"    V_th = {EXP_V_TH_mV:.0f} mV,  I_th = {EXP_I_TH_uA:.0f} µA,  β_s = {EXP_BETA_INV:.1f} V⁻¹")
 print("=" * 90)
 results = []

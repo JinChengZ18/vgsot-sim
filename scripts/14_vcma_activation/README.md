@@ -1,6 +1,6 @@
 # 14 — VCMA-branch activation (E3)
 
-The platform is named vgsot-sim, §2.1.3 builds the SOT-VCMA joint drive model, and §2.2.4 promises a dual-pulse scenario "used to quantify the energy-optimization benefit" — yet no chapter figure ever exercised the VCMA path (`vnv=1`). This experiment runs it in two configurations at the fig 2.11 calibration workpoint (0.75 ns, P→AP, Cayley, self-heating ON):
+The platform is named vgsot-sim, §2.1.3 builds the SOT-VCMA joint drive model, and §2.2.4 promises a dual-pulse scenario "used to quantify the energy-optimization benefit" — yet no chapter figure ever exercised the VCMA path (`vnv=1`). This experiment runs it in two configurations at the fig 2.11 calibration workpoint (0.75 ns, AP→P, Cayley, self-heating ON):
 
 1. **Simultaneous assist** — V_MTJ held during the SOT write stage only (stage layout: idle/precharge → write → relax). Output: I_th(V_MTJ) for V ∈ {−0.8, −0.4, 0, +0.4, +0.8} V against the analytic static scaling I_c0(V)/I_c0(0) = 1 − ΔK_v/K_U^eff with ΔK_v = β_VCMA·V/(t_ox·t_f).
 2. **Sequential dual pulse** — the §2.2.4 preset's literal description: a 1 ns VCMA-only pre-pulse (+0.8 V, I_SOT = 0) followed by an SOT-only write. Linear VCMA has no persistence, so this configuration is an honest null test of the preset's premise.

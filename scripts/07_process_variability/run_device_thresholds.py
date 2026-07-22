@@ -165,7 +165,7 @@ def analyze():
         json.dumps(summary, indent=2), encoding="utf-8")
 
     print("=" * 72)
-    print("Per-device 50% thresholds (0.75 ns, P->AP, Cayley, self-heating ON)")
+    print("Per-device 50% thresholds (0.75 ns, AP->P, Cayley, self-heating ON)")
     print("=" * 72)
     for r, u in zip(rows, usable):
         v, s = r["vth_mV"], r["span25to50_mV"]

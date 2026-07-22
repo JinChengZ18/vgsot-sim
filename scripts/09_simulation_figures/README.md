@@ -2,7 +2,7 @@
 
 This directory is the latest research output: a small driver bundle that runs
 the calibrated `vgsot_sim` library through the §2.3.3 detailed-P_sw protocol
-(write pulse `t_w = 0.75 ns`, `V_MTJ = 0`, P→AP) and renders the chapter §2.3
+(write pulse `t_w = 0.75 ns`, `V_MTJ = 0`, AP→P) and renders the chapter §2.3
 figures that close the loop between simulation and Device A measurements.
 
 The §2.3.4 calibration that selected `theta_SH = 0.066` as the package default
@@ -16,7 +16,7 @@ calibration table.
 | `plot_single_trajectory.py` | `Chapter02_local_09.png` | Single-trajectory `(m_z, R_MTJ, I_SOT)` for sub- / marginal / just-above / super-threshold `I_SOT` ∈ {−600, −1100, −1300, −2000} µA, self-heating ON, 0.75 ns write + 3.25 ns relax |
 | `plot_3d_trajectory.py` | `Chapter02_local_10.png` | Magnetisation vector `m(t)` on the unit sphere with time-encoded colour (cool→warm), plus Cartesian `m_x, m_y, m_z` time series for a super-threshold pulse |
 | `plot_ser_mc.py` | `Chapter02_local_11.png` | Monte-Carlo P_sw vs `\|I_SOT\|` sweep at 0.75 ns with **Wilson 95 % CI**, self-heating OFF vs ON, and a threshold-region zoom inset around the experimental `I_th ≈ 1152 µA` |
-| `calibrate_to_experiment.py` | stdout | `theta_SH` scan that picks the default; reports `V_th(0.75 ns)` and slope `β_s` per candidate, ranked by closeness to Device A P→AP target `V_th = 894 mV` |
+| `calibrate_to_experiment.py` | stdout | `theta_SH` scan that picks the default; reports `V_th(0.75 ns)` and slope `β_s` per candidate, ranked by closeness to Device A AP→P target `V_th = 894 mV` |
 
 Each script also `shutil.copy`-mirrors its PNG into
 `../../article/figs/` so the manuscript and the code stay
@@ -90,7 +90,7 @@ python scripts/09_simulation_figures/plot_ser_mc.py \
 ## Calibration target
 
 `calibrate_to_experiment.py` benchmarks each candidate against the same-batch
-Device A P→AP @ 0.75 ns operating point (chapter §2.3.3 Sigmoid fit):
+Device A AP→P @ 0.75 ns operating point (chapter §2.3.3 Sigmoid fit):
 
 | Quantity | Target |
 |---|---|

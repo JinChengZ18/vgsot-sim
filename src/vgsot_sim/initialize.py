@@ -72,7 +72,11 @@ def init(PAP, constants: PhysicalConstantsConfig, rng=None):
     Parameters
     ----------
     PAP : int
-        1 for the "parallel-pole" basin (θ near π), 0 for the other basin.
+        1 starts in the ANTIPARALLEL basin (θ near π, m_z ≈ −1, R ≈ R_AP);
+        0 starts in the parallel basin (θ near 0, m_z ≈ +1, R = R_P).
+        Note the name is historical and reads backwards; `tmr()` defines
+        m_z = +1 as the parallel state, so a `pap=1` run with
+        `target_mz=+1` is an AP→P event (≈10 kΩ → ≈5 kΩ).
     constants : PhysicalConstantsConfig
     rng : np.random.Generator, optional
         Seedable RNG for reproducibility. Falls back to np.random global.

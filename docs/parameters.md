@@ -118,7 +118,7 @@ A measurements (2026-05-16). The notable changes from older versions:
 
 | Parameter | Default | Note |
 |---|---|---|
-| `theta_SH` | **`0.066`** | Calibrated to Device A P→AP V_th(0.75 ns) = 894 mV (was `0.04` pre-FL-SOT-fix; `0.25` textbook β-W). For bare-material studies override explicitly. |
+| `theta_SH` | **`0.066`** | Calibrated to Device A AP→P V_th(0.75 ns) = 894 mV (was `0.04` pre-FL-SOT-fix; `0.25` textbook β-W). For bare-material studies override explicitly. |
 | `TMR` | **`1.0`** | ≈100 % to match the §2.3.3 hysteresis amplitude R_AP/R_P ≈ 2 (was `1.19`). |
 | `RA` | **`16.6e-12`** Ω·m² | Calibrated to R_P ≈ 5 kΩ at D_elec = 65 nm (was `36e-12`). |
 | `D_elec` | `65e-9` m | Electrical effective MTJ diameter (new; D_phys remains `80e-9`). |

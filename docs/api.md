@@ -141,7 +141,7 @@ These parameters appear in many APIs and are defined globally:
 
 | Param | Meaning                                                 |
 | ----- | ------------------------------------------------------- |
-| `pap` | Initial magnetic state: 1 = Parallel, 0 = Anti-parallel |
+| `pap` | Initial magnetic state: 1 = **anti-parallel** start (m_z ≈ −1, R ≈ R_AP), 0 = parallel start (m_z ≈ +1, R = R_P). The name reads backwards; `tmr()` defines m_z = +1 as parallel. |
 | `non` | Thermal noise toggle (1 = enable, 0 = disable)          |
 | `vnv` | VCMA effect toggle (1 = enable, 0 = disable)            |
 

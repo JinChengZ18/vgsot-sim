@@ -1,7 +1,7 @@
 """E1 — pulse-width transferability of the single-point theta_SH calibration.
 
 The chapter calibrates theta_SH = 0.066 against ONE experimental anchor
-(Device A, P->AP, t_w = 0.75 ns, V_th = 894 mV, Cayley integrator,
+(Device A, AP->P, t_w = 0.75 ns, V_th = 894 mV, Cayley integrator,
 self-heating ON). This experiment asks whether that single-point
 calibration *transfers*: simulate V_th^sim(t_w) at the pulse widths the
 experiment actually measured (0.75 / 1 / 2 / 5 ns, plus 1.5 / 3 ns
@@ -16,7 +16,7 @@ parameter set bounds the *actual* retention of the simulated device at
 flips over the observed window shows tau_ret^NB ~ 172 ns is a
 linear-barrier extrapolation artifact, not a physical dwell time.
 
-Experimental references (article/chapter02.md, 2.3.2-2.3.3, Device A, P->AP):
+Experimental references (article/chapter02.md, 2.3.2-2.3.3, Device A, AP->P):
   V(t_w) = a - b ln(t_w/ns),  a = 0.795 V, b = 0.175 V  (Table 2.7 precision;
   prose rounds to 0.79/0.18);  sigmoid V_th(0.75 ns) = 894 mV;
   NB inversion at tau0 = 1 ns: Delta = 4.91, V_c0 = 857 mV, tau_ret = 135 ns.
@@ -47,7 +47,7 @@ from vgsot_sim.analysis.sigmoid_fit import sigmoid4p
 
 HERE = Path(__file__).resolve().parent
 
-# ── Experimental references (Device A, P->AP) ────────────────────────────
+# ── Experimental references (Device A, AP->P) ────────────────────────────
 EXP_A, EXP_B = 0.795, 0.175          # V(t) = a - b ln(t/ns), Table-2.7 precision
 EXP_WIDTHS_NS = (0.75, 1.0, 2.0, 5.0)  # pulse widths actually measured
 EXP_VTH_SIGMOID_075 = 0.894          # V, sigmoid 50% point at 0.75 ns
@@ -324,7 +324,7 @@ def analyze(out_json: Path, fig_prefix: str):
 
     # ── Console summary ──────────────────────────────────────────────────
     print("=" * 74)
-    print("E1 summary  (theta_SH = 0.066, Cayley, self-heating ON, P->AP)")
+    print("E1 summary  (theta_SH = 0.066, Cayley, self-heating ON, AP->P)")
     print("=" * 74)
     print(f"{'t_w (ns)':>9} {'Vth_sim (mV)':>13} {'Vth_expline (mV)':>17} {'dev':>7}")
     for t, v, dv in zip(tw, vth, dev_line):

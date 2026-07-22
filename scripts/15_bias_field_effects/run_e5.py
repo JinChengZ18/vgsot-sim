@@ -1,7 +1,7 @@
 """E5 — direction asymmetry vs reference-layer stray field.
 
-Section 2.3.4 attributes the measured direction asymmetry (AP->P shows a
-back-hopping plateau from ~940 mV and two-segment transitions; P->AP is
+Section 2.3.4 attributes the measured direction asymmetry (P->AP shows a
+back-hopping plateau from ~940 mV and two-segment transitions; AP->P is
 clean; hysteresis intercepts differ by ~30 mV) to an uncompensated
 reference-layer stray field, with "可能提示" wording and no simulation
 support. This experiment injects a z stray field H_z in {0, 25, 50, 100} Oe

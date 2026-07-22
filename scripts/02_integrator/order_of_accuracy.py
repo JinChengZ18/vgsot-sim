@@ -55,7 +55,7 @@ from vgsot_sim.dynamic_switching_vector import _omega_from_state, cayley_step
 # ─────────────────────────────────────────────────────────────────────────
 PARAMS = dict(
     V_MTJ=0.0,
-    I_SOT=-1.5e-3,        # 超阈 P→AP 写电流，保证 ω(m(t)) 强烈随时间变化
+    I_SOT=-1.5e-3,        # 超阈 AP→P 写电流，保证 ω(m(t)) 强烈随时间变化
     R_MTJ=5000.0,
     ESOT=1,
     ESTT=0,

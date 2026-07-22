@@ -189,13 +189,13 @@ for dev in DATA:
     fit_m = nb_fit.fit_direction(tws, Vms, tau0=TAU0)
     FITS[dev] = {
         "tws": tws,
-        "AP2P": dict(a=fit_p.a, b=fit_p.b, D=fit_p.Delta, Vc=fit_p.Vc0, V=Vps,
+        "pos": dict(a=fit_p.a, b=fit_p.b, D=fit_p.Delta, Vc=fit_p.Vc0, V=Vps,
                      tret=fit_p.tau_ret_ns),
-        "P2AP": dict(a=fit_m.a, b=fit_m.b, D=fit_m.Delta, Vc=fit_m.Vc0, V=Vms,
+        "neg": dict(a=fit_m.a, b=fit_m.b, D=fit_m.Delta, Vc=fit_m.Vc0, V=Vms,
                      tret=fit_m.tau_ret_ns),
     }
     print(f"\n  Device {dev}")
-    for lbl, d in [("AP→P", FITS[dev]["AP2P"]), ("P→AP", FITS[dev]["P2AP"])]:
+    for lbl, d in [("P→AP", FITS[dev]["pos"]), ("AP→P", FITS[dev]["neg"])]:
         print(f"    {lbl}:  V = {d['a']:.3f} - {d['b']:.3f} ln(t/ns)")
         print(f"           Δ = {d['D']:.2f}, V_c0 = {d['Vc']*1e3:.0f} mV, "
               f"E_b = {d['D']*KBT*1e3:.0f} meV, τ_ret = {d['tret']:.0f} ns")
@@ -255,22 +255,22 @@ ax_top_l.legend(loc="center", bbox_to_anchor=(0.5, 0.50),
 # ════════════════════════════════════════════════════════════════════════════
 T_CURVE = np.logspace(np.log10(0.5), np.log10(20), 400)
 
-ax_top_r.scatter(MAIN["tws"], MAIN["AP2P"]["V"],
+ax_top_r.scatter(MAIN["tws"], MAIN["pos"]["V"],
                  s=75, marker="o", facecolor="white",
                  edgecolor=CRIMSON, linewidths=1.8, zorder=5,
-                 label=r"Exp. $V_{\rm th+}$ (AP$\to$P)")
+                 label=r"Exp. $V_{\rm th+}$ (P$\to$AP)")
 
-a_p, b_p = MAIN["AP2P"]["a"], MAIN["AP2P"]["b"]
+a_p, b_p = MAIN["pos"]["a"], MAIN["pos"]["b"]
 ax_top_r.plot(T_CURVE, a_p - b_p * np.log(T_CURVE),
               color=CRIMSON, lw=2.0,
               label=rf"Fit: $V(t)={a_p:.2f}-{b_p:.2f}\ln(t)$")
 
-ax_top_r.scatter(MAIN["tws"], -MAIN["P2AP"]["V"],
+ax_top_r.scatter(MAIN["tws"], -MAIN["neg"]["V"],
                  s=75, marker="s", facecolor="white",
                  edgecolor=NAVY, linewidths=1.8, zorder=5,
-                 label=r"Exp. $V_{\rm th-}$ (P$\to$AP)")
+                 label=r"Exp. $V_{\rm th-}$ (AP$\to$P)")
 
-a_m, b_m = MAIN["P2AP"]["a"], MAIN["P2AP"]["b"]
+a_m, b_m = MAIN["neg"]["a"], MAIN["neg"]["b"]
 ax_top_r.plot(T_CURVE, -(a_m - b_m * np.log(T_CURVE)),
               color=NAVY, lw=2.0,
               label=rf"Fit: $V(t)=-{a_m:.2f}+{b_m:.2f}\ln(t)$")
@@ -288,16 +288,16 @@ ax_top_r.set_xticks([0.5, 1, 2, 5, 10, 20])
 # near the origin; the y≈0 center-left region is empty between them).
 ax_top_r.legend(loc="center left", fontsize=10.5, framealpha=0.96)
 
-D_p, Vc_p      = MAIN["AP2P"]["D"], MAIN["AP2P"]["Vc"]
-D_m, Vc_m      = MAIN["P2AP"]["D"], MAIN["P2AP"]["Vc"]
-tret_p, tret_m = MAIN["AP2P"]["tret"], MAIN["P2AP"]["tret"]
+D_p, Vc_p      = MAIN["pos"]["D"], MAIN["pos"]["Vc"]
+D_m, Vc_m      = MAIN["neg"]["D"], MAIN["neg"]["Vc"]
+tret_p, tret_m = MAIN["pos"]["tret"], MAIN["neg"]["tret"]
 
 annot = (rf"$\tau_0 = {TAU0:.0f}$ ns assumed" "\n"
-         rf"AP$\to$P: $\Delta={D_p:.2f}$, $V_{{c0}}={Vc_p*1e3:.0f}$ mV, "
+         rf"P$\to$AP: $\Delta={D_p:.2f}$, $V_{{c0}}={Vc_p*1e3:.0f}$ mV, "
          rf"$\tau_{{\rm ret}}={tret_p:.0f}$ ns" "\n"
-         rf"P$\to$AP: $\Delta={D_m:.2f}$, $V_{{c0}}={Vc_m*1e3:.0f}$ mV, "
+         rf"AP$\to$P: $\Delta={D_m:.2f}$, $V_{{c0}}={Vc_m*1e3:.0f}$ mV, "
          rf"$\tau_{{\rm ret}}={tret_m:.0f}$ ns")
-# Parameter box: bottom-right quadrant, below the P→AP line at long t_w.
+# Parameter box: bottom-right quadrant, below the AP→P line at long t_w.
 ax_top_r.text(0.98, 0.02, annot, transform=ax_top_r.transAxes,
               fontsize=10, va="bottom", ha="right",
               bbox=dict(boxstyle="round,pad=0.35",
@@ -345,10 +345,10 @@ ax_bot.plot(v_loc[mask] * 1e3, t_loc[mask],
             color=CHARCOAL, lw=2.2, ls="--", zorder=6,
             label=r"$P_{\rm sw}=50\%$ locus (NB model)")
 
-for dev, mk, lbl in [("A", "o", r"Device A (AP$\to$P)"),
-                     ("B", "^", r"Device B (AP$\to$P)")]:
+for dev, mk, lbl in [("A", "o", r"Device A (P$\to$AP)"),
+                     ("B", "^", r"Device B (P$\to$AP)")]:
     tws_d = FITS[dev]["tws"]
-    Vs_d  = FITS[dev]["AP2P"]["V"]
+    Vs_d  = FITS[dev]["pos"]["V"]
     ax_bot.scatter(Vs_d * 1e3, tws_d,
                    s=70, c="white", marker=mk,
                    edgecolors=CRIMSON, linewidths=1.8, zorder=7,
@@ -359,7 +359,7 @@ ax_bot.set_xlabel(r"Write voltage $V_{\rm SOT}$ (mV)")
 ax_bot.set_ylabel(r"Pulse width $t_w$ (ns)")
 ax_bot.set_title(
     r"Joint switching probability $P_{\rm sw}(V,\,t_w)$ — "
-    r"Néel-Brown model calibrated on Device A (AP$\to$P)"
+    r"Néel-Brown model calibrated on Device A (P$\to$AP)"
 )
 ax_bot.set_xlim(0, 1080)
 ax_bot.set_ylim(0.4, 50)
@@ -398,9 +398,9 @@ ax = axes[0]
 for dev, col, mk in [("A", CRIMSON, "o"),
                      ("B", THU_DEEP, "^")]:
     tws_d = FITS[dev]["tws"]
-    Vs_d  = FITS[dev]["AP2P"]["V"]
-    a, b  = FITS[dev]["AP2P"]["a"], FITS[dev]["AP2P"]["b"]
-    D, Vc = FITS[dev]["AP2P"]["D"], FITS[dev]["AP2P"]["Vc"]
+    Vs_d  = FITS[dev]["pos"]["V"]
+    a, b  = FITS[dev]["pos"]["a"], FITS[dev]["pos"]["b"]
+    D, Vc = FITS[dev]["pos"]["D"], FITS[dev]["pos"]["Vc"]
     ax.scatter(tws_d, Vs_d, s=70, marker=mk,
                facecolor="white", edgecolor=col, linewidths=1.9,
                label=rf"Device {dev}: $\Delta$={D:.2f}, $V_{{c0}}$={Vc*1e3:.0f} mV",
@@ -409,8 +409,8 @@ for dev, col, mk in [("A", CRIMSON, "o"),
 
 ax.set_xscale("log")
 ax.set_xlabel(r"Pulse width $t_w$ (ns)")
-ax.set_ylabel(r"$V_{\rm th+}$ (V)  [AP$\to$P]")
-ax.set_title(r"Device-to-device consistency (AP$\to$P)")
+ax.set_ylabel(r"$V_{\rm th+}$ (V)  [P$\to$AP]")
+ax.set_title(r"Device-to-device consistency (P$\to$AP)")
 ax.set_xlim(0.5, 20)
 ax.xaxis.set_major_formatter(mticker.ScalarFormatter())
 ax.set_xticks([0.5, 1, 2, 5, 10, 20])
@@ -422,8 +422,8 @@ x_pos = np.arange(len(dev_labels))
 widths = 0.28
 
 params = {
-    r"$\Delta$ (AP$\to$P)": [FITS[d]["AP2P"]["D"] for d in dev_labels],
-    r"$\Delta$ (P$\to$AP)": [FITS[d]["P2AP"]["D"] for d in dev_labels],
+    r"$\Delta$ (P$\to$AP)": [FITS[d]["pos"]["D"] for d in dev_labels],
+    r"$\Delta$ (AP$\to$P)": [FITS[d]["neg"]["D"] for d in dev_labels],
 }
 colours = [CRIMSON, NAVY]
 
@@ -433,8 +433,8 @@ for i, (lbl, vals) in enumerate(params.items()):
            label=lbl)
 
 for i, d in enumerate(dev_labels):
-    ax.text(i, max(FITS[d]["AP2P"]["D"], FITS[d]["P2AP"]["D"]) + 0.25,
-            rf"$V_{{c0}}\!=$ {FITS[d]['AP2P']['Vc']*1e3:.0f} mV",
+    ax.text(i, max(FITS[d]["pos"]["D"], FITS[d]["neg"]["D"]) + 0.25,
+            rf"$V_{{c0}}\!=$ {FITS[d]['pos']['Vc']*1e3:.0f} mV",
             ha="center", fontsize=10, color=CHARCOAL)
 
 ax.set_xticks(x_pos)
@@ -459,7 +459,7 @@ print("=" * 72)
 print(f"  τ_0 = {TAU0:.1f} ns (literature prior)")
 for dev in DATA:
     print(f"\n  Device {dev}:")
-    for lbl, key in [("AP→P", "AP2P"), ("P→AP", "P2AP")]:
+    for lbl, key in [("P→AP", "pos"), ("AP→P", "neg")]:
         d = FITS[dev][key]
         print(f"    {lbl}: a = {d['a']:.3f} V, b = {d['b']:.3f} V, "
               f"Δ = {d['D']:.2f}, V_c0 = {d['Vc']*1e3:.0f} mV, "

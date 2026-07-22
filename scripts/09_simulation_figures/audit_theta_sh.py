@@ -5,7 +5,7 @@
 ----
 图脚本注释与正文残留「θ_SH = 0.04（球坐标-Euler 标定值）」字样，但发布的
 `PhysicalConstantsConfig.theta_SH` 默认值已是 **0.066**（Cayley 积分器，按
-Device-A P→AP 0.75 ns 的实验 V_th=894 mV → I_th≈1152 µA 重标定）。
+Device-A AP→P 0.75 ns 的实验 V_th=894 mV → I_th≈1152 µA 重标定）。
 
 本脚本两段：
   PART B-1（决定性，cheap）— 运行时断言：
@@ -14,11 +14,11 @@ Device-A P→AP 0.75 ns 的实验 V_th=894 mV → I_th≈1152 µA 重标定）�
        integrator（→ 继承 0.066 + cayley）。
   PART B-2（系综溯源，较重；此处跑 *缩减 pilot* N≈30 种子）—
      对 θ_SH ∈ {0.066, 0.04}：在电流网格上对 N 个独立热噪声种子统计
-     P→AP（NEGATIVE I_SOT）翻转成功率 P_sw(|I|)（成功判据与标定图 plot_ser_mc
+     AP→P（NEGATIVE I_SOT）翻转成功率 P_sw(|I|)（成功判据与标定图 plot_ser_mc
      一致：|m_z_end − 1| ≤ 0.2，4 ns 窗口），再对 P_sw(|I|) 拟合 Logistic 取
      **P_sw=0.5 交点 I_50**（即系综中位翻转阈值），看哪个 θ_SH 的 I_50 落在实验
      I_th≈1152 µA 附近。I_50 的 95% CI 由对 N 个种子做自助重采样得到。
-     红队加固：θ_SH 验证**必须**用 NEGATIVE I_SOT（P→AP）+ N≥200 种子系综
+     红队加固：θ_SH 验证**必须**用 NEGATIVE I_SOT（AP→P）+ N≥200 种子系综
      （单种子阈值跨度大，不能凭 seed=1）。本 pilot N=30 仅作 harness 验证；
      完整 N≥200 见 deferred_full_run_cmd / --full。
 
@@ -77,7 +77,7 @@ I_GRID_UA = np.array([900, 1000, 1100, 1150, 1200, 1250, 1300, 1350,
 
 
 def _success(i_sot_A: float, theta_SH: float, seed: int) -> bool:
-    """One seeded P→AP trajectory (NEGATIVE I_SOT) at a given θ_SH; True if it
+    """One seeded AP→P trajectory (NEGATIVE I_SOT) at a given θ_SH; True if it
     meets the SER success criterion. θ_SH injected via a mutated dataclass copy.
     """
     cc = dataclasses.replace(PhysicalConstantsConfig(), theta_SH=theta_SH)
@@ -206,10 +206,10 @@ def part_b1_readback():
 
 def part_b2_ensemble(n_seeds: int, theta_list=(0.066, 0.04)):
     """Ensemble P_sw(|I|) → I_50 (P_sw=0.5 crossing) per θ_SH; NEGATIVE I_SOT,
-    P→AP. Returns {f'theta_SH={th}': {...}}."""
+    AP→P. Returns {f'theta_SH={th}': {...}}."""
     print("=" * 78)
     print(f"  实验 F — PART B-2：阈值系综 I_50 (N={n_seeds} 种子/θ_SH, "
-          f"NEGATIVE I_SOT, P→AP)")
+          f"NEGATIVE I_SOT, AP→P)")
     print("=" * 78)
     out = {}
     boot_rng = np.random.default_rng(20260630)
@@ -255,7 +255,7 @@ def make_figure(b2, I_th_exp_uA, out_png):
     axL.axvline(I_th_exp_uA, color="#1A6B5A", ls=(0, (4, 2)), lw=1.5,
                 label=rf"exp $I_{{\mathrm{{th}}}}={I_th_exp_uA:.0f}\,\mu$A")
     axL.set_xlabel(r"$|I_{\mathrm{SOT}}|$ ($\mu$A)")
-    axL.set_ylabel(r"$P_{\mathrm{sw}}$ (P→AP)")
+    axL.set_ylabel(r"$P_{\mathrm{sw}}$ (AP→P)")
     axL.set_ylim(-0.05, 1.05)
     axL.set_title("Ensemble P$_{sw}$(|I|) per θ$_{SH}$")
     axL.grid(True, ls="--", lw=0.4, alpha=0.6)
@@ -292,7 +292,7 @@ def make_figure(b2, I_th_exp_uA, out_png):
     axR.grid(True, ls="--", lw=0.4, alpha=0.6)
     axR.legend(fontsize=8, loc="best")
 
-    fig.suptitle("θ_SH provenance audit (NEGATIVE I$_{SOT}$, P→AP ensemble)",
+    fig.suptitle("θ_SH provenance audit (NEGATIVE I$_{SOT}$, AP→P ensemble)",
                  fontsize=13)
     plt.tight_layout()
     plt.savefig(out_png, dpi=200, bbox_inches="tight", facecolor="white")

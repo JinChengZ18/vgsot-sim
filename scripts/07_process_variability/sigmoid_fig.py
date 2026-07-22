@@ -90,20 +90,20 @@ OUTDIR = str(Path(__file__).resolve().parent) + "/"
 
 # ── Measured (V_SOT mV, P_sw) per filename ──────────────────────────────────
 DATA = {
-    ("A", "AP→P"): (
+    ("A", "P→AP"): (
         np.array([800, 820, 840, 860, 880, 900, 920, 940, 960, 980,
                   1000, 1020, 1040, 1060, 1080, 1100]),
         np.array([0.000, 0.000, 0.000, 0.000, 0.040, 0.040, 0.580, 0.780,
                   0.720, 0.720, 0.720, 0.860, 0.840, 0.880, 0.900, 1.000])),
-    ("A", "P→AP"): (
+    ("A", "AP→P"): (
         np.array([800, 820, 840, 860, 880, 900, 920, 940, 960,
                   980, 1000, 1020]),
         np.array([0.000, 0.020, 0.100, 0.180, 0.340, 0.500, 0.820, 0.840,
                   0.900, 0.980, 0.940, 1.000])),
-    ("B", "AP→P"): (
+    ("B", "P→AP"): (
         np.array([800, 820, 840, 860, 880, 900, 920, 940, 960]),
         np.array([0.000, 0.020, 0.360, 0.380, 0.520, 0.740, 0.740, 0.920, 1.000])),
-    ("B", "P→AP"): (
+    ("B", "AP→P"): (
         np.array([840, 860, 880, 900, 920, 940, 960, 980, 1000]),
         np.array([0.000, 0.100, 0.180, 0.400, 0.840, 0.960, 1.000, 1.000, 1.000])),
 }
@@ -123,10 +123,10 @@ FITS = {key: fit_and_stats(V, P) for key, (V, P) in DATA.items()}
 
 # ── NB predictions (same-batch hysteresis-derived Δ, V_c0) ──────────────────
 NB_PARAMS = {
-    ("A", "AP→P"): dict(Delta=5.15, Vc0=884),
-    ("A", "P→AP"): dict(Delta=4.91, Vc0=857),
-    ("B", "AP→P"): dict(Delta=4.46, Vc0=876),
-    ("B", "P→AP"): dict(Delta=4.95, Vc0=856),
+    ("A", "P→AP"): dict(Delta=5.15, Vc0=884),
+    ("A", "AP→P"): dict(Delta=4.91, Vc0=857),
+    ("B", "P→AP"): dict(Delta=4.46, Vc0=876),
+    ("B", "AP→P"): dict(Delta=4.95, Vc0=856),
 }
 TAU0, TW_NS = 1.0, 0.75
 for key in NB_PARAMS:
@@ -137,9 +137,11 @@ for key in NB_PARAMS:
     NB_PARAMS[key]["Vth_NB"]  = float(nb_fit.vth_nb(TW_NS, D, V0))
 
 # Per-point measurement protocol: every (device, direction, V) datum is the
-# success ratio of 100 independent write attempts (see thesis §2.3.3); the
-# Wilson 95% CI in sigmoid_fit.wilson uses n=100 by default. Override that
-# default if a future dataset uses a different repetition count.
+# success ratio of N_CYCLES independent write attempts. The committed
+# per-shot records in 05_experimental_raw_data hold 50 rows per point, so
+# the Wilson 95% CI must be evaluated at n=50 rather than sigmoid_fit's
+# n=100 default (which made the drawn intervals ~sqrt(2) too narrow).
+N_CYCLES = 50
 
 # ── Figure ──────────────────────────────────────────────────────────────────
 fig = plt.figure(figsize=(13.0, 9.8))
@@ -147,24 +149,24 @@ gs = GridSpec(2, 2, figure=fig, hspace=0.38, wspace=0.23,
               left=0.07, right=0.97, top=0.90, bottom=0.07)
 
 layout = {
-    (0, 0): ("A", "AP→P"),
-    (0, 1): ("A", "P→AP"),
-    (1, 0): ("B", "AP→P"),
-    (1, 1): ("B", "P→AP"),
+    (0, 0): ("A", "P→AP"),
+    (0, 1): ("A", "AP→P"),
+    (1, 0): ("B", "P→AP"),
+    (1, 1): ("B", "AP→P"),
 }
-DIR_COLOR = {"AP→P": CRIMSON, "P→AP": NAVY}
+DIR_COLOR = {"P→AP": CRIMSON, "AP→P": NAVY}
 PANEL_NOTES = {
-    ("A", "AP→P"): r"back-hopping plateau at $V\gtrsim 940$ mV",
-    ("A", "P→AP"): "clean single-stage transition",
-    ("B", "AP→P"): "two-stage transition (840–860 mV)",
-    ("B", "P→AP"): "clean single-stage transition",
+    ("A", "P→AP"): r"back-hopping plateau at $V\gtrsim 940$ mV",
+    ("A", "AP→P"): "clean single-stage transition",
+    ("B", "P→AP"): "two-stage transition (840–860 mV)",
+    ("B", "AP→P"): "clean single-stage transition",
 }
 
 for (i, j), (dev, direction) in layout.items():
     ax = fig.add_subplot(gs[i, j])
     V, P = DATA[(dev, direction)]
     fit = FITS[(dev, direction)]
-    lo, hi = wilson(P)
+    lo, hi = wilson(P, N_CYCLES)
     yerr = [np.clip(P - lo, 0, None), np.clip(hi - P, 0, None)]
     col = DIR_COLOR[direction]
 
@@ -243,13 +245,13 @@ etas = [FITS[k]["beta"] / NB_PARAMS[k]["beta_NB"] for k in layout.values()]
 print()
 print(f"  η_c range       : {min(etas):.1f} – {max(etas):.1f}")
 print(f"  η_c median      : {np.median(etas):.1f}")
-print(f"  Clean subset    : P→AP both devices = "
-      f"{FITS[('A','P→AP')]['beta']/NB_PARAMS[('A','P→AP')]['beta_NB']:.1f}, "
-      f"{FITS[('B','P→AP')]['beta']/NB_PARAMS[('B','P→AP')]['beta_NB']:.1f}")
+print(f"  Clean subset    : AP→P both devices = "
+      f"{FITS[('A','AP→P')]['beta']/NB_PARAMS[('A','AP→P')]['beta_NB']:.1f}, "
+      f"{FITS[('B','AP→P')]['beta']/NB_PARAMS[('B','AP→P')]['beta_NB']:.1f}")
 print()
-print("  PRIMARY REFERENCE: Device A, P→AP (cleanest, primary device)")
-print(f"    β_s = {FITS[('A','P→AP')]['beta']:.1f} V⁻¹,  η_c = "
-      f"{FITS[('A','P→AP')]['beta']/NB_PARAMS[('A','P→AP')]['beta_NB']:.2f}")
+print("  PRIMARY REFERENCE: Device A, AP→P (cleanest, primary device)")
+print(f"    β_s = {FITS[('A','AP→P')]['beta']:.1f} V⁻¹,  η_c = "
+      f"{FITS[('A','AP→P')]['beta']/NB_PARAMS[('A','AP→P')]['beta_NB']:.2f}")
 print()
 print("  SEPARATE BATCH (5 ns Sigmoid, reported in earlier test report):")
 print("    β_s = 56.9 V⁻¹, η_c ≈ 7.0 — falls within the same-batch range")

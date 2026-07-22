@@ -1,7 +1,7 @@
 """E2 — overlay the measured Sigmoid on the simulated P_sw(V) and decompose eta_c.
 
 Fig 2.11 aligns simulation and experiment at the 50% threshold only; the
-full measured Device-A P->AP Sigmoid (fig 2.14b) was never overlaid on the
+full measured Device-A AP->P Sigmoid (fig 2.14b) was never overlaid on the
 simulated transition. This experiment (i) densely samples the simulated
 transition (>=500 trials/point) and extracts beta_s^sLLG with a confidence
 interval, placing the macrospin engine on the slope ladder
@@ -13,7 +13,7 @@ including a relaxation-window sensitivity check that separates judgement
 convention from device physics.
 
 Measured reference (mirrors scripts/07_process_variability/sigmoid_fig.py
-DATA[("A", "P->AP")], 100 write-read cycles per point, H_x = 200 Oe):
+DATA[("A", "AP->P")], 50 write-read cycles per point, H_x = 200 Oe):
 sigmoid fit V_th = 894.0 mV, k = 22.43 mV, beta_s = 44.6 V^-1 (Table 2.6).
 NB reference at tau0 = 1 ns: Delta = 4.91, V_c0 = 857 mV (Table 2.8).
 
@@ -43,11 +43,11 @@ from vgsot_sim.analysis import nb_fit
 HERE = Path(__file__).resolve().parent
 BASE_SEED = 20260719
 
-# ── Measured Device A, P->AP, 0.75 ns (V_SOT mV, P_sw; N = 100 each) ─────
+# ── Measured Device A, AP->P, 0.75 ns (V_SOT mV, P_sw; N = 50 each) ──────
 MEAS_V_MV = np.array([800, 820, 840, 860, 880, 900, 920, 940, 960, 980, 1000, 1020])
 MEAS_P = np.array([0.000, 0.020, 0.100, 0.180, 0.340, 0.500, 0.820, 0.840,
                    0.900, 0.980, 0.940, 1.000])
-MEAS_N = 100
+MEAS_N = 50          # per-shot records hold 50 cycles per point, not 100
 MEAS_FIT = dict(Vth_mV=894.0, k_mV=22.43, beta=44.6)     # Table 2.6
 NB_REF = dict(Delta=4.91, Vc0=0.857, tau0_ns=1.0)        # Table 2.8
 BETA_NB_ANALYTIC = nb_fit.beta_nb_analytic(NB_REF["Delta"], NB_REF["Vc0"])  # ~7.94
@@ -228,7 +228,7 @@ def analyze():
 
     # ── Console summary ──────────────────────────────────────────────────
     print("=" * 72)
-    print("E2 summary (0.75 ns, P->AP, Cayley, self-heating ON)")
+    print("E2 summary (0.75 ns, AP->P, Cayley, self-heating ON)")
     print("=" * 72)
     print(f"pooled dense scan : {len(grid)} points x {n_tot} trials")
     print(f"sim sigmoid       : Vth = {vth_sim*1e3:.1f} mV, k = {k_sim*1e3:.1f} mV, "

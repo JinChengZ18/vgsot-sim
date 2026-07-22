@@ -102,7 +102,7 @@ def V_for_p(p):
 
 print("=" * 78)
 print("  Operating-point voltages on the primary Sigmoid")
-print("  (Device A, P→AP, 0.75 ns)")
+print("  (Device A, AP→P, 0.75 ns)")
 print("=" * 78)
 for p in [0.1, 0.5, 0.9]:
     print(f"  p = {p:.1f}   →   V = {V_for_p(p)*1e3:7.2f} mV")
@@ -377,7 +377,7 @@ ax_f.xaxis.set_major_formatter(mticker.ScalarFormatter())
 
 fig.suptitle(
     r"Hardware Bernoulli sampling reliability — Binomial-exact vs. Monte Carlo "
-    r"(Device A, P$\to$AP, $t_w = 0.75$ ns)",
+    r"(Device A, AP$\to$P, $t_w = 0.75$ ns)",
     y=0.965,
 )
 

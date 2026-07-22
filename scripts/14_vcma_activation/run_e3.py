@@ -251,7 +251,7 @@ def analyze():
     plt.close(fig)
 
     print("=" * 70)
-    print("E3 summary (0.75 ns, P->AP, Cayley, self-heating ON, vnv=1)")
+    print("E3 summary (0.75 ns, AP->P, Cayley, self-heating ON, vnv=1)")
     print("=" * 70)
     print(f"{'V_MTJ (V)':>10} {'Ith (uA)':>10} {'sim scale':>10} {'analytic':>9} {'E (pJ)':>8}")
     for v, i, ss, sa in zip(V, ith, scale_sim, scale_ana):
